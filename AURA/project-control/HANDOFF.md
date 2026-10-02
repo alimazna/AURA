@@ -30,8 +30,9 @@ Date: 2026-10-02
 - `FND-0015 ErrorCode.h` and `FND-0016 ErrorRecord.h` are implemented, reviewed and `APPROVED`
   (previously OPEN DECISION / BLOCKED). The V3-45 OPEN DECISION was resolved by the human decision
   recorded in `DECISIONS.md` (2026-10-02); `BLOCK-002` is RESOLVED.
-- Phase 0 is complete; the `PHASE-0` milestone is `APPROVED`. The next READY task is `RS-0001`
-  (Phase 0.5); it was NOT started.
+- Phase 0 is complete; the `PHASE-0` milestone is `APPROVED`.
+- Phase 0.5 was explicitly authorized and ONE task was executed: `RS-0001 ServiceDescriptor.h`
+  (`src/resilience/`), now `APPROVED`. `RS-0002` is the next READY task but was NOT started.
 - Authority note: Phase 0 filenames come from V3-42. The `src/` layout, the `EntityId`
   representation, the `Version` grammar, and the Phase 0.5/1/2 filenames are PROPOSED
   decomposition and require integration review; they are not canonical architecture.
@@ -61,10 +62,12 @@ Date: 2026-10-02
 2. Read `project-control/IMPLEMENTATION_SCOPE.md`.
 3. Read `project-control/PROJECT_STATE.md`.
 4. Read `project-control/TASK_MANIFEST.yaml` and pick the next actionable task.
-5. Inspect the repository; Phase 0 `src/foundation/` headers now exist.
-6. Phase 0 is complete and `APPROVED` (all 36 file-level tasks + the `PHASE-0` milestone). The
-   ErrorCode blocker (`BLOCK-002`) is resolved. The next READY task is `RS-0001` (Phase 0.5); do not
-   begin Phase 0.5 without explicit authorization.
+5. Inspect the repository; Phase 0 `src/foundation/` headers and the Phase 0.5
+   `src/resilience/ServiceDescriptor.h` now exist.
+6. Phase 0 is complete and `APPROVED` (all 36 file-level tasks + the `PHASE-0` milestone). Phase 0.5
+   is in progress: `RS-0001 ServiceDescriptor.h` is `APPROVED`. The next READY task is `RS-0002`
+   (`src/resilience/CapabilityId.h`, depends on `FND-0001`); do not begin it without explicit
+   authorization.
 7. Run appropriate deterministic checks; record real results in `TEST_LOG.md`.
 8. Preserve implementation + state in Git before ending the session.
 
@@ -77,6 +80,17 @@ Date: 2026-10-02
 - No task is BLOCKED; `BLOCK-001` and `BLOCK-002` are RESOLVED.
 - Next READY task is `RS-0001` (Phase 0.5). It was NOT started and must not start without explicit
   authorization.
+- Pushed to `origin/main`; remote URL is token-free and no credential is persisted anywhere.
+
+### Session end state (2026-10-02, RS-0001)
+
+- Phase 0.5 started under explicit authorization. Exactly one task executed: `RS-0001`
+  (`src/resilience/ServiceDescriptor.h`), classified `APPROVED`.
+- Verification: self-contained standalone TU + structural harness pass under c++17/c++20 strict;
+  deterministic equality/ordering/hashing; all 8 canonical `ServiceState` values representable;
+  combined all-headers TU compiles.
+- `RS-0002` is the next READY task; it was NOT started. No other Phase 0.5/1/2 task was started.
+- `PHASE-0.5` remains `PLANNED` (1 of 20 tasks complete).
 - Pushed to `origin/main`; remote URL is token-free and no credential is persisted anywhere.
 
 ### Open blockers

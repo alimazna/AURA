@@ -301,6 +301,36 @@ Every Phase 0 file-level task passes independent review and verification and is 
 Compilation and structural checks support — but do not by themselves prove — architectural
 correctness; no profitability, calibration, broker-validation or production-safety claim is made.
 
+## 2026-10-02 — RS-0001 ServiceDescriptor (Phase 0.5)
+
+Scope: `RS-0001` → `src/resilience/ServiceDescriptor.h` only. One task, one output file.
+
+Commands (ad-hoc; no application build system exists):
+- `g++ -std=c++17 -Wall -Wextra -Werror -pedantic -I src /tmp/sc17.cpp` (standalone self-containment)
+- same with `-std=c++20`
+- `g++ -std=c++17 ... /tmp/rs0001_check.cpp` and `-std=c++20` (structural harness)
+- combined all-headers TU incl. `Hasher.cpp` under both standards
+
+Result: PASS.
+- Self-contained: the header compiles alone (no other project header) under c++17 and c++20 strict.
+- Structural harness passes under both standards: default descriptor invalid; non-empty name valid;
+  empty name invalid; name/state preserved; deterministic equality/inequality on both fields;
+  deterministic ordering (name then state); equal values hash equal; usable as `unordered_set` and
+  `set` key (equal keys dedup); copy preserves value; all 8 canonical `ServiceState` values
+  representable; `is_operational` remains the sole operational authority.
+- Includes: only `foundation/ServiceState.h` (FND-0004) plus std headers. Preprocessor check confirms
+  `foundation/EntityId.h` is NOT pulled in (the only "EntityId" occurrence is in a comment). No
+  higher-layer include. Include graph acyclic.
+- No duplicate type name (`ServiceDescriptor` declared once); the `hash` matches are distinct
+  `std::hash<...>` specializations, not duplicate types.
+- Combined all-headers TU compiles cleanly under c++17 and c++20 strict.
+
+Interpretation:
+`RS-0001` satisfies its acceptance ("describes identity and state vocabulary; consistent with
+ServiceState; no runtime behaviour") and the V3-13/V3-15/V3-16/V3-40/V3-46/V3-49 checks. Classified
+`APPROVED`. No source defect found; no dependency contract was changed. Compilation and structural
+checks support — but do not by themselves prove — architectural correctness.
+
 ## Future test entry format
 
 - Date

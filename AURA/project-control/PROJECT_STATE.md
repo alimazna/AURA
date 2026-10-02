@@ -140,14 +140,34 @@ This is the human-readable snapshot of where the project currently stands.
 - The next READY task is `RS-0001` (Phase 0.5) but it was NOT started; Phase 0.5 awaits explicit
   authorization.
 
+## Phase 0.5 implementation — RS-0001 (2026-10-02)
+
+- Phase 0.5 (Resilience & Graceful Degradation) was explicitly authorized. Exactly one task was
+  executed: `RS-0001` → `src/resilience/ServiceDescriptor.h`.
+- `RS-0001` defines an immutable `ServiceDescriptor` value type in `aura::resilience`: a stable
+  non-empty service name (empty name yields the invalid default) plus a `foundation::ServiceState`
+  declared default state. It is a descriptive contract only — no supervision, monitoring,
+  transition, recovery, isolation, scheduling, or I/O.
+- It depends only on `FND-0004 ServiceState.h`; it deliberately does not carry an `EntityId` (RS-0002
+  owns capability identity) and introduces no higher-layer dependency.
+- Verification: self-contained standalone TU and structural harness pass under `g++ -std=c++17` and
+  `g++ -std=c++20` with `-Wall -Wextra -Werror -pedantic`; deterministic equality/ordering/hashing,
+  value semantics, all 8 canonical `ServiceState` values representable, and combined all-headers
+  compile verified. Details in `TEST_LOG.md`.
+- Review classification: `RS-0001` = `APPROVED`.
+- `PHASE-0.5` remains `PLANNED` (1 of 20 Phase 0.5 tasks complete). `RS-0002` is the next READY task
+  but was NOT started.
+
 ## Current task
 
-- Phase 0 complete: all 36 Phase 0 file-level tasks and the `PHASE-0` milestone are `APPROVED`.
-- Next READY: `RS-0001` (Phase 0.5) — not started, pending explicit authorization.
+- Phase 0 complete and `APPROVED`.
+- Phase 0.5 started under explicit authorization: `RS-0001` is implemented, reviewed and `APPROVED`.
+- Next READY: `RS-0002` (`src/resilience/CapabilityId.h`) — not started, pending explicit
+  authorization.
 
 ## Next action
 
-1. Obtain explicit authorization before starting Phase 0.5 (`RS-0001`).
+1. Obtain explicit authorization before starting the next Phase 0.5 task (`RS-0002`).
 2. Preserve implementation + state in Git before ending the session.
 
 ## Update rule

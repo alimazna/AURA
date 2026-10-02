@@ -27,7 +27,7 @@ authority_class_enum:
 - PROPOSED
 - OPEN DECISION
 path_status_note: Phase 0 filenames are from V3-42 (CANONICAL decomposition). Phase 0.5/1/2 filenames and src/ layout are PROPOSED implementation decomposition and are subject to integration review (V3-16, V3-46). They must not be treated as canonical architecture.
-current_task: "RS-0001 (Phase 0.5) is the next READY task now that the PHASE-0 milestone is APPROVED; do not start it until explicitly authorized"
+current_task: "RS-0001 (ServiceDescriptor.h) APPROVED on 2026-10-02. Next READY: RS-0002 (CapabilityId.h, depends on FND-0001) — not started; do not begin without explicit authorization"
 tasks:
 - id: TASK-BOOTSTRAP-001
   phase: BOOTSTRAP
@@ -509,12 +509,13 @@ tasks:
   module: RESILIENCE
   layer: RESILIENCE_PLANE
   authority: PROPOSED
-  status: PLANNED
+  status: APPROVED
   output: src/resilience/ServiceDescriptor.h
   dependencies:
   - FND-0004
   objective: Define the descriptor of a supervised service/subsystem.
   acceptance: Describes identity and state vocabulary; consistent with ServiceState; no runtime behaviour.
+  evidence: 'Implemented and reviewed 2026-10-02. Immutable ServiceDescriptor value type in namespace aura::resilience; identity is a non-empty stable name (empty name yields the invalid default) and it carries a foundation::ServiceState default_state; explicit constructor, no implicit string conversion, no mutator. Includes only foundation/ServiceState.h (FND-0004) plus std headers; no EntityId, no higher-layer dependency, no runtime behaviour. Self-contained standalone TU and structural harness pass under g++ -std=c++17 and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic; deterministic equality/ordering/hashing verified; usable as unordered_set/set key; all 8 canonical ServiceState values representable; include graph acyclic; combined all-headers TU compiles. Reviewed against V3-13/V3-15/V3-16/V3-40/V3-46/V3-49 and the RS-0001 acceptance. Classified APPROVED; compilation alone does not prove architectural correctness.'
 - id: RS-0002
   phase: '0.5'
   module: RESILIENCE
