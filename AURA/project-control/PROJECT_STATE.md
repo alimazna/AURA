@@ -102,18 +102,34 @@ This is the human-readable snapshot of where the project currently stands.
   Independent approval has not been granted, and compilation does not prove correctness.
 - No Phase 0.5 work was started. `FND-0015` remains OPEN DECISION and `FND-0016` remains BLOCKED.
 
+## Phase 0 error contracts — FND-0015 / FND-0016 (2026-10-02)
+
+- The V3-45 OPEN DECISION for `ErrorCode` was resolved by an explicit human decision recorded in
+  `DECISIONS.md` (2026-10-02): a closed, strongly typed `enum class` over the 13 V3 section 113 ERROR
+  categories, with explicit stable integral identities (1..13) independent of compiler ordering, no
+  `UNKNOWN`/`OTHER`, and severity kept as an independent record-level field.
+- `src/foundation/ErrorCode.h` (FND-0015) and `src/foundation/ErrorRecord.h` (FND-0016) were
+  implemented. `ErrorRecord` carries exactly the eight V3-27 fields and is a value/contract type only.
+- Verification: both headers are self-contained (70 standalone TUs across 35 headers × c++17/c++20,
+  strict warnings); the full Phase 0 runtime harness passes including SHA-256 known-answer tests; the
+  include graph is acyclic and lower-layer only. Details in `TEST_LOG.md`.
+- Status: `FND-0015` and `FND-0016` are `REVIEW_PENDING` — implemented and reviewed, NOT yet
+  `APPROVED`/`INTEGRATED`. `BLOCK-002` is RESOLVED; the manifest has no `BLOCKED` tasks.
+- No Phase 0.5 work was started.
+
 ## Current task
 
 - `FND-0001` — `src/foundation/EntityId.h` — status: `TESTED`.
-- Phase 0 `src/foundation/` contracts — status: `REVIEW_PENDING` (reviewed, not yet approved).
-- Next blocker: `FND-0015` — `src/foundation/ErrorCode.h` — status: `BLOCKED` (OPEN DECISION).
+- All 36 Phase 0 foundation files (incl. `ErrorCode.h`, `ErrorRecord.h`) — status: `REVIEW_PENDING`.
+- No task is currently READY: the `PHASE-0` milestone requires all Phase 0 tasks `APPROVED` (a
+  human/integration action), and Phase 0.5 depends on `PHASE-0`.
 
 ## Next action
 
-1. Obtain the human `ErrorCode` taxonomy decision needed for `FND-0015`/`FND-0016`, or leave them BLOCKED.
-2. Independently approve the `REVIEW_PENDING` Phase 0 files to move them to `APPROVED`/`INTEGRATED`.
-3. Do not begin Phase 0.5 until Phase 0 is approved and its blocker is resolved.
-4. Preserve implementation + state in Git before ending the session.
+1. Independently APPROVE/INTEGRATE the `REVIEW_PENDING` Phase 0 files (human/integration action) to
+   satisfy the `PHASE-0` milestone acceptance.
+2. Only then may Phase 0.5 be promoted; do not begin Phase 0.5 beforehand.
+3. Preserve implementation + state in Git before ending the session.
 
 ## Update rule
 

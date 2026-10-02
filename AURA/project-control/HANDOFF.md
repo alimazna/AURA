@@ -9,8 +9,8 @@ Date: 2026-10-02
 - Repository layout is confirmed and normalized: the project lives under the nested
   `AURA/` directory inside `alimazna/AURA`; the repository root contains only `AURA/`.
 - Phase 0 immutable foundations, configuration, audit, integrity, persistence and guardian
-  contracts now exist under `AURA/src/foundation/` (34 source files). They have been reviewed and
-  are recorded as `REVIEW_PENDING`.
+  contracts now exist under `AURA/src/foundation/` (36 source files, including `ErrorCode.h` and
+  `ErrorRecord.h`). They are recorded as `REVIEW_PENDING`.
 - There is still NO application build system, no test framework, and no MQL5 adapters.
 - The earlier baseline build/test audit is not reproducible from the current repository and is
   treated as unverified historical material (see `TEST_LOG.md`).
@@ -22,13 +22,15 @@ Date: 2026-10-02
 - Active now: Phase 0 (36 tasks), Phase 0.5 (20), Phase 1 (21), Phase 2 (4), plus 4 phase milestones.
 - Deferred and still visible: Phases 3–11 (`DEFERRED`).
 - `FND-0001` (`src/foundation/EntityId.h`) is `TESTED`.
-- Phase 0 source tasks `FND-0002..FND-0014`, `FND-0017`, `FND-0010/0011/0013`,
+- Phase 0 source tasks `FND-0002..FND-0017` (excluding the removed-from-BLOCKED pair noted below),
   `CFG-0001..0005`, `AUD-0001..0003`, `INT-0001..0003`, `PER-0001..0004`, `GDN-0001..0004`
   have been REVIEWED and are recorded as `REVIEW_PENDING` (not yet `APPROVED`/`INTEGRATED`).
   `GDN-0002` and `PER-0004` required rework (unused includes) and were fixed and re-verified.
-- Blocked on human architectural decision: `FND-0015 ErrorCode.h` (OPEN DECISION) and
-  `FND-0016 ErrorRecord.h` (BLOCKED), per V3-45. These require an `ErrorCode` taxonomy decision
-  recorded in `DECISIONS.md`; do not invent it. `current_task` is set to `FND-0015`.
+- `FND-0015 ErrorCode.h` and `FND-0016 ErrorRecord.h` are now implemented and reviewed as
+  `REVIEW_PENDING` (previously OPEN DECISION / BLOCKED). The V3-45 OPEN DECISION was resolved by the
+  human decision recorded in `DECISIONS.md` (2026-10-02); `BLOCK-002` is RESOLVED.
+- No task is currently READY: the `PHASE-0` milestone acceptance requires all Phase 0 tasks
+  `APPROVED` (a human/integration action), and Phase 0.5 depends on `PHASE-0`.
 - Authority note: Phase 0 filenames come from V3-42. The `src/` layout, the `EntityId`
   representation, the `Version` grammar, and the Phase 0.5/1/2 filenames are PROPOSED
   decomposition and require integration review; they are not canonical architecture.
@@ -59,34 +61,24 @@ Date: 2026-10-02
 3. Read `project-control/PROJECT_STATE.md`.
 4. Read `project-control/TASK_MANIFEST.yaml` and pick the next actionable task.
 5. Inspect the repository; Phase 0 `src/foundation/` headers now exist.
-6. Phase 0 files are already reviewed (`REVIEW_PENDING`). The next real blocker is the human
-   `ErrorCode` taxonomy decision (`FND-0015`/`FND-0016`); do not invent it. Independent approval of
-   the `REVIEW_PENDING` files, or Phase 0.5, must not begin until the blocker is resolved.
+6. Phase 0 files are reviewed (`REVIEW_PENDING`); `FND-0015`/`FND-0016` are implemented and the
+   ErrorCode blocker (`BLOCK-002`) is resolved. No task is currently READY: the `PHASE-0` milestone
+   requires all Phase 0 tasks `APPROVED` (a human/integration action). Do not begin Phase 0.5.
 7. Run appropriate deterministic checks; record real results in `TEST_LOG.md`.
 8. Preserve implementation + state in Git before ending the session.
 
-### Session end state (2026-10-02)
+### Session end state (2026-10-02, FND-0015/FND-0016)
 
-- Two local commits on `main` are pending push:
-  1. "Implement Phase 0 foundation contracts (Waves 0A-0D) and reconcile manifest"
-  2. the Phase 0 review/integration commit (this session).
-- PUSH STATUS: NOT pushed. `git push origin main` is rejected with HTTP 403
-  ("Permission to alimazna/AURA.git denied to alimazna"). Read access works
-  (`git ls-remote origin main` -> `1fedbbc`), and the GitHub API reports
-  `permissions.push: true` for the token, yet actual write is denied — the token
-  behaves as read-only. A secure credential helper was configured
-  (`gh auth setup-git`; remote URL remains token-free) and the push still failed.
-  No secure write credential is available in this session.
-  `origin/main` is therefore still `1fedbbc`; the work exists locally only and MUST be pushed by
-  the next session that has write access.
-- The remote URL is token-free (`https://github.com/alimazna/AURA.git`); no credential was
-  persisted to the repository, config, or logs.
+- Pushed to `origin/main`; remote HEAD is the "Implement FND-0015 ErrorCode and FND-0016 ErrorRecord"
+  commit. `origin/main` contains the Phase 0 source files and updated control plane.
+- Remote URL is token-free (`https://github.com/alimazna/AURA.git`); no credential was persisted to
+  the repository, config, or logs.
 
 ### Open blockers
 
-- `FND-0015 ErrorCode.h` / `FND-0016 ErrorRecord.h`: need a human `ErrorCode` taxonomy decision.
-- `src/` layout and Phase 0.5/1/2 filenames are PROPOSED and need integration review before they
-  are treated as stable contracts.
+- None. `BLOCK-001` and `BLOCK-002` are both RESOLVED.
+- Remaining (non-blocking) state: Phase 0 files await independent `APPROVED`/`INTEGRATED`; the
+  `src/` layout and Phase 0.5/1/2 filenames remain PROPOSED and need integration review.
 
 ### Do not
 

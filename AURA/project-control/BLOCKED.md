@@ -4,6 +4,9 @@ Use this file only for real blockers.
 
 ## Current blockers
 
+No open blockers as of 2026-10-02. (Both historical entries below are resolved and retained for
+provenance.)
+
 ### BLOCK-001 — Detailed file-level task graph
 
 Status: RESOLVED (2026-10-02)
@@ -15,34 +18,29 @@ marked `DEFERRED`. No missing contract was invented.
 
 ### BLOCK-002 — ErrorCode taxonomy decision (FND-0015 / FND-0016)
 
-Status: OPEN
+Status: RESOLVED (2026-10-02)
 
 Task IDs:
-- `FND-0015` — `src/foundation/ErrorCode.h` — status `BLOCKED` (authority OPEN DECISION)
-- `FND-0016` — `src/foundation/ErrorRecord.h` — status `BLOCKED`
+- `FND-0015` — `src/foundation/ErrorCode.h` — status `REVIEW_PENDING` (was `BLOCKED` / OPEN DECISION)
+- `FND-0016` — `src/foundation/ErrorRecord.h` — status `REVIEW_PENDING` (was `BLOCKED`)
 
-Exact blocker:
-The Master V3 section 113 lists structured error categories
-(`DATA_ERROR`, `SCHEMA_ERROR`, `CLOCK_ERROR`, `CONNECTION_ERROR`, `BROKER_ERROR`, `RISK_ERROR`,
-`EXECUTION_ERROR`, `RECONCILIATION_ERROR`, `PERSISTENCE_ERROR`, `MODEL_ERROR`, `CONFIG_ERROR`,
-`TELEGRAM_ERROR`, `RECOVERY_ERROR`) but does not freeze them as a closed, numbered `ErrorCode`
-enumeration, nor define the code ranges, extensibility rule, or mapping to `ErrorSeverity`.
+Resolution:
+The required human architectural decision was recorded in `project-control/DECISIONS.md`
+(2026-10-02, "Phase 0 ErrorCode taxonomy decision", which explicitly resolves the V3-45 OPEN
+DECISION). It freezes `ErrorCode` as a strongly typed `enum class` over the 13 V3 section 113 ERROR
+categories, with explicit stable integral identities independent of compiler ordering, a closed set
+(no `UNKNOWN`/`OTHER`), and severity kept as an independent record-level field.
 
-Why it matters:
-`FND-0015` defines the canonical error identity used by `FND-0016 ErrorRecord` and by later
-persistence, audit and Guardian behaviour. Freezing the wrong taxonomy would silently constrain
-every downstream error contract and violate V3-11 (BLOCKED is a valid success state) and V3-45
-(do not silently freeze OPEN DECISION items).
+`FND-0015 ErrorCode.h` and `FND-0016 ErrorRecord.h` were then implemented and verified
+(self-contained standalone TUs and the full Phase 0 harness pass under `g++ -std=c++17` and
+`-std=c++20` with `-Wall -Wextra -Werror -pedantic`; the include graph remains acyclic and
+lower-layer only). No taxonomy beyond the recorded decision was invented.
 
-Smallest required human decision:
-Record in `project-control/DECISIONS.md` a canonical `ErrorCode` taxonomy: the closed value set
-(or explicit extensibility rule), stable numeric assignments, and the severity mapping.
+Remaining state: both files are `REVIEW_PENDING` (implemented and reviewed, not yet independently
+`APPROVED`/`INTEGRATED`). This is a normal lifecycle state, not a blocker.
 
 Affected tasks:
 `FND-0016 ErrorRecord.h`; later error/audit/persistence/Guardian contracts that consume error identity.
-
-Rule:
-Do not invent missing contracts or silently freeze OPEN DECISION items.
 
 ## Blocked-state rule
 

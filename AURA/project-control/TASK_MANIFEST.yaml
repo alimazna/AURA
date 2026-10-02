@@ -27,7 +27,7 @@ authority_class_enum:
 - PROPOSED
 - OPEN DECISION
 path_status_note: Phase 0 filenames are from V3-42 (CANONICAL decomposition). Phase 0.5/1/2 filenames and src/ layout are PROPOSED implementation decomposition and are subject to integration review (V3-16, V3-46). They must not be treated as canonical architecture.
-current_task: FND-0015
+current_task: "none (no task is READY: the PHASE-0 milestone requires all Phase 0 tasks APPROVED, which is a human/integration action; Phase 0.5 depends on PHASE-0)"
 tasks:
 - id: TASK-BOOTSTRAP-001
   phase: BOOTSTRAP
@@ -235,19 +235,19 @@ tasks:
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
-  authority: OPEN DECISION
-  status: BLOCKED
+  authority: PROJECT DECISION
+  status: REVIEW_PENDING
   output: src/foundation/ErrorCode.h
-  dependencies:
-  - architectural decision / ErrorCode taxonomy
+  dependencies: []
   objective: Define the ErrorCode contract/taxonomy for structured errors.
-  acceptance: 'BLOCKED at contract level: taxonomy/semantics are an OPEN DECISION (V3-45); do not freeze before a human decision is recorded in DECISIONS.md.'
+  acceptance: "Closed enum class of exactly the 13 V3 section 113 ERROR categories, explicit stable numeric identity independent of compiler ordering, no UNKNOWN/OTHER, no embedded severity, no serialization; self-contained, deterministic, C++17."
+  evidence: "Implemented and reviewed 2026-10-02. Enum class ErrorCode : uint8_t with explicit values 1..13 in V3-113 order; to_string() returns canonical labels. Self-contained standalone TU and full Phase 0 harness pass under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exact values asserted. V3-45 OPEN DECISION resolved by the human decision recorded in DECISIONS.md (2026-10-02). Status REVIEW_PENDING: independent APPROVAL/INTEGRATION not yet granted; compilation does not prove architectural correctness."
 - id: FND-0016
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: PROPOSED
-  status: BLOCKED
+  status: REVIEW_PENDING
   output: src/foundation/ErrorRecord.h
   dependencies:
   - FND-0015
@@ -256,7 +256,8 @@ tasks:
   - FND-0004
   - FND-0014
   objective: Define the structured error record (error_id, component, severity, timestamp, state, message, context, recovery_action).
-  acceptance: 'BLOCKED: depends on frozen ErrorCode taxonomy and RecoveryAction semantics (V3-45).'
+  acceptance: "Exact eight-field V3-27 error shape (error_id, component, severity, timestamp, state, message, context, recovery_action); value/contract type only; depends only on frozen foundation contracts; self-contained, deterministic, C++17."
+  evidence: "Implemented and reviewed 2026-10-02. Immutable ErrorRecord value type carrying exactly the eight V3-27 fields; no logging/recovery/retry/evaluation/serialization/persistence/networking. Includes only EntityId, ErrorCode, ErrorSeverity, RecoveryAction, ServiceState, Timestamp (all lower-layer). Self-contained standalone TU and structural harness pass under g++ -std=c++17 and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic. Status REVIEW_PENDING: independent APPROVAL/INTEGRATION not yet granted; compilation does not prove architectural correctness."
 - id: CFG-0001
   phase: '0'
   module: FOUNDATION

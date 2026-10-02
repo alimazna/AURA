@@ -220,6 +220,49 @@ Every implemented Phase 0 file passed review and integration verification. Statu
 `REVIEW_PENDING` (not `APPROVED`/`INTEGRATED`), because independent approval has not been granted;
 compilation and structural checks do not prove architectural or trading correctness.
 
+## 2026-10-02 — FND-0015 ErrorCode + FND-0016 ErrorRecord (implement / review / full Phase 0 verify)
+
+Tasks/Phase: FND-0015 `src/foundation/ErrorCode.h`, FND-0016 `src/foundation/ErrorRecord.h`
+(Phase 0). The V3-45 OPEN DECISION was resolved by a human decision recorded in `DECISIONS.md`
+(2026-10-02); no taxonomy was invented by the agent.
+
+Build command (ad-hoc; no application build system exists):
+`g++ -std=c++17 -Wall -Wextra -Werror -pedantic -I src /tmp/phase0_full_verify.cpp src/foundation/Hasher.cpp`
+Also compiled under `-std=c++20` with the same flags.
+
+Build result: PASS (clean, both standards).
+
+Test result: PASS.
+- `FND-0015`: exact enum values asserted — `DATA_ERROR=1` … `RECOVERY_ERROR=13` in V3-113 order;
+  `to_string()` returns the canonical labels; strongly-typed scoped enum, underlying `uint8_t`.
+- `FND-0016`: all eight V3-27 fields round-trip; default record is not `valid()` and defaults
+  `recovery_action` to `UNKNOWN` (representable, not safe); empty component ⇒ not valid.
+- SHA-256 known-answer tests still pass: `sha256("abc")`, `sha256("")`, and the 448-bit FIPS vector.
+- Existing contracts re-checked: `SystemMode` V3-14 values; `ServiceState` names; `is_critical`,
+  `is_known`, `is_protective`.
+
+Structural verification (programmatic):
+- Self-containment: 35 headers × 2 standards = 70 standalone TUs — ALL PASS
+  (`-Wall -Wextra -Werror -pedantic`).
+- Include graph: acyclic; no self-includes; no unknown includes; all includes lower-layer.
+- Files: 36 expected Phase 0 files present (including `ErrorCode.h`, `ErrorRecord.h`); no missing,
+  no stray/duplicate files.
+- Duplicate type check: exactly one `enum class ErrorCode` (ErrorCode.h) and one `class ErrorRecord`
+  (ErrorRecord.h).
+- Secret scan of the repository: no matches.
+
+Review findings: no defect found in either file. `ErrorRecord` includes only `EntityId`, `ErrorCode`,
+`ErrorSeverity`, `RecoveryAction`, `ServiceState`, `Timestamp` (all lower-layer); no circular or
+hidden higher-layer dependency; API limited to the contract; no logging/recovery/retry/evaluation/
+serialization/persistence/networking behaviour.
+
+Interpretation:
+Both files compile cleanly and satisfy their structural and contract checks. Status is recorded as
+`REVIEW_PENDING` — NOT `APPROVED`/`INTEGRATED` — because independent approval has not been granted;
+compilation and structural checks do not prove architectural correctness. `BLOCK-002` is RESOLVED;
+the manifest now has no `BLOCKED` tasks. `PHASE-0` (requires all Phase 0 tasks APPROVED) and Phase 0.5
+are not started; no task is currently READY.
+
 ## Future test entry format
 
 - Date
