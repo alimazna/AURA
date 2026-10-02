@@ -82,6 +82,20 @@ Date: 2026-10-02
   authorization.
 - Pushed to `origin/main`; remote URL is token-free and no credential is persisted anywhere.
 
+### Session end state (2026-10-02, Phase 1 complete)
+
+- Phase 1 (Deterministic Runtime) is COMPLETE: all 21 file-level tasks (`RT-0001`..`RT-0021`) and the
+  `PHASE-1` milestone are `APPROVED`.
+- `src/runtime/` now holds the nine-stream MT5 adapter boundary, data bus, validator, closed-bar
+  finalizer, timeframe state store, feature/structure/regime/eligibility/signal/score/confidence/macro/
+  market-quality/risk engines, shadow execution, position simulator, reconciliation, append-only ledger,
+  deterministic replay, the `Mt5Boundary.md` contract, and the `RuntimeTests.cpp` test artifact.
+- Verification: 20 runtime headers self-contained + combined all-headers TU (74 headers) under
+  c++17/c++20 strict; `RuntimeTests.cpp` passes under both standards. Details in `TEST_LOG.md`.
+- Shadow-only: no live-order path exists; `is_order`/`is_live` are always false.
+- Next READY: Phase 2, `OB-0001` (`src/observation/PredictionLedger.h`, deps `RT-0010`, `RT-0019`).
+- Pushed to `origin/main`; remote URL is token-free and no credential is persisted anywhere.
+
 ### Session end state (2026-10-02, Phase 0.5 complete)
 
 - Phase 0.5 is COMPLETE: all 20 file-level tasks (`RS-0001`..`RS-0020`) and the `PHASE-0.5`

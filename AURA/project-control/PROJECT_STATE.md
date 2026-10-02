@@ -185,15 +185,33 @@ This is the human-readable snapshot of where the project currently stands.
   so no task replacement was needed; the `RT-0001` and `RT-0021` contracts were refined to require
   explicit per-stream timeframe identity and independent stream state. Master V3 is unmodified.
 
+## Phase 1 completion (2026-10-02)
+
+- Phase 1 (Deterministic Runtime) is COMPLETE. All 21 file-level tasks (`RT-0001`..`RT-0021`) and the
+  `PHASE-1` milestone are `APPROVED`.
+- New source under `src/runtime/`: `AdapterManager` (nine logical MT5 streams with explicit timeframe
+  identity, one EA / one transport), `DataBus`, `DataValidator`, `BarFinalizer`, `TimeframeStateStore`,
+  `FeatureEngine`, `StructureEngine`, `RegimeEngine`, `EligibilityEngine`, `SignalEngine`, `ScoreEngine`,
+  `ConfidenceEngine`, `MacroContextEngine`, `MarketQualityEngine`, `RiskEngine`, `ShadowExecutionEngine`,
+  `PositionSimulator`, `ReconciliationEngine`, `ShadowLedger`, `ReplayEngine`, plus the contract document
+  `Mt5Boundary.md` and the test artifact `RuntimeTests.cpp`.
+- Determinism, no-lookahead and no-repaint are enforced: future-dated events and forming/non-advancing
+  bars are rejected; decision/signal identity follows the V3-23 formula; replay is reproducible.
+- Shadow-only: `RiskProposal::is_order`, `SimulatedFill::is_live` and `SimulatedPosition::is_live` are
+  always false. No live order path exists in this phase.
+- Verification: 20 runtime headers self-contained and combined all-headers TU (74 headers across
+  foundation/resilience/runtime) compile under `g++ -std=c++17` and `-std=c++20` with
+  `-Wall -Wextra -Werror -pedantic`; `RuntimeTests.cpp` passes under both standards. Details in `TEST_LOG.md`.
+
 ## Current task
 
-- Phase 0 and Phase 0.5 are COMPLETE and `APPROVED`.
-- Next: Phase 1 (Deterministic Runtime), beginning with `RT-0001` (`src/runtime/AdapterManager.h`,
-  dependencies `RS-0019`, `FND-0010`).
+- Phases 0, 0.5 and 1 are COMPLETE and `APPROVED`.
+- Next: Phase 2 (Observation & Outcomes), beginning with `OB-0001` (`src/observation/PredictionLedger.h`,
+  dependencies `RT-0010`, `RT-0019`).
 
 ## Next action
 
-1. Execute Phase 1 in dependency order from `RT-0001`.
+1. Execute Phase 2 in dependency order from `OB-0001`.
 2. Preserve implementation + state in Git after each coherent wave.
 
 ## Update rule

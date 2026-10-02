@@ -368,6 +368,44 @@ isolation"). All 20 Phase 0.5 tasks and the milestone are classified `APPROVED`.
 structural checks support — but do not by themselves prove — architectural correctness; no
 profitability, calibration, broker-validation or production-safety claim is made.
 
+## 2026-10-02 — Phase 1 deterministic runtime (RT-0001..RT-0021)
+
+Scope: Phase 1, `src/runtime/`. 21 file-level tasks.
+
+Commands (ad-hoc; no application build system exists):
+- per-header self-containment under c++17/c++20 strict
+- combined all-headers TU across foundation/resilience/runtime under both standards
+- `g++ -std={c++17,c++20} ... src/runtime/RuntimeTests.cpp src/foundation/Hasher.cpp -o t && ./t`
+- static include-graph / duplicate-type / layer-direction analysis (python)
+
+Result: PASS.
+- All 20 runtime headers self-contained under c++17 and c++20 strict; combined all-headers TU (74
+  headers) compiles under both.
+- `RuntimeTests.cpp` passes under both standards (real code paths, no mocks): nine independent MT5
+  streams where an M15 failure/recovery leaves H4 untouched and a D1 disconnect leaves M15 healthy;
+  unknown timeframe rejected; deterministic data-bus ordering; future-dated event rejected (no
+  lookahead); forming bar rejected (no repaint); OHLC validation (INVALID/DEGRADED/VALID); closed-bar
+  identity deterministic and per-timeframe; re-finalizing the same close_time rejected; timeframe state
+  store is monotonic (regression refused) and persists idempotently; feature computation refuses any
+  still-forming bar; H4 structural authority enforced; eligibility gated by data quality (UNKNOWN/STALE
+  -> INELIGIBLE); decision/signal identity deterministic and configuration-version dependent; score and
+  confidence bounded ranking values (zero confidence on non-VALID quality); market quality UNKNOWN when
+  streams unassessed and GOOD when all valid; risk proposal is not an order and requires usable market
+  quality; shadow fill is never live and models commission/partial fill; position lifecycle open ->
+  partial close -> full close; reconciliation MATCHED within tolerance and DIVERGED/not-trustworthy
+  outside it; ledger entry identity deterministic and append idempotent; ledger persist idempotent;
+  replay finalizes ten closed bars, rejects the future-dated and forming events, and produces identical
+  fingerprints across runs (reproducible).
+- Include graph: acyclic; runtime headers include only foundation/resilience/runtime. No duplicate types
+  (std::hash specializations only). No live-order path; no future-phase behaviour. Secret scan: none.
+
+Interpretation:
+Phase 1 satisfies the `PHASE-1` milestone acceptance ("deterministic runtime proven by replay tests;
+shadow ledger append-only and idempotent; no live orders"). All 21 tasks and the milestone are
+`APPROVED`. Compilation and structural checks support but do not by themselves prove architectural
+correctness; no profitability, calibration, broker-validation or production-safety claim is made, and
+the real MT5 connection remains unproven until measured.
+
 ## Future test entry format
 
 - Date

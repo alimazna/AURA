@@ -27,7 +27,7 @@ authority_class_enum:
 - PROPOSED
 - OPEN DECISION
 path_status_note: Phase 0 filenames are from V3-42 (CANONICAL decomposition). Phase 0.5/1/2 filenames and src/ layout are PROPOSED implementation decomposition and are subject to integration review (V3-16, V3-46). They must not be treated as canonical architecture.
-current_task: "PHASE-0.5 APPROVED (all 20 tasks). Next READY: PHASE-1 milestone and RT-0001 (AdapterManager.h, deps RS-0019+FND-0010)."
+current_task: "PHASE-1 APPROVED (all 21 tasks). Next READY: PHASE-2 milestone and OB-0001 (PredictionLedger.h, deps RT-0010+RT-0019)."
 tasks:
 - id: TASK-BOOTSTRAP-001
   phase: BOOTSTRAP
@@ -773,216 +773,234 @@ tasks:
   module: DETERMINISTIC_RUNTIME
   layer: RUNTIME_CORE
   authority: PROPOSED
-  status: PLANNED
+  status: APPROVED
   output: src/runtime/AdapterManager.h
   dependencies:
   - RS-0019
   - FND-0010
   objective: Define the MT5/MQL5 adapter manager boundary.
   acceptance: One physical MT5 EA / one transport carrying nine logically independent timeframe streams (M1,M5,M15,M30,H1,H4,D1,W1,MN1) with explicit timeframe identity per stream; independent per-stream health, closed-bar state, sequence and last-error tracking; one stream failing must not mark others unhealthy and one stream recovering must not overwrite another's state; no positional multiplexing; no fabricated data on failure (V3-29, MT5 one-EA decision).
+  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33; classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RT-0002
   phase: '1'
   module: DETERMINISTIC_RUNTIME
   layer: RUNTIME_CORE
   authority: PROPOSED
-  status: PLANNED
+  status: APPROVED
   output: src/runtime/DataBus.h
   dependencies:
   - FND-0013
   - RT-0001
   objective: Define the deterministic C++ data bus for market events.
   acceptance: Event-driven; deterministic ordering; no lookahead; no repaint.
+  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33; classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RT-0003
   phase: '1'
   module: DETERMINISTIC_RUNTIME
   layer: RUNTIME_CORE
   authority: PROPOSED
-  status: PLANNED
+  status: APPROVED
   output: src/runtime/DataValidator.h
   dependencies:
   - FND-0007
   - RT-0002
   objective: Define the data validator that assigns data-quality state.
   acceptance: Quality state propagates into eligibility/gating (V3-25); UNKNOWN not neutral.
+  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33; classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RT-0004
   phase: '1'
   module: DETERMINISTIC_RUNTIME
   layer: RUNTIME_CORE
   authority: PROPOSED
-  status: PLANNED
+  status: APPROVED
   output: src/runtime/BarFinalizer.h
   dependencies:
   - FND-0002
   - RT-0003
   objective: Define the closed-bar finalizer.
   acceptance: Only closed bars are finalized; no repainting; deterministic bar identity.
+  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33; classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RT-0005
   phase: '1'
   module: DETERMINISTIC_RUNTIME
   layer: RUNTIME_CORE
   authority: PROPOSED
-  status: PLANNED
+  status: APPROVED
   output: src/runtime/TimeframeStateStore.h
   dependencies:
   - RT-0004
   - PER-0003
   objective: Define the timeframe state store (last processed bar per timeframe).
   acceptance: Persisted last-processed-bar per timeframe; restart-safe; deterministic.
+  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33; classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RT-0006
   phase: '1'
   module: DETERMINISTIC_RUNTIME
   layer: RUNTIME_CORE
   authority: PROPOSED
-  status: PLANNED
+  status: APPROVED
   output: src/runtime/FeatureEngine.h
   dependencies:
   - RT-0005
   objective: Define the feature engine.
   acceptance: Deterministic features from closed data only; no future information.
+  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33; classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RT-0007
   phase: '1'
   module: DETERMINISTIC_RUNTIME
   layer: RUNTIME_CORE
   authority: PROPOSED
-  status: PLANNED
+  status: APPROVED
   output: src/runtime/StructureEngine.h
   dependencies:
   - RT-0006
   objective: Define the structure engine (H4 structural context).
   acceptance: H4 structural authority respected; deterministic; no repaint.
+  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33; classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RT-0008
   phase: '1'
   module: DETERMINISTIC_RUNTIME
   layer: RUNTIME_CORE
   authority: PROPOSED
-  status: PLANNED
+  status: APPROVED
   output: src/runtime/RegimeEngine.h
   dependencies:
   - RT-0007
   objective: Define the regime engine.
   acceptance: Regime precedes strategy eligibility (V3-05); deterministic; score is not probability.
+  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33; classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RT-0009
   phase: '1'
   module: DETERMINISTIC_RUNTIME
   layer: RUNTIME_CORE
   authority: PROPOSED
-  status: PLANNED
+  status: APPROVED
   output: src/runtime/EligibilityEngine.h
   dependencies:
   - RT-0008
   - RT-0003
   objective: Define the strategy-eligibility engine.
   acceptance: Eligibility gated by data quality and regime; deterministic.
+  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33; classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RT-0010
   phase: '1'
   module: DETERMINISTIC_RUNTIME
   layer: RUNTIME_CORE
   authority: PROPOSED
-  status: PLANNED
+  status: APPROVED
   output: src/runtime/SignalEngine.h
   dependencies:
   - RT-0009
   - RT-0005
   objective: Define the signal engine for the single MVP strategy family.
   acceptance: Signal identity deterministic (DecisionID formula, V3-23); no lookahead; no repaint.
+  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33; classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RT-0011
   phase: '1'
   module: DETERMINISTIC_RUNTIME
   layer: RUNTIME_CORE
   authority: PROPOSED
-  status: PLANNED
+  status: APPROVED
   output: src/runtime/ScoreEngine.h
   dependencies:
   - RT-0010
   objective: Define the score engine.
   acceptance: Score is a deterministic ranking/quality value; never labelled a probability (V3-31).
+  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33; classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RT-0012
   phase: '1'
   module: DETERMINISTIC_RUNTIME
   layer: RUNTIME_CORE
   authority: PROPOSED
-  status: PLANNED
+  status: APPROVED
   output: src/runtime/ConfidenceEngine.h
   dependencies:
   - RT-0011
   objective: Define the confidence engine.
   acceptance: Confidence is not a guarantee; no calibration claim (V3-31).
+  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33; classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RT-0013
   phase: '1'
   module: DETERMINISTIC_RUNTIME
   layer: RUNTIME_CORE
   authority: PROPOSED
-  status: PLANNED
+  status: APPROVED
   output: src/runtime/MacroContextEngine.h
   dependencies:
   - RT-0005
   objective: Define the macro/higher-timeframe context engine.
   acceptance: Higher-timeframe context only; no lookahead.
+  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33; classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RT-0014
   phase: '1'
   module: DETERMINISTIC_RUNTIME
   layer: RUNTIME_CORE
   authority: PROPOSED
-  status: PLANNED
+  status: APPROVED
   output: src/runtime/MarketQualityEngine.h
   dependencies:
   - RT-0003
   - RT-0001
   objective: Define the market-quality engine.
   acceptance: Uses observed data-quality state; no fabricated quality.
+  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33; classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RT-0015
   phase: '1'
   module: DETERMINISTIC_RUNTIME
   layer: RUNTIME_CORE
   authority: PROPOSED
-  status: PLANNED
+  status: APPROVED
   output: src/runtime/RiskEngine.h
   dependencies:
   - RT-0012
   - RT-0014
   objective: Define the risk proposal engine.
   acceptance: Risk precedes execution (V3-05); produces a proposal, not an order; deterministic sizing inputs.
+  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33; classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RT-0016
   phase: '1'
   module: DETERMINISTIC_RUNTIME
   layer: RUNTIME_CORE
   authority: PROPOSED
-  status: PLANNED
+  status: APPROVED
   output: src/runtime/ShadowExecutionEngine.h
   dependencies:
   - RT-0015
   - PER-0004
   objective: Define the shadow execution engine.
   acceptance: Models opportunity, proposal, simulated fill, slippage, commission, swap, lifecycle (V3-32); no live orders.
+  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33; classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RT-0017
   phase: '1'
   module: DETERMINISTIC_RUNTIME
   layer: RUNTIME_CORE
   authority: PROPOSED
-  status: PLANNED
+  status: APPROVED
   output: src/runtime/PositionSimulator.h
   dependencies:
   - RT-0016
   objective: Define the simulated position lifecycle.
   acceptance: Deterministic lifecycle; partial-fill behaviour modelled; no live execution.
+  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33; classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RT-0018
   phase: '1'
   module: DETERMINISTIC_RUNTIME
   layer: RUNTIME_CORE
   authority: PROPOSED
-  status: PLANNED
+  status: APPROVED
   output: src/runtime/ReconciliationEngine.h
   dependencies:
   - RT-0016
   - PER-0003
   objective: Define the reconciliation engine.
   acceptance: Distinguishes assumed vs observed behaviour; reconciliation before trust (V3-05).
+  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33; classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RT-0019
   phase: '1'
   module: DETERMINISTIC_RUNTIME
   layer: RUNTIME_CORE
   authority: PROPOSED
-  status: PLANNED
+  status: APPROVED
   output: src/runtime/ShadowLedger.h
   dependencies:
   - RT-0016
@@ -990,12 +1008,13 @@ tasks:
   - PER-0003
   objective: Define the append-only shadow ledger.
   acceptance: Append-only; auditable; idempotent writes; historical source of truth (V3-22).
+  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33; classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RT-0020
   phase: '1'
   module: DETERMINISTIC_RUNTIME
   layer: RUNTIME_CORE
   authority: PROPOSED
-  status: PLANNED
+  status: APPROVED
   output: src/runtime/ReplayEngine.h
   dependencies:
   - RT-0002
@@ -1003,17 +1022,19 @@ tasks:
   - RT-0019
   objective: Define the deterministic replay engine.
   acceptance: Reproducible from the ledger; deterministic; no lookahead; no repaint.
+  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33; classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RT-0021
   phase: '1'
   module: DETERMINISTIC_RUNTIME
   layer: RUNTIME_CORE
   authority: PROPOSED
-  status: PLANNED
+  status: APPROVED
   output: src/runtime/Mt5Boundary.md
   dependencies:
   - RT-0001
   objective: Document the C++<->MQL5 runtime boundary contract (not an implementation).
   acceptance: Boundary contract explicit; each message/event carries explicit timeframe identity (no positional multiplexing); one transport may carry nine logical streams while preserving independent stream state and closed-bar identity; no invented broker contract; real connection remains unproven until measured (MT5 one-EA decision).
+  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33; classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: OB-0001
   phase: '2'
   module: OBSERVATION_OUTCOMES
@@ -1197,12 +1218,13 @@ tasks:
   module: DETERMINISTIC_RUNTIME
   layer: PHASE_MILESTONE
   authority: PROJECT DECISION
-  status: PLANNED
+  status: APPROVED
   output: (phase milestone - aggregates the phase's file-level tasks)
   dependencies:
   - PHASE-0.5
   objective: Complete Phase 1 deterministic runtime, MT5 market-data boundary, and shadow execution lifecycle.
   acceptance: Deterministic runtime proven by replay tests; shadow ledger append-only and idempotent; no live orders.
+  evidence: 'Phase 1 review/integration gate (2026-10-02): all 21 file-level tasks APPROVED. src/runtime/RuntimeTests.cpp passes under c++17/c++20 strict (real code paths, no mocks) and proves: nine independent MT5 streams (one failing does not affect another); deterministic data-bus ordering; no lookahead (future-dated events rejected) and no repaint (forming and non-advancing bars rejected); deterministic bar/decision/signal identity; score/confidence explicitly ranking values not probabilities; shadow-only execution (is_live always false, is_order always false); append-only idempotent shadow ledger; deterministic reproducible replay (identical fingerprints, future/forming events rejected). All 20 runtime headers self-contained and combined TU compiles under both standards; include graph acyclic; runtime layer depends only on foundation/resilience/runtime; no live orders; no future-phase behaviour. Phase gate PASSED. No profitability, calibration, broker-validation or production-safety claim is made.'
 - id: PHASE-2
   phase: '2'
   module: OBSERVATION_OUTCOMES
