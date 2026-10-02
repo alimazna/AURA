@@ -87,17 +87,33 @@ This is the human-readable snapshot of where the project currently stands.
 - PROPOSED implementation choices (not canonical): the `EntityId` opaque-string representation,
   the `Version` MAJOR.MINOR.PATCH grammar, and the `src/` layout. These require integration review.
 
+## Phase 0 review / integration (2026-10-02)
+
+- All 34 implemented Phase 0 files were reviewed against their manifest acceptance, canonical Master
+  V3 sections, dependencies, namespace/include correctness, supported C++ standard, determinism,
+  ownership boundaries, dependency direction, and future-phase behaviour.
+- Two files required rework (unused includes) and were fixed: `GDN-0002 GuardianPolicy.h` and
+  `PER-0004 PersistenceTransaction.h`.
+- The include graph is acyclic, lower-layer only, with no self-includes or hidden higher-layer
+  dependencies.
+- Verification: all 33 headers are self-contained (66 standalone TUs, c++17/c++20, strict warnings);
+  the full runtime harness passes including SHA-256 known-answer tests. Details in `TEST_LOG.md`.
+- Status is recorded as `REVIEW_PENDING` for the reviewed files — NOT `APPROVED`/`INTEGRATED`.
+  Independent approval has not been granted, and compilation does not prove correctness.
+- No Phase 0.5 work was started. `FND-0015` remains OPEN DECISION and `FND-0016` remains BLOCKED.
+
 ## Current task
 
 - `FND-0001` — `src/foundation/EntityId.h` — status: `TESTED`.
-- Phase 0 `src/foundation/` contracts — status: `IMPLEMENTED`, pending review.
+- Phase 0 `src/foundation/` contracts — status: `REVIEW_PENDING` (reviewed, not yet approved).
 - Next blocker: `FND-0015` — `src/foundation/ErrorCode.h` — status: `BLOCKED` (OPEN DECISION).
 
 ## Next action
 
 1. Obtain the human `ErrorCode` taxonomy decision needed for `FND-0015`/`FND-0016`, or leave them BLOCKED.
-2. Begin REVIEW/INTEGRATION of the `IMPLEMENTED` Phase 0 files, one task = one source file.
-3. Preserve implementation + state in Git before ending the session.
+2. Independently approve the `REVIEW_PENDING` Phase 0 files to move them to `APPROVED`/`INTEGRATED`.
+3. Do not begin Phase 0.5 until Phase 0 is approved and its blocker is resolved.
+4. Preserve implementation + state in Git before ending the session.
 
 ## Update rule
 

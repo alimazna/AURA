@@ -4,7 +4,6 @@
 #include "foundation/EntityId.h"
 #include "foundation/HashDigest.h"
 #include "foundation/PersistenceRecordMetadata.h"
-#include "foundation/PersistenceStatus.h"
 
 #include <cstddef>
 #include <vector>

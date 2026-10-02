@@ -1,8 +1,6 @@
 #ifndef AURA_FOUNDATION_GUARDIANPOLICY_H
 #define AURA_FOUNDATION_GUARDIANPOLICY_H
 
-#include "foundation/GuardianStatus.h"
-
 #include <string>
 #include <utility>
 

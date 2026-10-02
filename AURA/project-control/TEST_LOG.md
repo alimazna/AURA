@@ -171,6 +171,55 @@ The Phase 0 files compile cleanly under strict warnings (c++17/c++20) and their 
 structural properties hold at runtime, including genuine SHA-256 known-answer tests. Status is
 `IMPLEMENTED` (not `APPROVED`/`INTEGRATED`) because independent review has not occurred.
 
+## 2026-10-02 — Phase 0 REVIEW / INTEGRATION (Phase 0 only)
+
+Scope: review/integration of the 34 implemented Phase 0 files. No Phase 0.5 work. `FND-0015`
+remains OPEN DECISION and `FND-0016` remains BLOCKED; no substitute ErrorCode definitions were
+created.
+
+Review method (per file): checked against the exact `TASK_MANIFEST.yaml` acceptance criterion, the
+relevant canonical Master V3 section, declared dependencies, namespace/include correctness,
+supported C++ standard, determinism, ownership boundaries, dependency direction, accidental
+future-phase behaviour, and unnecessary API surface.
+
+Findings:
+- Defect (REWORK) `GDN-0002 src/foundation/GuardianPolicy.h`: included `GuardianStatus.h` but never
+  used it. Removed the unused include. Reworked and re-verified.
+- Defect (REWORK) `PER-0004 src/foundation/PersistenceTransaction.h`: included `PersistenceStatus.h`
+  but never used it. Removed the unused include. Reworked and re-verified.
+- Benign: several files include foundation headers that are not in their scheduling `dependencies`
+  list (e.g. `ProtocolVersion.h`/`SchemaVersion.h` -> `Version.h`; `ConfigurationSnapshot.h` ->
+  `ConfigurationScope.h`). This is correct layering (lower-layer only), not a contract mismatch.
+  The manifest dependency lists are scheduling dependencies, not the include contract.
+- Include graph: acyclic; no self-includes; all includes are lower-layer
+  (no hidden higher-layer dependency). Verified programmatically.
+- Focused re-checks: `SystemMode.h` uses the exact V3-14 values; `MessageMetadata.h` carries the
+  V3-23 `HashDigest` checksum; `EventId.h` provides stable `to_string()`; `RecoveryAction.h` exposes
+  `UNKNOWN` and is not treated as safe; `Version.h` parse/round-trip/ordering all hold.
+
+Build command (ad-hoc; no application build system exists):
+`g++ -std=c++17 -Wall -Wextra -Werror -pedantic -I AURA/src /tmp/phase0_review_verify.cpp AURA/src/foundation/Hasher.cpp`
+Also compiled under `-std=c++20` with the same flags.
+
+Build result: PASS (clean, both standards).
+
+Test result: PASS. Additionally, standalone self-containment was verified for all 33 headers:
+each header was compiled alone as a translation unit under `-std=c++17` and `-std=c++20` with
+`-Wall -Wextra -Werror -pedantic` (66 TUs) — ALL PASS. Runtime assertions re-confirmed SHA-256
+known-answer vectors (`sha256("abc")`, `sha256("")`), enum values against V3-14/V3-25, and the
+Guardian severity mapping.
+
+Hygiene:
+- 34 files exist under `AURA/src/foundation/`; no duplicate or accidental files; no stray build
+  artifacts.
+- Manifest `src/foundation/` outputs = 36 (34 present + `ErrorCode.h`/`ErrorRecord.h` still BLOCKED).
+- Secret scan of `AURA/**` for token/key/private-key patterns: no matches.
+
+Interpretation:
+Every implemented Phase 0 file passed review and integration verification. Status is recorded as
+`REVIEW_PENDING` (not `APPROVED`/`INTEGRATED`), because independent approval has not been granted;
+compilation and structural checks do not prove architectural or trading correctness.
+
 ## Future test entry format
 
 - Date
