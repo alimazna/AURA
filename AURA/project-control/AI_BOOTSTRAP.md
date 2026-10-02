@@ -15,7 +15,7 @@ The AI must not rely on previous chat memory. GitHub files are the persistent pr
 5. `project-control/BLOCKED.md`
 6. `project-control/HANDOFF.md`
 7. Current task and required dependencies
-8. `docs/XAUUSD_SOVEREIGN_MASTER_UNIFIED_PROJECT_v3.0.md` when architectural context is needed
+8. `docs/AURA_MASTER_UNIFIED_PROJECT_v3.0.md` when architectural context is needed
 
 ## Authority
 

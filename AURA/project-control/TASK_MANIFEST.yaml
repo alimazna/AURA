@@ -1,150 +1,1139 @@
 project: AURA
-manifest_version: 1
-
+manifest_version: 2
+generated_by: TASK-MANIFEST-001
+repository_layout_note: The GitHub repository alimazna/AURA intentionally nests the project under the AURA/ directory. All paths in this manifest are relative to the AURA project root (i.e. AURA/ from the repository root).
 authority:
-  architecture: docs/XAUUSD_SOVEREIGN_MASTER_UNIFIED_PROJECT_v3.0.md
+  architecture: docs/AURA_MASTER_UNIFIED_PROJECT_v3.0.md
   scope: project-control/IMPLEMENTATION_SCOPE.md
   human_decisions: project-control/DECISIONS.md
-
+  source_of_truth_order: V3-02
 status_enum:
-  - PLANNED
-  - READY
-  - ASSIGNED
-  - IN_PROGRESS
-  - IMPLEMENTED
-  - REVIEW_PENDING
-  - REVIEW_FAILED
-  - APPROVED
-  - INTEGRATED
-  - TESTED
-  - BLOCKED
-  - DEFERRED
-  - REPLACED
-
-current_task: TASK-BOOTSTRAP-001
-
+- PLANNED
+- READY
+- ASSIGNED
+- IN_PROGRESS
+- IMPLEMENTED
+- REVIEW_PENDING
+- REVIEW_FAILED
+- APPROVED
+- INTEGRATED
+- TESTED
+- BLOCKED
+- DEFERRED
+- REPLACED
+authority_class_enum:
+- CANONICAL
+- PROJECT DECISION
+- PROPOSED
+- OPEN DECISION
+path_status_note: Phase 0 filenames are from V3-42 (CANONICAL decomposition). Phase 0.5/1/2 filenames and src/ layout are PROPOSED implementation decomposition and are subject to integration review (V3-16, V3-46). They must not be treated as canonical architecture.
+current_task: FND-0001
 tasks:
-  - id: TASK-BOOTSTRAP-001
-    phase: BOOTSTRAP
-    module: PROJECT_CONTROL
-    status: READY
-    dependencies:
-      - docs/XAUUSD_SOVEREIGN_MASTER_UNIFIED_PROJECT_v3.0.md
-    objective: >
-      Establish persistent project memory and execution control artifacts
-      so different AI agents can resume without chat history.
-    acceptance:
-      - Master document is present.
-      - Scope is explicitly separated from architecture.
-      - Current state is recorded.
-      - Handoff, test, decision, and blocker state files exist.
-      - No application source files are changed by this bootstrap task.
-
-  - id: TASK-MANIFEST-001
-    phase: BOOTSTRAP
-    module: PROJECT_CONTROL
-    status: PLANNED
-    dependencies:
-      - TASK-BOOTSTRAP-001
-      - docs/XAUUSD_SOVEREIGN_MASTER_UNIFIED_PROJECT_v3.0.md
-      - project-control/IMPLEMENTATION_SCOPE.md
-      - project-control/PROJECT_STATE.md
-    objective: >
-      Inspect the Master and repository and create the detailed file-level
-      implementation task graph for the active scope.
-    acceptance:
-      - Required dependencies are explicit.
-      - Deferred Master features remain visible as DEFERRED.
-      - Each source implementation task has one output path.
-      - No task silently changes architectural authority.
-
-  - id: PHASE-0
-    phase: 0
-    module: Immutable Foundations
-    status: PLANNED
-    dependencies:
-      - TASK-MANIFEST-001
-
-  - id: PHASE-0.5
-    phase: 0.5
-    module: Resilience & Graceful Degradation
-    status: PLANNED
-    dependencies:
-      - PHASE-0
-
-  - id: PHASE-1
-    phase: 1
-    module: Deterministic Runtime / MT5 / Shadow
-    status: PLANNED
-    dependencies:
-      - PHASE-0.5
-
-  - id: PHASE-2
-    phase: 2
-    module: Observation & Outcomes
-    status: PLANNED
-    dependencies:
-      - PHASE-1
-
-  - id: PHASE-3
-    phase: 3
-    module: Self-Learning
-    status: DEFERRED
-    dependencies:
-      - PHASE-2
-
-  - id: PHASE-4
-    phase: 4
-    module: Research Plane
-    status: DEFERRED
-    dependencies:
-      - PHASE-3
-
-  - id: PHASE-5
-    phase: 5
-    module: Evolution
-    status: DEFERRED
-    dependencies:
-      - PHASE-4
-
-  - id: PHASE-6
-    phase: 6
-    module: Validation
-    status: DEFERRED
-    dependencies:
-      - PHASE-5
-
-  - id: PHASE-7
-    phase: 7
-    module: Governance
-    status: DEFERRED
-    dependencies:
-      - PHASE-6
-
-  - id: PHASE-8
-    phase: 8
-    module: Operating Window & Recovery
-    status: DEFERRED
-    dependencies:
-      - PHASE-7
-
-  - id: PHASE-9
-    phase: 9
-    module: Desktop Control Center
-    status: DEFERRED
-    dependencies:
-      - PHASE-8
-
-  - id: PHASE-10
-    phase: 10
-    module: Telegram
-    status: DEFERRED
-    dependencies:
-      - PHASE-9
-
-  - id: PHASE-11
-    phase: 11
-    module: Controlled Real-World Validation
-    status: DEFERRED
-    dependencies:
-      - PHASE-10
+- id: TASK-BOOTSTRAP-001
+  phase: BOOTSTRAP
+  module: PROJECT_CONTROL
+  layer: CONTROL_PLANE
+  authority: PROJECT DECISION
+  status: APPROVED
+  output: project-control/
+  dependencies:
+  - docs/AURA_MASTER_UNIFIED_PROJECT_v3.0.md
+  objective: Establish persistent project memory and execution control artifacts so different AI agents can resume without chat history.
+  acceptance: Master document present; scope separated from architecture; current state recorded; handoff/test/decision/blocker files exist; no application source changed.
+- id: TASK-MANIFEST-001
+  phase: BOOTSTRAP
+  module: PROJECT_CONTROL
+  layer: CONTROL_PLANE
+  authority: PROJECT DECISION
+  status: IMPLEMENTED
+  output: project-control/TASK_MANIFEST.yaml
+  dependencies:
+  - TASK-BOOTSTRAP-001
+  - docs/AURA_MASTER_UNIFIED_PROJECT_v3.0.md
+  - project-control/IMPLEMENTATION_SCOPE.md
+  - project-control/PROJECT_STATE.md
+  objective: Inspect the Master and repository and create the detailed file-level implementation task graph for the active scope.
+  acceptance: Required dependencies explicit; deferred Master features visible as DEFERRED; each source task has one output path; no task silently changes architectural authority.
+- id: FND-0001
+  phase: '0'
+  module: FOUNDATION
+  layer: IMMUTABLE_FOUNDATION
+  authority: CANONICAL
+  status: READY
+  output: src/foundation/EntityId.h
+  dependencies: []
+  objective: Define the immutable, strongly-typed entity identifier used to name every persistent object.
+  acceptance: Immutable value type; validated non-empty identity; deterministic equality/hashing; no higher-layer dependency.
+- id: FND-0002
+  phase: '0'
+  module: FOUNDATION
+  layer: IMMUTABLE_FOUNDATION
+  authority: CANONICAL
+  status: READY
+  output: src/foundation/Timestamp.h
+  dependencies: []
+  objective: Define the immutable timestamp value type and temporal-unit semantics used across the system.
+  acceptance: Immutable; ordering-safe; explicit unit; no implicit wall-clock float conversion; deterministic comparison.
+- id: FND-0003
+  phase: '0'
+  module: FOUNDATION
+  layer: IMMUTABLE_FOUNDATION
+  authority: CANONICAL
+  status: READY
+  output: src/foundation/Version.h
+  dependencies: []
+  objective: Define the immutable version identifier used for configuration, strategy, and schema versioning.
+  acceptance: Comparable and immutable; ordering supported; stable serialization; usable for provenance.
+- id: FND-0004
+  phase: '0'
+  module: FOUNDATION
+  layer: IMMUTABLE_FOUNDATION
+  authority: CANONICAL
+  status: READY
+  output: src/foundation/ServiceState.h
+  dependencies: []
+  objective: Define the canonical service/subsystem state enumeration (STARTING/ONLINE/DEGRADED/OFFLINE/RECOVERING/PAUSED/BLOCKED/ERROR).
+  acceptance: Matches V3-14 exactly; no values merged or renamed; UNKNOWN not treated as safe.
+- id: FND-0005
+  phase: '0'
+  module: FOUNDATION
+  layer: IMMUTABLE_FOUNDATION
+  authority: CANONICAL
+  status: READY
+  output: src/foundation/SystemMode.h
+  dependencies: []
+  objective: Define the canonical system operating mode enumeration (STARTING/RECOVERY/NORMAL/DEGRADED/SHADOW/PAUSED/MANUAL/EMERGENCY/HALTED).
+  acceptance: Matches V3-14 exactly; kept distinct from ServiceState; SHADOW representable as primary mode.
+- id: FND-0006
+  phase: '0'
+  module: FOUNDATION
+  layer: IMMUTABLE_FOUNDATION
+  authority: CANONICAL
+  status: READY
+  output: src/foundation/HashDigest.h
+  dependencies: []
+  objective: Define the immutable hash digest value type used for integrity, provenance, and identity hashing.
+  acceptance: Immutable; deterministic equality; no dependency on a concrete hasher.
+- id: FND-0007
+  phase: '0'
+  module: FOUNDATION
+  layer: IMMUTABLE_FOUNDATION
+  authority: CANONICAL
+  status: READY
+  output: src/foundation/DataQualityState.h
+  dependencies: []
+  objective: Define the canonical data-quality state enumeration (VALID/DEGRADED/INVALID/UNKNOWN/STALE/MISSING/OUT_OF_ORDER/DUPLICATE/INCOMPLETE).
+  acceptance: Matches V3-25 exactly; UNKNOWN not a neutral success; usable for capability gating.
+- id: FND-0008
+  phase: '0'
+  module: FOUNDATION
+  layer: IMMUTABLE_FOUNDATION
+  authority: CANONICAL
+  status: READY
+  output: src/foundation/ProtocolVersion.h
+  dependencies: []
+  objective: Define the immutable protocol version identifier for the message boundary.
+  acceptance: Immutable and comparable; used by MessageMetadata; no payload-type dependency.
+- id: FND-0009
+  phase: '0'
+  module: FOUNDATION
+  layer: IMMUTABLE_FOUNDATION
+  authority: CANONICAL
+  status: READY
+  output: src/foundation/SchemaVersion.h
+  dependencies: []
+  objective: Define the immutable schema version identifier for events, messages, and persisted records.
+  acceptance: Immutable and comparable; supports schema-evolution checks.
+- id: FND-0012
+  phase: '0'
+  module: FOUNDATION
+  layer: IMMUTABLE_FOUNDATION
+  authority: CANONICAL
+  status: READY
+  output: src/foundation/EventType.h
+  dependencies: []
+  objective: Define the canonical event-type enumeration/identifier for the event boundary.
+  acceptance: Stable identifiers; extensible without renumbering; no payload-type dependency.
+- id: FND-0014
+  phase: '0'
+  module: FOUNDATION
+  layer: IMMUTABLE_FOUNDATION
+  authority: CANONICAL
+  status: READY
+  output: src/foundation/ErrorSeverity.h
+  dependencies: []
+  objective: Define the canonical error severity enumeration for structured error records.
+  acceptance: Closed, ordered enumeration; used by ErrorRecord; no stringly-typed severity.
+- id: FND-0017
+  phase: '0'
+  module: FOUNDATION
+  layer: IMMUTABLE_FOUNDATION
+  authority: CANONICAL
+  status: READY
+  output: src/foundation/RecoveryAction.h
+  dependencies: []
+  objective: Define the recovery-action descriptor type referenced by structured error records.
+  acceptance: Explicit semantics; UNKNOWN recovery representable but not treated as safe; no Guardian runtime dependency.
+- id: FND-0011
+  phase: '0'
+  module: FOUNDATION
+  layer: IMMUTABLE_FOUNDATION
+  authority: CANONICAL
+  status: PLANNED
+  output: src/foundation/EventId.h
+  dependencies:
+  - FND-0001
+  objective: Define the deterministic event identifier derived from entity identity.
+  acceptance: Deterministic given inputs; depends only on EntityId; immutable; stable serialization.
+- id: FND-0010
+  phase: '0'
+  module: FOUNDATION
+  layer: IMMUTABLE_FOUNDATION
+  authority: CANONICAL
+  status: PLANNED
+  output: src/foundation/MessageMetadata.h
+  dependencies:
+  - FND-0001
+  - FND-0002
+  - FND-0008
+  - FND-0009
+  objective: Define the message metadata contract (protocol_version, schema_version, message_id, timestamp, source, destination, payload, checksum/hash where appropriate).
+  acceptance: Fields match V3-23; immutable carrier; checksum/hash uses HashDigest; no payload interpretation.
+- id: FND-0013
+  phase: '0'
+  module: FOUNDATION
+  layer: IMMUTABLE_FOUNDATION
+  authority: CANONICAL
+  status: PLANNED
+  output: src/foundation/EventMetadata.h
+  dependencies:
+  - FND-0001
+  - FND-0002
+  - FND-0009
+  - FND-0011
+  - FND-0012
+  objective: Define the event metadata contract (event_id, event_type, symbol, source, source_instance, event_time, receive_time, sequence_id, schema_version).
+  acceptance: Fields match V3-23 exactly; event_time and receive_time distinct; sequence_id supports ordering; immutable.
+- id: FND-0015
+  phase: '0'
+  module: FOUNDATION
+  layer: IMMUTABLE_FOUNDATION
+  authority: OPEN DECISION
+  status: BLOCKED
+  output: src/foundation/ErrorCode.h
+  dependencies:
+  - architectural decision / ErrorCode taxonomy
+  objective: Define the ErrorCode contract/taxonomy for structured errors.
+  acceptance: 'BLOCKED at contract level: taxonomy/semantics are an OPEN DECISION (V3-45); do not freeze before a human decision is recorded in DECISIONS.md.'
+- id: FND-0016
+  phase: '0'
+  module: FOUNDATION
+  layer: IMMUTABLE_FOUNDATION
+  authority: PROPOSED
+  status: BLOCKED
+  output: src/foundation/ErrorRecord.h
+  dependencies:
+  - FND-0015
+  - FND-0017
+  - FND-0002
+  - FND-0004
+  - FND-0014
+  objective: Define the structured error record (error_id, component, severity, timestamp, state, message, context, recovery_action).
+  acceptance: 'BLOCKED: depends on frozen ErrorCode taxonomy and RecoveryAction semantics (V3-45).'
+- id: CFG-0001
+  phase: '0'
+  module: FOUNDATION
+  layer: IMMUTABLE_FOUNDATION
+  authority: PROPOSED
+  status: PLANNED
+  output: src/foundation/ConfigurationKey.h
+  dependencies: []
+  objective: Define the configuration key type for versioned configuration.
+  acceptance: Stable, immutable key type; final type system not inferred until the contract is frozen (V3-44).
+- id: CFG-0002
+  phase: '0'
+  module: FOUNDATION
+  layer: IMMUTABLE_FOUNDATION
+  authority: PROPOSED
+  status: PLANNED
+  output: src/foundation/ConfigurationValue.h
+  dependencies: []
+  objective: Define the configuration value type for versioned configuration.
+  acceptance: Explicit, versionable value type; no silent mutation; contract not inferred (V3-44).
+- id: CFG-0003
+  phase: '0'
+  module: FOUNDATION
+  layer: IMMUTABLE_FOUNDATION
+  authority: PROPOSED
+  status: PLANNED
+  output: src/foundation/ConfigurationSnapshot.h
+  dependencies: []
+  objective: Define the immutable configuration snapshot carrying a configuration version.
+  acceptance: Immutable and versioned; supports decision provenance; no silent mutation.
+- id: CFG-0004
+  phase: '0'
+  module: FOUNDATION
+  layer: IMMUTABLE_FOUNDATION
+  authority: PROPOSED
+  status: PLANNED
+  output: src/foundation/ConfigurationScope.h
+  dependencies: []
+  objective: Define runtime-vs-research configuration scope separation.
+  acceptance: Scope distinguishes runtime and research configuration (V3-26); no implicit merging.
+- id: CFG-0005
+  phase: '0'
+  module: FOUNDATION
+  layer: IMMUTABLE_FOUNDATION
+  authority: PROPOSED
+  status: PLANNED
+  output: src/foundation/ConfigurationChange.h
+  dependencies: []
+  objective: Define the configuration change record for auditable configuration mutation.
+  acceptance: Change recorded, attributed, versioned; no silent configuration mutation (V3-26).
+- id: AUD-0001
+  phase: '0'
+  module: FOUNDATION
+  layer: IMMUTABLE_FOUNDATION
+  authority: PROPOSED
+  status: PLANNED
+  output: src/foundation/AuditAction.h
+  dependencies: []
+  objective: Define the audited action enumeration/identifier.
+  acceptance: Stable action identifiers; append-only usage; no rewrite semantics.
+- id: AUD-0002
+  phase: '0'
+  module: FOUNDATION
+  layer: IMMUTABLE_FOUNDATION
+  authority: PROPOSED
+  status: PLANNED
+  output: src/foundation/AuditOutcome.h
+  dependencies: []
+  objective: Define the audited outcome enumeration.
+  acceptance: Outcomes include failed/rejected states as first-class values (V3-27).
+- id: AUD-0003
+  phase: '0'
+  module: FOUNDATION
+  layer: IMMUTABLE_FOUNDATION
+  authority: PROPOSED
+  status: PLANNED
+  output: src/foundation/AuditRecord.h
+  dependencies: []
+  objective: Define the append-only audit record.
+  acceptance: Append-only, attributable; carries timestamp and actor/component context; no in-place history rewrite.
+- id: INT-0001
+  phase: '0'
+  module: FOUNDATION
+  layer: IMMUTABLE_FOUNDATION
+  authority: PROPOSED
+  status: PLANNED
+  output: src/foundation/HashAlgorithm.h
+  dependencies: []
+  objective: Define the supported hash algorithm identifier enumeration.
+  acceptance: Explicit, versioned algorithm identifiers; unknown algorithm representable and not treated as safe.
+- id: INT-0002
+  phase: '0'
+  module: FOUNDATION
+  layer: IMMUTABLE_FOUNDATION
+  authority: PROPOSED
+  status: PLANNED
+  output: src/foundation/IHasher.h
+  dependencies:
+  - INT-0001
+  - FND-0006
+  objective: Define the hasher interface contract returning a HashDigest.
+  acceptance: Deterministic, stateless-per-call; no hidden mutable state; returns HashDigest.
+- id: INT-0003
+  phase: '0'
+  module: FOUNDATION
+  layer: IMMUTABLE_FOUNDATION
+  authority: PROPOSED
+  status: PLANNED
+  output: src/foundation/Hasher.cpp
+  dependencies:
+  - INT-0001
+  - INT-0002
+  - FND-0006
+  objective: Implement the deterministic hasher conforming to IHasher.
+  acceptance: Deterministic output for identical input/algorithm; no higher-layer dependency; unit test proves determinism.
+- id: PER-0001
+  phase: '0'
+  module: FOUNDATION
+  layer: IMMUTABLE_FOUNDATION
+  authority: PROPOSED
+  status: PLANNED
+  output: src/foundation/PersistenceStatus.h
+  dependencies: []
+  objective: Define the persistence status enumeration.
+  acceptance: Success/failure/unknown covered and not collapsed; failure is a safety-relevant signal.
+- id: PER-0002
+  phase: '0'
+  module: FOUNDATION
+  layer: IMMUTABLE_FOUNDATION
+  authority: PROPOSED
+  status: PLANNED
+  output: src/foundation/PersistenceRecordMetadata.h
+  dependencies:
+  - FND-0001
+  - FND-0002
+  - FND-0009
+  objective: Define metadata attached to every persisted record.
+  acceptance: Carries identity, schema version, timestamp for auditability.
+- id: PER-0003
+  phase: '0'
+  module: FOUNDATION
+  layer: IMMUTABLE_FOUNDATION
+  authority: PROPOSED
+  status: PLANNED
+  output: src/foundation/IPersistenceStore.h
+  dependencies:
+  - PER-0001
+  - PER-0002
+  objective: Define the persistence store interface contract.
+  acceptance: Append-oriented, auditable; failure surfaced not swallowed; no higher-layer dependency.
+- id: PER-0004
+  phase: '0'
+  module: FOUNDATION
+  layer: IMMUTABLE_FOUNDATION
+  authority: PROPOSED
+  status: PLANNED
+  output: src/foundation/PersistenceTransaction.h
+  dependencies:
+  - PER-0001
+  - PER-0002
+  - PER-0003
+  objective: Define the persistence transaction concept for atomic/auditable writes.
+  acceptance: Preserves idempotency and auditability; partial failure explicit; no silent data loss.
+- id: GDN-0001
+  phase: '0'
+  module: FOUNDATION
+  layer: IMMUTABLE_FOUNDATION
+  authority: PROPOSED
+  status: PLANNED
+  output: src/foundation/GuardianStatus.h
+  dependencies: []
+  objective: Define the Guardian status enumeration.
+  acceptance: Distinguishes normal/safe/halt; Guardian authority not self-granted.
+- id: GDN-0002
+  phase: '0'
+  module: FOUNDATION
+  layer: IMMUTABLE_FOUNDATION
+  authority: PROPOSED
+  status: PLANNED
+  output: src/foundation/GuardianPolicy.h
+  dependencies: []
+  objective: Define the Guardian policy contract.
+  acceptance: Explicit rules; automatic rollback only to approved KNOWN-GOOD state (V3-17); no evolution self-modification.
+- id: GDN-0003
+  phase: '0'
+  module: FOUNDATION
+  layer: IMMUTABLE_FOUNDATION
+  authority: PROPOSED
+  status: PLANNED
+  output: src/foundation/IGuardian.h
+  dependencies:
+  - GDN-0001
+  - GDN-0002
+  objective: Define the Guardian interface contract.
+  acceptance: Exposes policy evaluation and safe-mode/halt decisions; no self-modification surface.
+- id: GDN-0004
+  phase: '0'
+  module: FOUNDATION
+  layer: IMMUTABLE_FOUNDATION
+  authority: PROPOSED
+  status: PLANNED
+  output: src/foundation/Guardian.h
+  dependencies:
+  - GDN-0001
+  - GDN-0002
+  - GDN-0003
+  objective: Implement the Guardian skeleton conforming to IGuardian.
+  acceptance: Skeleton only; no autonomous authority escalation; deterministic and testable.
+- id: RS-0001
+  phase: '0.5'
+  module: RESILIENCE
+  layer: RESILIENCE_PLANE
+  authority: PROPOSED
+  status: PLANNED
+  output: src/resilience/ServiceDescriptor.h
+  dependencies:
+  - FND-0004
+  objective: Define the descriptor of a supervised service/subsystem.
+  acceptance: Describes identity and state vocabulary; consistent with ServiceState; no runtime behaviour.
+- id: RS-0002
+  phase: '0.5'
+  module: RESILIENCE
+  layer: RESILIENCE_PLANE
+  authority: PROPOSED
+  status: PLANNED
+  output: src/resilience/CapabilityId.h
+  dependencies:
+  - FND-0001
+  objective: Define the identifier for a capability exposed to the dependency graph.
+  acceptance: Stable identity; immutable; reusable across registry and impact resolution.
+- id: RS-0003
+  phase: '0.5'
+  module: RESILIENCE
+  layer: RESILIENCE_PLANE
+  authority: PROPOSED
+  status: PLANNED
+  output: src/resilience/CapabilityDescriptor.h
+  dependencies:
+  - RS-0001
+  - RS-0002
+  objective: Define the descriptor of a capability and its owning service.
+  acceptance: Binds capability to service; explicit criticality reference; no hidden defaults.
+- id: RS-0004
+  phase: '0.5'
+  module: RESILIENCE
+  layer: RESILIENCE_PLANE
+  authority: PROPOSED
+  status: PLANNED
+  output: src/resilience/DependencyDescriptor.h
+  dependencies:
+  - RS-0002
+  objective: Define a directed capability dependency edge.
+  acceptance: Encodes direction explicitly; supports cycle detection; no implicit dependencies.
+- id: RS-0005
+  phase: '0.5'
+  module: RESILIENCE
+  layer: RESILIENCE_PLANE
+  authority: PROPOSED
+  status: PLANNED
+  output: src/resilience/HealthSnapshot.h
+  dependencies:
+  - RS-0001
+  - FND-0002
+  - FND-0004
+  objective: Define the immutable health snapshot for a service/capability.
+  acceptance: Immutable, timestamped; carries state and reason; UNKNOWN not treated as safe.
+- id: RS-0006
+  phase: '0.5'
+  module: RESILIENCE
+  layer: RESILIENCE_PLANE
+  authority: PROPOSED
+  status: PLANNED
+  output: src/resilience/FreshnessState.h
+  dependencies:
+  - FND-0002
+  objective: Define the data-freshness state concept.
+  acceptance: Distinguishes fresh/stale/unknown; no fabricated freshness.
+- id: RS-0007
+  phase: '0.5'
+  module: RESILIENCE
+  layer: RESILIENCE_PLANE
+  authority: PROPOSED
+  status: PLANNED
+  output: src/resilience/DegradationImpact.h
+  dependencies:
+  - RS-0002
+  objective: Define the impact of a capability degradation.
+  acceptance: Explicitly lists affected and still-available capabilities; no implied UI-only behaviour.
+- id: RS-0008
+  phase: '0.5'
+  module: RESILIENCE
+  layer: RESILIENCE_PLANE
+  authority: PROPOSED
+  status: PLANNED
+  output: src/resilience/CriticalityPolicy.h
+  dependencies:
+  - RS-0003
+  objective: Define the critical-vs-non-critical capability policy.
+  acceptance: Explicit classification; no silent default; supports isolation decisions.
+- id: RS-0009
+  phase: '0.5'
+  module: RESILIENCE
+  layer: RESILIENCE_PLANE
+  authority: PROPOSED
+  status: PLANNED
+  output: src/resilience/CapabilityRegistry.h
+  dependencies:
+  - RS-0003
+  - RS-0004
+  objective: Define the registry of capabilities and their dependencies.
+  acceptance: Single source of capability metadata; deterministic lookup; no duplicate capability ids.
+- id: RS-0010
+  phase: '0.5'
+  module: RESILIENCE
+  layer: RESILIENCE_PLANE
+  authority: PROPOSED
+  status: PLANNED
+  output: src/resilience/DependencyGraph.h
+  dependencies:
+  - RS-0004
+  objective: Define the capability dependency graph used for impact resolution.
+  acceptance: Deterministic traversal; cycle-safe; encodes the capability dependency graph rather than implying it (V3-15).
+- id: RS-0011
+  phase: '0.5'
+  module: RESILIENCE
+  layer: RESILIENCE_PLANE
+  authority: PROPOSED
+  status: PLANNED
+  output: src/resilience/HealthStateEngine.h
+  dependencies:
+  - RS-0005
+  - RS-0009
+  - RS-0010
+  objective: Define the engine that derives aggregate health state from service health.
+  acceptance: Deterministic aggregation; propagates dependency failure; no fabricated healthy state.
+- id: RS-0012
+  phase: '0.5'
+  module: RESILIENCE
+  layer: RESILIENCE_PLANE
+  authority: PROPOSED
+  status: PLANNED
+  output: src/resilience/DataFreshnessMonitor.h
+  dependencies:
+  - RS-0006
+  - FND-0002
+  objective: Define the monitor that evaluates data freshness.
+  acceptance: Deterministic; distinguishes stale vs fresh vs unknown; no lookahead.
+- id: RS-0013
+  phase: '0.5'
+  module: RESILIENCE
+  layer: RESILIENCE_PLANE
+  authority: PROPOSED
+  status: PLANNED
+  output: src/resilience/StaleCandleDetector.h
+  dependencies:
+  - RS-0006
+  - FND-0007
+  objective: Define the detector for stale candles per timeframe.
+  acceptance: Reports the exact stale timeframe; never treats stale data as fresh (V3-13).
+- id: RS-0014
+  phase: '0.5'
+  module: RESILIENCE
+  layer: RESILIENCE_PLANE
+  authority: PROPOSED
+  status: PLANNED
+  output: src/resilience/SubsystemIsolationManager.h
+  dependencies:
+  - RS-0009
+  - RS-0010
+  - FND-0004
+  objective: Define the manager that isolates a failed subsystem.
+  acceptance: Disables only dependent capabilities; keeps safe independent capabilities running (V3-13).
+- id: RS-0015
+  phase: '0.5'
+  module: RESILIENCE
+  layer: RESILIENCE_PLANE
+  authority: PROPOSED
+  status: PLANNED
+  output: src/resilience/GracefulDegradationManager.h
+  dependencies:
+  - RS-0008
+  - RS-0009
+  - RS-0014
+  - RS-0007
+  objective: Define the manager that applies graceful degradation decisions.
+  acceptance: Applies policy deterministically; records affected capabilities; never fabricates data.
+- id: RS-0016
+  phase: '0.5'
+  module: RESILIENCE
+  layer: RESILIENCE_PLANE
+  authority: PROPOSED
+  status: PLANNED
+  output: src/resilience/RecoveryManager.h
+  dependencies:
+  - RS-0011
+  - RS-0014
+  - FND-0017
+  objective: Define the manager that recovers subsystems when possible.
+  acceptance: Recovery prefers known-valid state; recovery result is auditable.
+- id: RS-0017
+  phase: '0.5'
+  module: RESILIENCE
+  layer: RESILIENCE_PLANE
+  authority: PROPOSED
+  status: PLANNED
+  output: src/resilience/PauseResumeManager.h
+  dependencies:
+  - RS-0009
+  - FND-0004
+  - FND-0005
+  objective: Define the pause/resume manager for subsystems.
+  acceptance: Pause/resume bounded by authority; UI can report what paused and why (V3-15).
+- id: RS-0018
+  phase: '0.5'
+  module: RESILIENCE
+  layer: RESILIENCE_PLANE
+  authority: PROPOSED
+  status: PLANNED
+  output: src/resilience/ImpactResolver.h
+  dependencies:
+  - RS-0007
+  - RS-0010
+  objective: Define the resolver that maps failures to capability impact.
+  acceptance: Deterministic impact set; exact failed timeframe/capability reported (V3-15).
+- id: RS-0019
+  phase: '0.5'
+  module: RESILIENCE
+  layer: RESILIENCE_PLANE
+  authority: PROPOSED
+  status: PLANNED
+  output: src/resilience/SystemSupervisor.h
+  dependencies:
+  - RS-0011
+  - RS-0015
+  - RS-0016
+  - RS-0017
+  - GDN-0003
+  objective: Define the supervisor that coordinates health, degradation, recovery, and pause/resume.
+  acceptance: Coordinates without granting new authority; deterministic state transitions; no live-trading enablement.
+- id: RS-0020
+  phase: '0.5'
+  module: RESILIENCE
+  layer: RESILIENCE_PLANE
+  authority: PROPOSED
+  status: PLANNED
+  output: src/resilience/DegradationTests.cpp
+  dependencies:
+  - RS-0015
+  - RS-0014
+  - RS-0013
+  objective: Define deterministic tests proving graceful degradation and isolation behaviour.
+  acceptance: Tests prove non-critical failure does not fail the whole system; exact failed timeframe reported; deterministic.
+- id: RT-0001
+  phase: '1'
+  module: DETERMINISTIC_RUNTIME
+  layer: RUNTIME_CORE
+  authority: PROPOSED
+  status: PLANNED
+  output: src/runtime/AdapterManager.h
+  dependencies:
+  - RS-0019
+  - FND-0010
+  objective: Define the MT5/MQL5 adapter manager boundary.
+  acceptance: Adapter health surfaced; per-timeframe state tracked; no fabricated data on failure.
+- id: RT-0002
+  phase: '1'
+  module: DETERMINISTIC_RUNTIME
+  layer: RUNTIME_CORE
+  authority: PROPOSED
+  status: PLANNED
+  output: src/runtime/DataBus.h
+  dependencies:
+  - FND-0013
+  - RT-0001
+  objective: Define the deterministic C++ data bus for market events.
+  acceptance: Event-driven; deterministic ordering; no lookahead; no repaint.
+- id: RT-0003
+  phase: '1'
+  module: DETERMINISTIC_RUNTIME
+  layer: RUNTIME_CORE
+  authority: PROPOSED
+  status: PLANNED
+  output: src/runtime/DataValidator.h
+  dependencies:
+  - FND-0007
+  - RT-0002
+  objective: Define the data validator that assigns data-quality state.
+  acceptance: Quality state propagates into eligibility/gating (V3-25); UNKNOWN not neutral.
+- id: RT-0004
+  phase: '1'
+  module: DETERMINISTIC_RUNTIME
+  layer: RUNTIME_CORE
+  authority: PROPOSED
+  status: PLANNED
+  output: src/runtime/BarFinalizer.h
+  dependencies:
+  - FND-0002
+  - RT-0003
+  objective: Define the closed-bar finalizer.
+  acceptance: Only closed bars are finalized; no repainting; deterministic bar identity.
+- id: RT-0005
+  phase: '1'
+  module: DETERMINISTIC_RUNTIME
+  layer: RUNTIME_CORE
+  authority: PROPOSED
+  status: PLANNED
+  output: src/runtime/TimeframeStateStore.h
+  dependencies:
+  - RT-0004
+  - PER-0003
+  objective: Define the timeframe state store (last processed bar per timeframe).
+  acceptance: Persisted last-processed-bar per timeframe; restart-safe; deterministic.
+- id: RT-0006
+  phase: '1'
+  module: DETERMINISTIC_RUNTIME
+  layer: RUNTIME_CORE
+  authority: PROPOSED
+  status: PLANNED
+  output: src/runtime/FeatureEngine.h
+  dependencies:
+  - RT-0005
+  objective: Define the feature engine.
+  acceptance: Deterministic features from closed data only; no future information.
+- id: RT-0007
+  phase: '1'
+  module: DETERMINISTIC_RUNTIME
+  layer: RUNTIME_CORE
+  authority: PROPOSED
+  status: PLANNED
+  output: src/runtime/StructureEngine.h
+  dependencies:
+  - RT-0006
+  objective: Define the structure engine (H4 structural context).
+  acceptance: H4 structural authority respected; deterministic; no repaint.
+- id: RT-0008
+  phase: '1'
+  module: DETERMINISTIC_RUNTIME
+  layer: RUNTIME_CORE
+  authority: PROPOSED
+  status: PLANNED
+  output: src/runtime/RegimeEngine.h
+  dependencies:
+  - RT-0007
+  objective: Define the regime engine.
+  acceptance: Regime precedes strategy eligibility (V3-05); deterministic; score is not probability.
+- id: RT-0009
+  phase: '1'
+  module: DETERMINISTIC_RUNTIME
+  layer: RUNTIME_CORE
+  authority: PROPOSED
+  status: PLANNED
+  output: src/runtime/EligibilityEngine.h
+  dependencies:
+  - RT-0008
+  - RT-0003
+  objective: Define the strategy-eligibility engine.
+  acceptance: Eligibility gated by data quality and regime; deterministic.
+- id: RT-0010
+  phase: '1'
+  module: DETERMINISTIC_RUNTIME
+  layer: RUNTIME_CORE
+  authority: PROPOSED
+  status: PLANNED
+  output: src/runtime/SignalEngine.h
+  dependencies:
+  - RT-0009
+  - RT-0005
+  objective: Define the signal engine for the single MVP strategy family.
+  acceptance: Signal identity deterministic (DecisionID formula, V3-23); no lookahead; no repaint.
+- id: RT-0011
+  phase: '1'
+  module: DETERMINISTIC_RUNTIME
+  layer: RUNTIME_CORE
+  authority: PROPOSED
+  status: PLANNED
+  output: src/runtime/ScoreEngine.h
+  dependencies:
+  - RT-0010
+  objective: Define the score engine.
+  acceptance: Score is a deterministic ranking/quality value; never labelled a probability (V3-31).
+- id: RT-0012
+  phase: '1'
+  module: DETERMINISTIC_RUNTIME
+  layer: RUNTIME_CORE
+  authority: PROPOSED
+  status: PLANNED
+  output: src/runtime/ConfidenceEngine.h
+  dependencies:
+  - RT-0011
+  objective: Define the confidence engine.
+  acceptance: Confidence is not a guarantee; no calibration claim (V3-31).
+- id: RT-0013
+  phase: '1'
+  module: DETERMINISTIC_RUNTIME
+  layer: RUNTIME_CORE
+  authority: PROPOSED
+  status: PLANNED
+  output: src/runtime/MacroContextEngine.h
+  dependencies:
+  - RT-0005
+  objective: Define the macro/higher-timeframe context engine.
+  acceptance: Higher-timeframe context only; no lookahead.
+- id: RT-0014
+  phase: '1'
+  module: DETERMINISTIC_RUNTIME
+  layer: RUNTIME_CORE
+  authority: PROPOSED
+  status: PLANNED
+  output: src/runtime/MarketQualityEngine.h
+  dependencies:
+  - RT-0003
+  - RT-0001
+  objective: Define the market-quality engine.
+  acceptance: Uses observed data-quality state; no fabricated quality.
+- id: RT-0015
+  phase: '1'
+  module: DETERMINISTIC_RUNTIME
+  layer: RUNTIME_CORE
+  authority: PROPOSED
+  status: PLANNED
+  output: src/runtime/RiskEngine.h
+  dependencies:
+  - RT-0012
+  - RT-0014
+  objective: Define the risk proposal engine.
+  acceptance: Risk precedes execution (V3-05); produces a proposal, not an order; deterministic sizing inputs.
+- id: RT-0016
+  phase: '1'
+  module: DETERMINISTIC_RUNTIME
+  layer: RUNTIME_CORE
+  authority: PROPOSED
+  status: PLANNED
+  output: src/runtime/ShadowExecutionEngine.h
+  dependencies:
+  - RT-0015
+  - PER-0004
+  objective: Define the shadow execution engine.
+  acceptance: Models opportunity, proposal, simulated fill, slippage, commission, swap, lifecycle (V3-32); no live orders.
+- id: RT-0017
+  phase: '1'
+  module: DETERMINISTIC_RUNTIME
+  layer: RUNTIME_CORE
+  authority: PROPOSED
+  status: PLANNED
+  output: src/runtime/PositionSimulator.h
+  dependencies:
+  - RT-0016
+  objective: Define the simulated position lifecycle.
+  acceptance: Deterministic lifecycle; partial-fill behaviour modelled; no live execution.
+- id: RT-0018
+  phase: '1'
+  module: DETERMINISTIC_RUNTIME
+  layer: RUNTIME_CORE
+  authority: PROPOSED
+  status: PLANNED
+  output: src/runtime/ReconciliationEngine.h
+  dependencies:
+  - RT-0016
+  - PER-0003
+  objective: Define the reconciliation engine.
+  acceptance: Distinguishes assumed vs observed behaviour; reconciliation before trust (V3-05).
+- id: RT-0019
+  phase: '1'
+  module: DETERMINISTIC_RUNTIME
+  layer: RUNTIME_CORE
+  authority: PROPOSED
+  status: PLANNED
+  output: src/runtime/ShadowLedger.h
+  dependencies:
+  - RT-0016
+  - RT-0017
+  - PER-0003
+  objective: Define the append-only shadow ledger.
+  acceptance: Append-only; auditable; idempotent writes; historical source of truth (V3-22).
+- id: RT-0020
+  phase: '1'
+  module: DETERMINISTIC_RUNTIME
+  layer: RUNTIME_CORE
+  authority: PROPOSED
+  status: PLANNED
+  output: src/runtime/ReplayEngine.h
+  dependencies:
+  - RT-0002
+  - RT-0005
+  - RT-0019
+  objective: Define the deterministic replay engine.
+  acceptance: Reproducible from the ledger; deterministic; no lookahead; no repaint.
+- id: RT-0021
+  phase: '1'
+  module: DETERMINISTIC_RUNTIME
+  layer: RUNTIME_CORE
+  authority: PROPOSED
+  status: PLANNED
+  output: src/runtime/Mt5Boundary.md
+  dependencies:
+  - RT-0001
+  objective: Document the C++<->MQL5 runtime boundary contract (not an implementation).
+  acceptance: Boundary contract explicit; no invented broker contract; real connection remains unproven until measured.
+- id: OB-0001
+  phase: '2'
+  module: OBSERVATION_OUTCOMES
+  layer: OBSERVATION_PLANE
+  authority: PROPOSED
+  status: PLANNED
+  output: src/observation/PredictionLedger.h
+  dependencies:
+  - RT-0019
+  - RT-0010
+  objective: Define the append-only prediction ledger.
+  acceptance: Deterministic identity; append-only; auditable; idempotent.
+- id: OB-0002
+  phase: '2'
+  module: OBSERVATION_OUTCOMES
+  layer: OBSERVATION_PLANE
+  authority: PROPOSED
+  status: PLANNED
+  output: src/observation/OutcomeEngine.h
+  dependencies:
+  - OB-0001
+  - RT-0017
+  objective: Define the outcome engine that resolves predictions into outcomes.
+  acceptance: Deterministic outcome resolution; no lookahead; no repaint.
+- id: OB-0003
+  phase: '2'
+  module: OBSERVATION_OUTCOMES
+  layer: OBSERVATION_PLANE
+  authority: PROPOSED
+  status: PLANNED
+  output: src/observation/FailureDetectionEngine.h
+  dependencies:
+  - OB-0002
+  objective: Define the structured failure-detection engine.
+  acceptance: Failures are structured objects (V3-27); no plain-string errors.
+- id: OB-0004
+  phase: '2'
+  module: OBSERVATION_OUTCOMES
+  layer: OBSERVATION_PLANE
+  authority: PROPOSED
+  status: PLANNED
+  output: src/observation/SystemHealthMonitor.h
+  dependencies:
+  - RS-0011
+  - OB-0003
+  objective: Define the system health monitor.
+  acceptance: Aggregates health deterministically; no fabricated healthy state.
+- id: PHASE-3
+  phase: '3'
+  module: SELF_LEARNING
+  layer: DEFERRED_PLANE
+  authority: CANONICAL
+  status: DEFERRED
+  output: (deferred - no file-level decomposition until explicitly promoted via DECISIONS.md)
+  dependencies:
+  - PHASE-2
+  - project-control/DECISIONS.md
+  objective: 'Master capability set: knowledge store; knowledge lifecycle; context learning; contradiction engine; knowledge decay; failure memory.'
+  acceptance: Remains part of the Master architecture but inactive; requires explicit human promotion recorded in DECISIONS.md followed by manifest update (IMPLEMENTATION_SCOPE.md scope-change rule).
+- id: PHASE-4
+  phase: '4'
+  module: RESEARCH_PLANE
+  layer: DEFERRED_PLANE
+  authority: CANONICAL
+  status: DEFERRED
+  output: (deferred - no file-level decomposition until explicitly promoted via DECISIONS.md)
+  dependencies:
+  - PHASE-3
+  - project-control/DECISIONS.md
+  objective: 'Master capability set: hypothesis engine; research planner; experiment ledger; research budgets; experiment fingerprint; sandbox.'
+  acceptance: Remains part of the Master architecture but inactive; requires explicit human promotion recorded in DECISIONS.md followed by manifest update (IMPLEMENTATION_SCOPE.md scope-change rule).
+- id: PHASE-5
+  phase: '5'
+  module: EVOLUTION
+  layer: DEFERRED_PLANE
+  authority: CANONICAL
+  status: DEFERRED
+  output: (deferred - no file-level decomposition until explicitly promoted via DECISIONS.md)
+  dependencies:
+  - PHASE-4
+  - project-control/DECISIONS.md
+  objective: 'Master capability set: candidate generator; candidate registry; evolution graph; candidate comparison.'
+  acceptance: Remains part of the Master architecture but inactive; requires explicit human promotion recorded in DECISIONS.md followed by manifest update (IMPLEMENTATION_SCOPE.md scope-change rule).
+- id: PHASE-6
+  phase: '6'
+  module: VALIDATION
+  layer: DEFERRED_PLANE
+  authority: CANONICAL
+  status: DEFERRED
+  output: (deferred - no file-level decomposition until explicitly promoted via DECISIONS.md)
+  dependencies:
+  - PHASE-5
+  - project-control/DECISIONS.md
+  objective: 'Master capability set: validation firewall; OOS; walk-forward; stress; regression; holdout service; evaluator firewall.'
+  acceptance: Remains part of the Master architecture but inactive; requires explicit human promotion recorded in DECISIONS.md followed by manifest update (IMPLEMENTATION_SCOPE.md scope-change rule).
+- id: PHASE-7
+  phase: '7'
+  module: GOVERNANCE
+  layer: DEFERRED_PLANE
+  authority: CANONICAL
+  status: DEFERRED
+  output: (deferred - no file-level decomposition until explicitly promoted via DECISIONS.md)
+  dependencies:
+  - PHASE-6
+  - project-control/DECISIONS.md
+  objective: 'Master capability set: approval gate; change investigation report; promotion gate; known-good registry; rollback; incident/postmortem.'
+  acceptance: Remains part of the Master architecture but inactive; requires explicit human promotion recorded in DECISIONS.md followed by manifest update (IMPLEMENTATION_SCOPE.md scope-change rule).
+- id: PHASE-8
+  phase: '8'
+  module: OPERATING_WINDOW_RECOVERY
+  layer: DEFERRED_PLANE
+  authority: CANONICAL
+  status: DEFERRED
+  output: (deferred - no file-level decomposition until explicitly promoted via DECISIONS.md)
+  dependencies:
+  - PHASE-7
+  - project-control/DECISIONS.md
+  objective: 'Master capability set: schedule manager; 3-8h enforcement; DRAINING; checkpoint/resume; crash recovery; resource budgets.'
+  acceptance: Remains part of the Master architecture but inactive; requires explicit human promotion recorded in DECISIONS.md followed by manifest update (IMPLEMENTATION_SCOPE.md scope-change rule).
+- id: PHASE-9
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: DEFERRED_PLANE
+  authority: CANONICAL
+  status: DEFERRED
+  output: (deferred - no file-level decomposition until explicitly promoted via DECISIONS.md)
+  dependencies:
+  - PHASE-8
+  - project-control/DECISIONS.md
+  objective: 'Master capability set: dashboard; research UI; knowledge UI; candidate UI; approval center; evolution graph UI; incident UI; schedule UI; audit UI.'
+  acceptance: Remains part of the Master architecture but inactive; requires explicit human promotion recorded in DECISIONS.md followed by manifest update (IMPLEMENTATION_SCOPE.md scope-change rule).
+- id: PHASE-10
+  phase: '10'
+  module: TELEGRAM
+  layer: DEFERRED_PLANE
+  authority: CANONICAL
+  status: DEFERRED
+  output: (deferred - no file-level decomposition until explicitly promoted via DECISIONS.md)
+  dependencies:
+  - PHASE-9
+  - project-control/DECISIONS.md
+  objective: 'Master capability set: operations assistant; governance notifications; authenticated requests.'
+  acceptance: Remains part of the Master architecture but inactive; requires explicit human promotion recorded in DECISIONS.md followed by manifest update (IMPLEMENTATION_SCOPE.md scope-change rule).
+- id: PHASE-11
+  phase: '11'
+  module: CONTROLLED_REAL_WORLD_VALIDATION
+  layer: DEFERRED_PLANE
+  authority: CANONICAL
+  status: DEFERRED
+  output: (deferred - no file-level decomposition until explicitly promoted via DECISIONS.md)
+  dependencies:
+  - PHASE-10
+  - project-control/DECISIONS.md
+  objective: 'Master capability set: controlled real-world validation only after preceding layers are stable and evidence/safety gates satisfied.'
+  acceptance: Remains part of the Master architecture but inactive; requires explicit human promotion recorded in DECISIONS.md followed by manifest update (IMPLEMENTATION_SCOPE.md scope-change rule).
+- id: PHASE-0
+  phase: '0'
+  module: IMMUTABLE_FOUNDATIONS
+  layer: PHASE_MILESTONE
+  authority: PROJECT DECISION
+  status: PLANNED
+  output: (phase milestone - aggregates the phase's file-level tasks)
+  dependencies:
+  - TASK-MANIFEST-001
+  objective: Complete Phase 0 immutable foundations and the blocking ErrorCode/ErrorRecord contract decisions.
+  acceptance: All Phase 0 foundation tasks APPROVED; ErrorCode taxonomy decision recorded before FND-0015/FND-0016 unblock.
+- id: PHASE-0.5
+  phase: '0.5'
+  module: RESILIENCE_GRACEFUL_DEGRADATION
+  layer: PHASE_MILESTONE
+  authority: PROJECT DECISION
+  status: PLANNED
+  output: (phase milestone - aggregates the phase's file-level tasks)
+  dependencies:
+  - PHASE-0
+  objective: Complete Phase 0.5 resilience and graceful-degradation foundations.
+  acceptance: Capability dependency graph encoded; degradation/isolation tests prove non-critical failure isolation.
+- id: PHASE-1
+  phase: '1'
+  module: DETERMINISTIC_RUNTIME
+  layer: PHASE_MILESTONE
+  authority: PROJECT DECISION
+  status: PLANNED
+  output: (phase milestone - aggregates the phase's file-level tasks)
+  dependencies:
+  - PHASE-0.5
+  objective: Complete Phase 1 deterministic runtime, MT5 market-data boundary, and shadow execution lifecycle.
+  acceptance: Deterministic runtime proven by replay tests; shadow ledger append-only and idempotent; no live orders.
+- id: PHASE-2
+  phase: '2'
+  module: OBSERVATION_OUTCOMES
+  layer: PHASE_MILESTONE
+  authority: PROJECT DECISION
+  status: PLANNED
+  output: (phase milestone - aggregates the phase's file-level tasks)
+  dependencies:
+  - PHASE-1
+  objective: Complete Phase 2 observation and outcomes.
+  acceptance: Prediction ledger and outcome engine deterministic and auditable; failures structured.
