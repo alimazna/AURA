@@ -1,0 +1,150 @@
+project: AURA
+manifest_version: 1
+
+authority:
+  architecture: docs/XAUUSD_SOVEREIGN_MASTER_UNIFIED_PROJECT_v3.0.md
+  scope: project-control/IMPLEMENTATION_SCOPE.md
+  human_decisions: project-control/DECISIONS.md
+
+status_enum:
+  - PLANNED
+  - READY
+  - ASSIGNED
+  - IN_PROGRESS
+  - IMPLEMENTED
+  - REVIEW_PENDING
+  - REVIEW_FAILED
+  - APPROVED
+  - INTEGRATED
+  - TESTED
+  - BLOCKED
+  - DEFERRED
+  - REPLACED
+
+current_task: TASK-BOOTSTRAP-001
+
+tasks:
+  - id: TASK-BOOTSTRAP-001
+    phase: BOOTSTRAP
+    module: PROJECT_CONTROL
+    status: READY
+    dependencies:
+      - docs/XAUUSD_SOVEREIGN_MASTER_UNIFIED_PROJECT_v3.0.md
+    objective: >
+      Establish persistent project memory and execution control artifacts
+      so different AI agents can resume without chat history.
+    acceptance:
+      - Master document is present.
+      - Scope is explicitly separated from architecture.
+      - Current state is recorded.
+      - Handoff, test, decision, and blocker state files exist.
+      - No application source files are changed by this bootstrap task.
+
+  - id: TASK-MANIFEST-001
+    phase: BOOTSTRAP
+    module: PROJECT_CONTROL
+    status: PLANNED
+    dependencies:
+      - TASK-BOOTSTRAP-001
+      - docs/XAUUSD_SOVEREIGN_MASTER_UNIFIED_PROJECT_v3.0.md
+      - project-control/IMPLEMENTATION_SCOPE.md
+      - project-control/PROJECT_STATE.md
+    objective: >
+      Inspect the Master and repository and create the detailed file-level
+      implementation task graph for the active scope.
+    acceptance:
+      - Required dependencies are explicit.
+      - Deferred Master features remain visible as DEFERRED.
+      - Each source implementation task has one output path.
+      - No task silently changes architectural authority.
+
+  - id: PHASE-0
+    phase: 0
+    module: Immutable Foundations
+    status: PLANNED
+    dependencies:
+      - TASK-MANIFEST-001
+
+  - id: PHASE-0.5
+    phase: 0.5
+    module: Resilience & Graceful Degradation
+    status: PLANNED
+    dependencies:
+      - PHASE-0
+
+  - id: PHASE-1
+    phase: 1
+    module: Deterministic Runtime / MT5 / Shadow
+    status: PLANNED
+    dependencies:
+      - PHASE-0.5
+
+  - id: PHASE-2
+    phase: 2
+    module: Observation & Outcomes
+    status: PLANNED
+    dependencies:
+      - PHASE-1
+
+  - id: PHASE-3
+    phase: 3
+    module: Self-Learning
+    status: DEFERRED
+    dependencies:
+      - PHASE-2
+
+  - id: PHASE-4
+    phase: 4
+    module: Research Plane
+    status: DEFERRED
+    dependencies:
+      - PHASE-3
+
+  - id: PHASE-5
+    phase: 5
+    module: Evolution
+    status: DEFERRED
+    dependencies:
+      - PHASE-4
+
+  - id: PHASE-6
+    phase: 6
+    module: Validation
+    status: DEFERRED
+    dependencies:
+      - PHASE-5
+
+  - id: PHASE-7
+    phase: 7
+    module: Governance
+    status: DEFERRED
+    dependencies:
+      - PHASE-6
+
+  - id: PHASE-8
+    phase: 8
+    module: Operating Window & Recovery
+    status: DEFERRED
+    dependencies:
+      - PHASE-7
+
+  - id: PHASE-9
+    phase: 9
+    module: Desktop Control Center
+    status: DEFERRED
+    dependencies:
+      - PHASE-8
+
+  - id: PHASE-10
+    phase: 10
+    module: Telegram
+    status: DEFERRED
+    dependencies:
+      - PHASE-9
+
+  - id: PHASE-11
+    phase: 11
+    module: Controlled Real-World Validation
+    status: DEFERRED
+    dependencies:
+      - PHASE-10
