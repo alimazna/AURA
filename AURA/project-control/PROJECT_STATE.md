@@ -57,22 +57,46 @@ This is the human-readable snapshot of where the project currently stands.
 
 - `src/foundation/EntityId.h` was created — the first application source file in the repository.
 - `FND-0001` is implemented and verified structurally; status recorded as `TESTED` in the manifest.
+- The remainder of Phase 0's foundation, configuration, audit, integrity, persistence and guardian
+  contract files were then created under `src/foundation/` (34 source tasks total, including FND-0001):
+  - Immutable foundations: `Timestamp`, `Version`, `ServiceState`, `SystemMode`, `HashDigest`,
+    `DataQualityState`, `ProtocolVersion`, `SchemaVersion`, `EventType`, `ErrorSeverity`,
+    `RecoveryAction`, `EventId`, `MessageMetadata`, `EventMetadata`.
+  - Configuration: `ConfigurationKey`, `ConfigurationValue`, `ConfigurationScope`,
+    `ConfigurationSnapshot`, `ConfigurationChange`.
+  - Audit: `AuditAction`, `AuditOutcome`, `AuditRecord`.
+  - Integrity: `HashAlgorithm`, `IHasher`, `Hasher.cpp` (real FIPS 180-4 SHA-256).
+  - Persistence: `PersistenceStatus`, `PersistenceRecordMetadata`, `IPersistenceStore`,
+    `PersistenceTransaction`.
+  - Guardian: `GuardianStatus`, `GuardianPolicy`, `IGuardian`, `Guardian`.
+- All of the above are recorded as `IMPLEMENTED` (not `APPROVED`/`INTEGRATED`) pending independent
+  review. `FND-0001` remains `TESTED`.
 - Verification: clean compile under `g++ -std=c++17` and `-std=c++20` with
-  `-Wall -Wextra -Werror -pedantic`; standalone-include check passed; runtime structural
-  assertions passed. Details in `TEST_LOG.md`.
-- No application build system exists yet; none was invented for this task.
-- The `EntityId` representation (non-empty opaque string token) is a PROPOSED implementation
-  choice: the Master V3 requires deterministic identity but does not freeze a concrete form.
+  `-Wall -Wextra -Werror -pedantic`; runtime structural assertions passed, including genuine
+  SHA-256 known-answer tests. Details in `TEST_LOG.md`.
+- No application build system exists yet; none was invented for these tasks.
+
+## Reconciliation (2026-10-02)
+
+- Wave 0A (V3-44) is exactly 12 tasks; all 12 files verified present, none omitted. The earlier
+  "11 files" note excluded `FND-0001`, which was already implemented and tested.
+- A contract inconsistency was found and corrected rather than silently frozen:
+  an early `SystemMode.h` used invented values; it now uses the exact V3-14 system operating modes.
+  `RecoveryAction` exposes `UNKNOWN`; `MessageMetadata` carries the V3-23 `HashDigest` checksum;
+  `EventId` exposes a stable `to_string()`.
+- PROPOSED implementation choices (not canonical): the `EntityId` opaque-string representation,
+  the `Version` MAJOR.MINOR.PATCH grammar, and the `src/` layout. These require integration review.
 
 ## Current task
 
 - `FND-0001` — `src/foundation/EntityId.h` — status: `TESTED`.
-- Next READY task: `FND-0002` — `src/foundation/Timestamp.h` (no code dependencies).
+- Phase 0 `src/foundation/` contracts — status: `IMPLEMENTED`, pending review.
+- Next blocker: `FND-0015` — `src/foundation/ErrorCode.h` — status: `BLOCKED` (OPEN DECISION).
 
 ## Next action
 
 1. Obtain the human `ErrorCode` taxonomy decision needed for `FND-0015`/`FND-0016`, or leave them BLOCKED.
-2. Implement `FND-0002` and continue Phase 0 Wave 0A in dependency order.
+2. Begin REVIEW/INTEGRATION of the `IMPLEMENTED` Phase 0 files, one task = one source file.
 3. Preserve implementation + state in Git before ending the session.
 
 ## Update rule

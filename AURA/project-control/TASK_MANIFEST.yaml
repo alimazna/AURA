@@ -27,7 +27,7 @@ authority_class_enum:
 - PROPOSED
 - OPEN DECISION
 path_status_note: Phase 0 filenames are from V3-42 (CANONICAL decomposition). Phase 0.5/1/2 filenames and src/ layout are PROPOSED implementation decomposition and are subject to integration review (V3-16, V3-46). They must not be treated as canonical architecture.
-current_task: FND-0002
+current_task: FND-0015
 tasks:
 - id: TASK-BOOTSTRAP-001
   phase: BOOTSTRAP
@@ -64,139 +64,148 @@ tasks:
   dependencies: []
   objective: Define the immutable, strongly-typed entity identifier used to name every persistent object.
   acceptance: Immutable value type; validated non-empty identity; deterministic equality/hashing; no higher-layer dependency.
-  evidence: >
-    Implemented AURA/src/foundation/EntityId.h. Compiled clean under g++ -std=c++17 and -std=c++20
-    with -Wall -Wextra -Werror -pedantic; standalone-include self-containment check passed; runtime
-    structural assertions (validity, deterministic equality/inequality, deterministic hashing,
-    ordering, hash-container key use, copy) passed. Details in TEST_LOG.md. Compilation and these
-    structural checks do not prove architectural or trading correctness.
+  evidence: 'Implemented AURA/src/foundation/EntityId.h. Compiled clean under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; standalone-include self-containment check passed; runtime structural assertions (validity, deterministic equality/inequality, deterministic hashing, ordering, hash-container key use, copy) passed. Details in TEST_LOG.md. Compilation and these structural checks do not prove architectural or trading correctness.
+
+    '
 - id: FND-0002
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: CANONICAL
-  status: READY
+  status: IMPLEMENTED
   output: src/foundation/Timestamp.h
   dependencies: []
   objective: Define the immutable timestamp value type and temporal-unit semantics used across the system.
   acceptance: Immutable; ordering-safe; explicit unit; no implicit wall-clock float conversion; deterministic comparison.
+  evidence: Implemented AURA/src/foundation/Timestamp.h. Compiled clean under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic as part of the Phase 0 verification harness; explicit-unit conversions and exact ordering. Independent REVIEW/INTEGRATION/APPROVAL not yet performed. Compilation and structural checks do not prove architectural or trading correctness. Details in TEST_LOG.md.
 - id: FND-0003
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: CANONICAL
-  status: READY
+  status: IMPLEMENTED
   output: src/foundation/Version.h
   dependencies: []
   objective: Define the immutable version identifier used for configuration, strategy, and schema versioning.
   acceptance: Comparable and immutable; ordering supported; stable serialization; usable for provenance.
+  evidence: Implemented AURA/src/foundation/Version.h. Compiled clean under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic as part of the Phase 0 verification harness; parse/round-trip and ordering; functions defined inline because FND-0003 owns only the header. Independent REVIEW/INTEGRATION/APPROVAL not yet performed. Compilation and structural checks do not prove architectural or trading correctness. Details in TEST_LOG.md.
 - id: FND-0004
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: CANONICAL
-  status: READY
+  status: IMPLEMENTED
   output: src/foundation/ServiceState.h
   dependencies: []
   objective: Define the canonical service/subsystem state enumeration (STARTING/ONLINE/DEGRADED/OFFLINE/RECOVERING/PAUSED/BLOCKED/ERROR).
   acceptance: Matches V3-14 exactly; no values merged or renamed; UNKNOWN not treated as safe.
+  evidence: Implemented AURA/src/foundation/ServiceState.h. Compiled clean under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic as part of the Phase 0 verification harness; values match V3-14 exactly. Independent REVIEW/INTEGRATION/APPROVAL not yet performed. Compilation and structural checks do not prove architectural or trading correctness. Details in TEST_LOG.md.
 - id: FND-0005
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: CANONICAL
-  status: READY
+  status: IMPLEMENTED
   output: src/foundation/SystemMode.h
   dependencies: []
   objective: Define the canonical system operating mode enumeration (STARTING/RECOVERY/NORMAL/DEGRADED/SHADOW/PAUSED/MANUAL/EMERGENCY/HALTED).
   acceptance: Matches V3-14 exactly; kept distinct from ServiceState; SHADOW representable as primary mode.
+  evidence: Implemented AURA/src/foundation/SystemMode.h. Compiled clean under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic as part of the Phase 0 verification harness; values match V3-14 exactly; SHADOW representable; kept distinct from ServiceState. Independent REVIEW/INTEGRATION/APPROVAL not yet performed. Compilation and structural checks do not prove architectural or trading correctness. Details in TEST_LOG.md.
 - id: FND-0006
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: CANONICAL
-  status: READY
+  status: IMPLEMENTED
   output: src/foundation/HashDigest.h
   dependencies: []
   objective: Define the immutable hash digest value type used for integrity, provenance, and identity hashing.
   acceptance: Immutable; deterministic equality; no dependency on a concrete hasher.
+  evidence: Implemented AURA/src/foundation/HashDigest.h. Compiled clean under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic as part of the Phase 0 verification harness; from_bytes/from_hex round-trip, byte-exact equality, deterministic hashing. Independent REVIEW/INTEGRATION/APPROVAL not yet performed. Compilation and structural checks do not prove architectural or trading correctness. Details in TEST_LOG.md.
 - id: FND-0007
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: CANONICAL
-  status: READY
+  status: IMPLEMENTED
   output: src/foundation/DataQualityState.h
   dependencies: []
   objective: Define the canonical data-quality state enumeration (VALID/DEGRADED/INVALID/UNKNOWN/STALE/MISSING/OUT_OF_ORDER/DUPLICATE/INCOMPLETE).
   acceptance: Matches V3-25 exactly; UNKNOWN not a neutral success; usable for capability gating.
+  evidence: Implemented AURA/src/foundation/DataQualityState.h. Compiled clean under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic as part of the Phase 0 verification harness; values match V3-25 exactly; UNKNOWN not usable. Independent REVIEW/INTEGRATION/APPROVAL not yet performed. Compilation and structural checks do not prove architectural or trading correctness. Details in TEST_LOG.md.
 - id: FND-0008
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: CANONICAL
-  status: READY
+  status: IMPLEMENTED
   output: src/foundation/ProtocolVersion.h
   dependencies: []
   objective: Define the immutable protocol version identifier for the message boundary.
   acceptance: Immutable and comparable; used by MessageMetadata; no payload-type dependency.
+  evidence: Implemented AURA/src/foundation/ProtocolVersion.h. Compiled clean under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic as part of the Phase 0 verification harness; distinct wrapper over Version; immutability/equality. Independent REVIEW/INTEGRATION/APPROVAL not yet performed. Compilation and structural checks do not prove architectural or trading correctness. Details in TEST_LOG.md.
 - id: FND-0009
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: CANONICAL
-  status: READY
+  status: IMPLEMENTED
   output: src/foundation/SchemaVersion.h
   dependencies: []
   objective: Define the immutable schema version identifier for events, messages, and persisted records.
   acceptance: Immutable and comparable; supports schema-evolution checks.
+  evidence: Implemented AURA/src/foundation/SchemaVersion.h. Compiled clean under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic as part of the Phase 0 verification harness; distinct wrapper over Version; immutability/equality. Independent REVIEW/INTEGRATION/APPROVAL not yet performed. Compilation and structural checks do not prove architectural or trading correctness. Details in TEST_LOG.md.
 - id: FND-0012
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: CANONICAL
-  status: READY
+  status: IMPLEMENTED
   output: src/foundation/EventType.h
   dependencies: []
   objective: Define the canonical event-type enumeration/identifier for the event boundary.
   acceptance: Stable identifiers; extensible without renumbering; no payload-type dependency.
+  evidence: Implemented AURA/src/foundation/EventType.h. Compiled clean under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic as part of the Phase 0 verification harness; stable names; UNKNOWN not a valid event. Independent REVIEW/INTEGRATION/APPROVAL not yet performed. Compilation and structural checks do not prove architectural or trading correctness. Details in TEST_LOG.md.
 - id: FND-0014
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: CANONICAL
-  status: READY
+  status: IMPLEMENTED
   output: src/foundation/ErrorSeverity.h
   dependencies: []
   objective: Define the canonical error severity enumeration for structured error records.
   acceptance: Closed, ordered enumeration; used by ErrorRecord; no stringly-typed severity.
+  evidence: Implemented AURA/src/foundation/ErrorSeverity.h. Compiled clean under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic as part of the Phase 0 verification harness; closed ordered enumeration; CRITICAL/FATAL protective. Independent REVIEW/INTEGRATION/APPROVAL not yet performed. Compilation and structural checks do not prove architectural or trading correctness. Details in TEST_LOG.md.
 - id: FND-0017
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: CANONICAL
-  status: READY
+  status: IMPLEMENTED
   output: src/foundation/RecoveryAction.h
   dependencies: []
   objective: Define the recovery-action descriptor type referenced by structured error records.
   acceptance: Explicit semantics; UNKNOWN recovery representable but not treated as safe; no Guardian runtime dependency.
+  evidence: Implemented AURA/src/foundation/RecoveryAction.h. Compiled clean under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic as part of the Phase 0 verification harness; UNKNOWN representable and not treated as safe; no Guardian runtime dependency. Independent REVIEW/INTEGRATION/APPROVAL not yet performed. Compilation and structural checks do not prove architectural or trading correctness. Details in TEST_LOG.md.
 - id: FND-0011
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: CANONICAL
-  status: PLANNED
+  status: IMPLEMENTED
   output: src/foundation/EventId.h
   dependencies:
   - FND-0001
   objective: Define the deterministic event identifier derived from entity identity.
   acceptance: Deterministic given inputs; depends only on EntityId; immutable; stable serialization.
+  evidence: Implemented AURA/src/foundation/EventId.h. Compiled clean under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic as part of the Phase 0 verification harness; distinct over EntityId; stable to_string round-trip. Independent REVIEW/INTEGRATION/APPROVAL not yet performed. Compilation and structural checks do not prove architectural or trading correctness. Details in TEST_LOG.md.
 - id: FND-0010
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: CANONICAL
-  status: PLANNED
+  status: IMPLEMENTED
   output: src/foundation/MessageMetadata.h
   dependencies:
   - FND-0001
@@ -205,12 +214,13 @@ tasks:
   - FND-0009
   objective: Define the message metadata contract (protocol_version, schema_version, message_id, timestamp, source, destination, payload, checksum/hash where appropriate).
   acceptance: Fields match V3-23; immutable carrier; checksum/hash uses HashDigest; no payload interpretation.
+  evidence: Implemented AURA/src/foundation/MessageMetadata.h. Compiled clean under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic as part of the Phase 0 verification harness; V3-23 fields including HashDigest checksum; identity/endpoint validity. Independent REVIEW/INTEGRATION/APPROVAL not yet performed. Compilation and structural checks do not prove architectural or trading correctness. Details in TEST_LOG.md.
 - id: FND-0013
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: CANONICAL
-  status: PLANNED
+  status: IMPLEMENTED
   output: src/foundation/EventMetadata.h
   dependencies:
   - FND-0001
@@ -220,6 +230,7 @@ tasks:
   - FND-0012
   objective: Define the event metadata contract (event_id, event_type, symbol, source, source_instance, event_time, receive_time, sequence_id, schema_version).
   acceptance: Fields match V3-23 exactly; event_time and receive_time distinct; sequence_id supports ordering; immutable.
+  evidence: Implemented AURA/src/foundation/EventMetadata.h. Compiled clean under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic as part of the Phase 0 verification harness; V3-23 fields; event_time and receive_time distinct; sequence_id ordering. Independent REVIEW/INTEGRATION/APPROVAL not yet performed. Compilation and structural checks do not prove architectural or trading correctness. Details in TEST_LOG.md.
 - id: FND-0015
   phase: '0'
   module: FOUNDATION
@@ -251,109 +262,119 @@ tasks:
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: PROPOSED
-  status: PLANNED
+  status: IMPLEMENTED
   output: src/foundation/ConfigurationKey.h
   dependencies: []
   objective: Define the configuration key type for versioned configuration.
   acceptance: Stable, immutable key type; final type system not inferred until the contract is frozen (V3-44).
+  evidence: Implemented AURA/src/foundation/ConfigurationKey.h. Compiled clean under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic as part of the Phase 0 verification harness; non-empty key identity; deterministic equality/ordering/hashing. Independent REVIEW/INTEGRATION/APPROVAL not yet performed. Compilation and structural checks do not prove architectural or trading correctness. Details in TEST_LOG.md.
 - id: CFG-0002
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: PROPOSED
-  status: PLANNED
+  status: IMPLEMENTED
   output: src/foundation/ConfigurationValue.h
   dependencies: []
   objective: Define the configuration value type for versioned configuration.
   acceptance: Explicit, versionable value type; no silent mutation; contract not inferred (V3-44).
+  evidence: Implemented AURA/src/foundation/ConfigurationValue.h. Compiled clean under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic as part of the Phase 0 verification harness; tagged value; typed equality (integer != decimal). Independent REVIEW/INTEGRATION/APPROVAL not yet performed. Compilation and structural checks do not prove architectural or trading correctness. Details in TEST_LOG.md.
 - id: CFG-0003
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: PROPOSED
-  status: PLANNED
+  status: IMPLEMENTED
   output: src/foundation/ConfigurationSnapshot.h
   dependencies: []
   objective: Define the immutable configuration snapshot carrying a configuration version.
   acceptance: Immutable and versioned; supports decision provenance; no silent mutation.
+  evidence: Implemented AURA/src/foundation/ConfigurationSnapshot.h. Compiled clean under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic as part of the Phase 0 verification harness; immutable versioned snapshot; deterministic ordered lookup. Independent REVIEW/INTEGRATION/APPROVAL not yet performed. Compilation and structural checks do not prove architectural or trading correctness. Details in TEST_LOG.md.
 - id: CFG-0004
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: PROPOSED
-  status: PLANNED
+  status: IMPLEMENTED
   output: src/foundation/ConfigurationScope.h
   dependencies: []
   objective: Define runtime-vs-research configuration scope separation.
   acceptance: Scope distinguishes runtime and research configuration (V3-26); no implicit merging.
+  evidence: Implemented AURA/src/foundation/ConfigurationScope.h. Compiled clean under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic as part of the Phase 0 verification harness; RUNTIME vs RESEARCH kept distinct. Independent REVIEW/INTEGRATION/APPROVAL not yet performed. Compilation and structural checks do not prove architectural or trading correctness. Details in TEST_LOG.md.
 - id: CFG-0005
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: PROPOSED
-  status: PLANNED
+  status: IMPLEMENTED
   output: src/foundation/ConfigurationChange.h
   dependencies: []
   objective: Define the configuration change record for auditable configuration mutation.
   acceptance: Change recorded, attributed, versioned; no silent configuration mutation (V3-26).
+  evidence: Implemented AURA/src/foundation/ConfigurationChange.h. Compiled clean under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic as part of the Phase 0 verification harness; records an explicit change; a no-op is not effective. Independent REVIEW/INTEGRATION/APPROVAL not yet performed. Compilation and structural checks do not prove architectural or trading correctness. Details in TEST_LOG.md.
 - id: AUD-0001
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: PROPOSED
-  status: PLANNED
+  status: IMPLEMENTED
   output: src/foundation/AuditAction.h
   dependencies: []
   objective: Define the audited action enumeration/identifier.
   acceptance: Stable action identifiers; append-only usage; no rewrite semantics.
+  evidence: Implemented AURA/src/foundation/AuditAction.h. Compiled clean under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic as part of the Phase 0 verification harness; append-only action kinds; UNKNOWN representable. Independent REVIEW/INTEGRATION/APPROVAL not yet performed. Compilation and structural checks do not prove architectural or trading correctness. Details in TEST_LOG.md.
 - id: AUD-0002
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: PROPOSED
-  status: PLANNED
+  status: IMPLEMENTED
   output: src/foundation/AuditOutcome.h
   dependencies: []
   objective: Define the audited outcome enumeration.
   acceptance: Outcomes include failed/rejected states as first-class values (V3-27).
+  evidence: Implemented AURA/src/foundation/AuditOutcome.h. Compiled clean under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic as part of the Phase 0 verification harness; failure/rejected/rolled-back outcomes first-class. Independent REVIEW/INTEGRATION/APPROVAL not yet performed. Compilation and structural checks do not prove architectural or trading correctness. Details in TEST_LOG.md.
 - id: AUD-0003
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: PROPOSED
-  status: PLANNED
+  status: IMPLEMENTED
   output: src/foundation/AuditRecord.h
   dependencies: []
   objective: Define the append-only audit record.
   acceptance: Append-only, attributable; carries timestamp and actor/component context; no in-place history rewrite.
+  evidence: Implemented AURA/src/foundation/AuditRecord.h. Compiled clean under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic as part of the Phase 0 verification harness; immutable, attributable record; no mutator. Independent REVIEW/INTEGRATION/APPROVAL not yet performed. Compilation and structural checks do not prove architectural or trading correctness. Details in TEST_LOG.md.
 - id: INT-0001
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: PROPOSED
-  status: PLANNED
+  status: IMPLEMENTED
   output: src/foundation/HashAlgorithm.h
   dependencies: []
   objective: Define the supported hash algorithm identifier enumeration.
   acceptance: Explicit, versioned algorithm identifiers; unknown algorithm representable and not treated as safe.
+  evidence: Implemented AURA/src/foundation/HashAlgorithm.h. Compiled clean under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic as part of the Phase 0 verification harness; explicit versioned identifiers; UNKNOWN not treated as safe. Independent REVIEW/INTEGRATION/APPROVAL not yet performed. Compilation and structural checks do not prove architectural or trading correctness. Details in TEST_LOG.md.
 - id: INT-0002
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: PROPOSED
-  status: PLANNED
+  status: IMPLEMENTED
   output: src/foundation/IHasher.h
   dependencies:
   - INT-0001
   - FND-0006
   objective: Define the hasher interface contract returning a HashDigest.
   acceptance: Deterministic, stateless-per-call; no hidden mutable state; returns HashDigest.
+  evidence: Implemented AURA/src/foundation/IHasher.h. Compiled clean under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic as part of the Phase 0 verification harness; deterministic stateless-per-call contract; factory declared. Independent REVIEW/INTEGRATION/APPROVAL not yet performed. Compilation and structural checks do not prove architectural or trading correctness. Details in TEST_LOG.md.
 - id: INT-0003
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: PROPOSED
-  status: PLANNED
+  status: IMPLEMENTED
   output: src/foundation/Hasher.cpp
   dependencies:
   - INT-0001
@@ -361,22 +382,24 @@ tasks:
   - FND-0006
   objective: Implement the deterministic hasher conforming to IHasher.
   acceptance: Deterministic output for identical input/algorithm; no higher-layer dependency; unit test proves determinism.
+  evidence: Implemented AURA/src/foundation/Hasher.cpp. Compiled clean under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic as part of the Phase 0 verification harness; real FIPS 180-4 SHA-256; known-answer tests for 'abc' and '' passed; deterministic. Independent REVIEW/INTEGRATION/APPROVAL not yet performed. Compilation and structural checks do not prove architectural or trading correctness. Details in TEST_LOG.md.
 - id: PER-0001
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: PROPOSED
-  status: PLANNED
+  status: IMPLEMENTED
   output: src/foundation/PersistenceStatus.h
   dependencies: []
   objective: Define the persistence status enumeration.
   acceptance: Success/failure/unknown covered and not collapsed; failure is a safety-relevant signal.
+  evidence: Implemented AURA/src/foundation/PersistenceStatus.h. Compiled clean under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic as part of the Phase 0 verification harness; success/failure/unknown not collapsed; failure safety-relevant. Independent REVIEW/INTEGRATION/APPROVAL not yet performed. Compilation and structural checks do not prove architectural or trading correctness. Details in TEST_LOG.md.
 - id: PER-0002
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: PROPOSED
-  status: PLANNED
+  status: IMPLEMENTED
   output: src/foundation/PersistenceRecordMetadata.h
   dependencies:
   - FND-0001
@@ -384,24 +407,26 @@ tasks:
   - FND-0009
   objective: Define metadata attached to every persisted record.
   acceptance: Carries identity, schema version, timestamp for auditability.
+  evidence: Implemented AURA/src/foundation/PersistenceRecordMetadata.h. Compiled clean under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic as part of the Phase 0 verification harness; identity/schema/timestamp provenance. Independent REVIEW/INTEGRATION/APPROVAL not yet performed. Compilation and structural checks do not prove architectural or trading correctness. Details in TEST_LOG.md.
 - id: PER-0003
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: PROPOSED
-  status: PLANNED
+  status: IMPLEMENTED
   output: src/foundation/IPersistenceStore.h
   dependencies:
   - PER-0001
   - PER-0002
   objective: Define the persistence store interface contract.
   acceptance: Append-oriented, auditable; failure surfaced not swallowed; no higher-layer dependency.
+  evidence: Implemented AURA/src/foundation/IPersistenceStore.h. Compiled clean under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic as part of the Phase 0 verification harness; append-oriented, idempotent; failure surfaced not swallowed. Independent REVIEW/INTEGRATION/APPROVAL not yet performed. Compilation and structural checks do not prove architectural or trading correctness. Details in TEST_LOG.md.
 - id: PER-0004
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: PROPOSED
-  status: PLANNED
+  status: IMPLEMENTED
   output: src/foundation/PersistenceTransaction.h
   dependencies:
   - PER-0001
@@ -409,44 +434,48 @@ tasks:
   - PER-0003
   objective: Define the persistence transaction concept for atomic/auditable writes.
   acceptance: Preserves idempotency and auditability; partial failure explicit; no silent data loss.
+  evidence: Implemented AURA/src/foundation/PersistenceTransaction.h. Compiled clean under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic as part of the Phase 0 verification harness; atomic/auditable grouping; duplicate identity rejected; partial failure explicit. Independent REVIEW/INTEGRATION/APPROVAL not yet performed. Compilation and structural checks do not prove architectural or trading correctness. Details in TEST_LOG.md.
 - id: GDN-0001
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: PROPOSED
-  status: PLANNED
+  status: IMPLEMENTED
   output: src/foundation/GuardianStatus.h
   dependencies: []
   objective: Define the Guardian status enumeration.
   acceptance: Distinguishes normal/safe/halt; Guardian authority not self-granted.
+  evidence: Implemented AURA/src/foundation/GuardianStatus.h. Compiled clean under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic as part of the Phase 0 verification harness; normal/safe/halt distinguished; no self-grant. Independent REVIEW/INTEGRATION/APPROVAL not yet performed. Compilation and structural checks do not prove architectural or trading correctness. Details in TEST_LOG.md.
 - id: GDN-0002
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: PROPOSED
-  status: PLANNED
+  status: IMPLEMENTED
   output: src/foundation/GuardianPolicy.h
   dependencies: []
   objective: Define the Guardian policy contract.
   acceptance: Explicit rules; automatic rollback only to approved KNOWN-GOOD state (V3-17); no evolution self-modification.
+  evidence: Implemented AURA/src/foundation/GuardianPolicy.h. Compiled clean under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic as part of the Phase 0 verification harness; explicit rules; rollback only to an approved KNOWN-GOOD anchor. Independent REVIEW/INTEGRATION/APPROVAL not yet performed. Compilation and structural checks do not prove architectural or trading correctness. Details in TEST_LOG.md.
 - id: GDN-0003
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: PROPOSED
-  status: PLANNED
+  status: IMPLEMENTED
   output: src/foundation/IGuardian.h
   dependencies:
   - GDN-0001
   - GDN-0002
   objective: Define the Guardian interface contract.
   acceptance: Exposes policy evaluation and safe-mode/halt decisions; no self-modification surface.
+  evidence: Implemented AURA/src/foundation/IGuardian.h. Compiled clean under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic as part of the Phase 0 verification harness; policy/status/evaluate; no self-modification surface. Independent REVIEW/INTEGRATION/APPROVAL not yet performed. Compilation and structural checks do not prove architectural or trading correctness. Details in TEST_LOG.md.
 - id: GDN-0004
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: PROPOSED
-  status: PLANNED
+  status: IMPLEMENTED
   output: src/foundation/Guardian.h
   dependencies:
   - GDN-0001
@@ -454,6 +483,7 @@ tasks:
   - GDN-0003
   objective: Implement the Guardian skeleton conforming to IGuardian.
   acceptance: Skeleton only; no autonomous authority escalation; deterministic and testable.
+  evidence: Implemented AURA/src/foundation/Guardian.h. Compiled clean under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic as part of the Phase 0 verification harness; deterministic skeleton; no authority escalation. Independent REVIEW/INTEGRATION/APPROVAL not yet performed. Compilation and structural checks do not prove architectural or trading correctness. Details in TEST_LOG.md.
 - id: RS-0001
   phase: '0.5'
   module: RESILIENCE
@@ -1143,3 +1173,4 @@ tasks:
   - PHASE-1
   objective: Complete Phase 2 observation and outcomes.
   acceptance: Prediction ledger and outcome engine deterministic and auditable; failures structured.
+last_updated: '2026-10-02'
