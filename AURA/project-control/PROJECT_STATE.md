@@ -203,16 +203,30 @@ This is the human-readable snapshot of where the project currently stands.
   foundation/resilience/runtime) compile under `g++ -std=c++17` and `-std=c++20` with
   `-Wall -Wextra -Werror -pedantic`; `RuntimeTests.cpp` passes under both standards. Details in `TEST_LOG.md`.
 
+## Phase 2 completion (2026-10-02)
+
+- Phase 2 (Observation & Outcomes) is COMPLETE. All 4 file-level tasks (`OB-0001`..`OB-0004`) and the
+  `PHASE-2` milestone are `APPROVED`.
+- New source under `src/observation/`: `PredictionLedger` (append-only, deterministic identity,
+  idempotent), `OutcomeEngine` (deterministic resolution, no lookahead, no repaint, conservative on
+  ambiguity), `FailureDetectionEngine` (structured `foundation::ErrorRecord` objects, never plain
+  strings), `SystemHealthMonitor` (deterministic worst-state aggregation, no fabricated healthy state),
+  plus the test artifact `ObservationTests.cpp`.
+- Verification: 4 observation headers self-contained and combined all-headers TU (78 headers across
+  foundation/resilience/runtime/observation) compile under `g++ -std=c++17` and `-std=c++20` with
+  `-Wall -Wextra -Werror -pedantic`; `ObservationTests.cpp` passes under both standards. Details in
+  `TEST_LOG.md`.
+
 ## Current task
 
-- Phases 0, 0.5 and 1 are COMPLETE and `APPROVED`.
-- Next: Phase 2 (Observation & Outcomes), beginning with `OB-0001` (`src/observation/PredictionLedger.h`,
-  dependencies `RT-0010`, `RT-0019`).
+- Phases 0, 0.5, 1 and 2 are COMPLETE and `APPROVED`.
+- Remaining phases (3..11) are `DEFERRED` and have no file-level decomposition. Promotion of a deferred
+  phase requires an explicit `DECISIONS.md` entry (per `IMPLEMENTATION_SCOPE.md`).
 
 ## Next action
 
-1. Execute Phase 2 in dependency order from `OB-0001`.
-2. Preserve implementation + state in Git after each coherent wave.
+1. Promote the next phase (Phase 3) with a `DECISIONS.md` entry before implementing it.
+2. Then execute it in dependency order, preserving implementation + state in Git after each wave.
 
 ## Update rule
 

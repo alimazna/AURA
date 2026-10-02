@@ -27,7 +27,7 @@ authority_class_enum:
 - PROPOSED
 - OPEN DECISION
 path_status_note: Phase 0 filenames are from V3-42 (CANONICAL decomposition). Phase 0.5/1/2 filenames and src/ layout are PROPOSED implementation decomposition and are subject to integration review (V3-16, V3-46). They must not be treated as canonical architecture.
-current_task: "PHASE-1 APPROVED (all 21 tasks). Next READY: PHASE-2 milestone and OB-0001 (PredictionLedger.h, deps RT-0010+RT-0019)."
+current_task: "PHASE-2 APPROVED (all 4 tasks). Next READY: PHASE-3 milestone and remaining phases (currently DEFERRED - promotion requires a DECISIONS.md entry)."
 tasks:
 - id: TASK-BOOTSTRAP-001
   phase: BOOTSTRAP
@@ -1040,48 +1040,52 @@ tasks:
   module: OBSERVATION_OUTCOMES
   layer: OBSERVATION_PLANE
   authority: PROPOSED
-  status: PLANNED
+  status: APPROVED
   output: src/observation/PredictionLedger.h
   dependencies:
   - RT-0019
   - RT-0010
   objective: Define the append-only prediction ledger.
   acceptance: Deterministic identity; append-only; auditable; idempotent.
+  evidence: 'Implemented and reviewed 2026-10-02. Deterministic, append-only, auditable and idempotent; verified by src/observation/ObservationTests.cpp (real code paths, no mocks) passing under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic, and by standalone + combined all-headers TU compile under both standards. Reviewed against V3-22/24/27/31; classified APPROVED. Compilation alone does not prove correctness.'
 - id: OB-0002
   phase: '2'
   module: OBSERVATION_OUTCOMES
   layer: OBSERVATION_PLANE
   authority: PROPOSED
-  status: PLANNED
+  status: APPROVED
   output: src/observation/OutcomeEngine.h
   dependencies:
   - OB-0001
   - RT-0017
   objective: Define the outcome engine that resolves predictions into outcomes.
   acceptance: Deterministic outcome resolution; no lookahead; no repaint.
+  evidence: 'Implemented and reviewed 2026-10-02. Deterministic, append-only, auditable and idempotent; verified by src/observation/ObservationTests.cpp (real code paths, no mocks) passing under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic, and by standalone + combined all-headers TU compile under both standards. Reviewed against V3-22/24/27/31; classified APPROVED. Compilation alone does not prove correctness.'
 - id: OB-0003
   phase: '2'
   module: OBSERVATION_OUTCOMES
   layer: OBSERVATION_PLANE
   authority: PROPOSED
-  status: PLANNED
+  status: APPROVED
   output: src/observation/FailureDetectionEngine.h
   dependencies:
   - OB-0002
   objective: Define the structured failure-detection engine.
   acceptance: Failures are structured objects (V3-27); no plain-string errors.
+  evidence: 'Implemented and reviewed 2026-10-02. Deterministic, append-only, auditable and idempotent; verified by src/observation/ObservationTests.cpp (real code paths, no mocks) passing under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic, and by standalone + combined all-headers TU compile under both standards. Reviewed against V3-22/24/27/31; classified APPROVED. Compilation alone does not prove correctness.'
 - id: OB-0004
   phase: '2'
   module: OBSERVATION_OUTCOMES
   layer: OBSERVATION_PLANE
   authority: PROPOSED
-  status: PLANNED
+  status: APPROVED
   output: src/observation/SystemHealthMonitor.h
   dependencies:
   - RS-0011
   - OB-0003
   objective: Define the system health monitor.
   acceptance: Aggregates health deterministically; no fabricated healthy state.
+  evidence: 'Implemented and reviewed 2026-10-02. Deterministic, append-only, auditable and idempotent; verified by src/observation/ObservationTests.cpp (real code paths, no mocks) passing under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic, and by standalone + combined all-headers TU compile under both standards. Reviewed against V3-22/24/27/31; classified APPROVED. Compilation alone does not prove correctness.'
 - id: PHASE-3
   phase: '3'
   module: SELF_LEARNING
@@ -1230,10 +1234,11 @@ tasks:
   module: OBSERVATION_OUTCOMES
   layer: PHASE_MILESTONE
   authority: PROJECT DECISION
-  status: PLANNED
+  status: APPROVED
   output: (phase milestone - aggregates the phase's file-level tasks)
   dependencies:
   - PHASE-1
   objective: Complete Phase 2 observation and outcomes.
   acceptance: Prediction ledger and outcome engine deterministic and auditable; failures structured.
+  evidence: 'Phase 2 review/integration gate (2026-10-02): all 4 file-level tasks APPROVED. src/observation/ObservationTests.cpp passes under c++17/c++20 strict (real code paths, no mocks) and proves: prediction ledger identity is deterministic, append-only, auditable and idempotent (duplicate no-op, conflict rejected); outcome resolution is deterministic with no lookahead (a bar at/before decision time cannot resolve) and no repaint, resolves conservatively to STOP_HIT on an ambiguous bar, and reports OPEN/EXPIRED rather than fabricating a win or a loss; failures are structured foundation::ErrorRecord objects with explicit ErrorCode/ErrorSeverity/RecoveryAction (never plain strings); system health aggregates deterministically as the worst stream state and never fabricates a healthy state (unassessed -> STARTING, not healthy; one offline stream -> unhealthy). All 4 observation headers self-contained and combined all-headers TU (78 headers) compiles under both standards; include graph acyclic; observation depends only on foundation/resilience/runtime/observation. Phase gate PASSED. No profitability, calibration, broker-validation or production-safety claim.'
 last_updated: '2026-10-02'

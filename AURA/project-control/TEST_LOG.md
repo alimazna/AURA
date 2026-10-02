@@ -406,6 +406,39 @@ shadow ledger append-only and idempotent; no live orders"). All 21 tasks and the
 correctness; no profitability, calibration, broker-validation or production-safety claim is made, and
 the real MT5 connection remains unproven until measured.
 
+## 2026-10-02 — Phase 2 observation and outcomes (OB-0001..OB-0004)
+
+Scope: Phase 2, `src/observation/`. 4 file-level tasks.
+
+Commands (ad-hoc; no application build system exists):
+- per-header self-containment under c++17/c++20 strict
+- combined all-headers TU across foundation/resilience/runtime/observation under both standards
+- `g++ -std={c++17,c++20} ... src/observation/ObservationTests.cpp src/foundation/Hasher.cpp -o t && ./t`
+- static include-graph / duplicate-type / layer-direction analysis (python)
+
+Result: PASS.
+- All 4 observation headers self-contained under c++17 and c++20 strict; combined all-headers TU (78
+  headers) compiles under both.
+- `ObservationTests.cpp` passes under both standards (real code paths, no mocks): prediction identity
+  deterministic and sensitive to changed fields; ledger append-only, auditable (find by identity),
+  idempotent on duplicate and rejecting on conflict; persist idempotent; invalid prediction rejected.
+  Outcome resolution: TARGET_HIT / STOP_HIT resolved, ambiguous bar resolves conservatively to
+  STOP_HIT, a bar at/before decision time cannot resolve (no lookahead), empty bars -> OPEN and no
+  trigger -> EXPIRED (no fabricated win/loss), and resolution is deterministic across runs.
+  Failure detection: an ERROR stream yields a valid structured ErrorRecord with its own error id, a
+  named component, a non-INFO severity and a known recovery action; a healthy set yields none.
+  System health: unassessed -> STARTING and not healthy, all-online -> healthy, one offline stream ->
+  unhealthy with the aggregate reflecting the worst stream; severity ordering is total.
+- Include graph: acyclic; observation headers include only foundation/resilience/runtime/observation.
+  No duplicate types beyond a per-translation-unit test helper class and std::hash specializations. No
+  live-order path; no future-phase behaviour. Secret scan: none.
+
+Interpretation:
+Phase 2 satisfies the `PHASE-2` milestone acceptance ("prediction ledger and outcome engine
+deterministic and auditable; failures structured"). All 4 tasks and the milestone are `APPROVED`.
+Compilation and structural checks support but do not by themselves prove architectural correctness;
+no profitability, calibration, broker-validation or production-safety claim is made.
+
 ## Future test entry format
 
 - Date

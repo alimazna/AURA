@@ -82,6 +82,19 @@ Date: 2026-10-02
   authorization.
 - Pushed to `origin/main`; remote URL is token-free and no credential is persisted anywhere.
 
+### Session end state (2026-10-02, Phase 2 complete)
+
+- Phase 2 (Observation & Outcomes) is COMPLETE: all 4 file-level tasks (`OB-0001`..`OB-0004`) and the
+  `PHASE-2` milestone are `APPROVED`.
+- `src/observation/` now holds the append-only prediction ledger, the deterministic outcome engine, the
+  structured failure-detection engine and the deterministic system health monitor, plus
+  `ObservationTests.cpp`.
+- Verification: 4 observation headers self-contained + combined all-headers TU (78 headers) under
+  c++17/c++20 strict; `ObservationTests.cpp` passes under both standards. Details in `TEST_LOG.md`.
+- Remaining phases (3..11) are `DEFERRED` with no file-level decomposition. Promotion requires an
+  explicit `DECISIONS.md` entry.
+- Pushed to `origin/main`; remote URL is token-free and no credential is persisted anywhere.
+
 ### Session end state (2026-10-02, Phase 1 complete)
 
 - Phase 1 (Deterministic Runtime) is COMPLETE: all 21 file-level tasks (`RT-0001`..`RT-0021`) and the
