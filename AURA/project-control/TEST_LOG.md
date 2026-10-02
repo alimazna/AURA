@@ -66,6 +66,44 @@ Structural validation only. It proves the task graph is internally consistent an
 the active scope. It does NOT prove that any planned source file is correct, buildable, or that
 the architecture has been implemented. No application source code was written.
 
+## 2026-10-02 — FND-0001 EntityId implementation verification
+
+Task/Phase: FND-0001 (Phase 0, Immutable Foundations)
+
+Files changed: `AURA/src/foundation/EntityId.h` (new)
+
+Build command (ad-hoc; no application build system exists):
+`g++ -std=c++17 -Wall -Wextra -Werror -pedantic -I AURA/src /tmp/fnd0001_check.cpp`
+
+Build result: PASS (clean compile, c++17). Also PASS under `-std=c++20`.
+
+Test command: `/tmp/fnd0001_check` (runtime structural assertions, no test framework added)
+
+Test result: PASS. Assertions covered:
+- default-constructed identity is invalid; `valid()` false and `operator bool` false
+- valid identity carries exact bytes (`value()`, `view()`)
+- deterministic equality / inequality
+- deterministic hashing: equal ids hash equally; `std::hash<EntityId>` specialization resolves
+- deterministic ordering (`operator<`)
+- usable as a key in `std::unordered_set` (duplicate insert collapses)
+- copy preserves identity and hash
+- explicit construction from `std::string` works
+- no implicit conversion from `const char*` (compile-time `static_assert`)
+
+Additional check: standalone-include self-containment (`#include "foundation/EntityId.h"` only)
+compiled and linked cleanly.
+
+Known limitations:
+- No application build system, no test framework, and no other source files exist; verification is
+  an ad-hoc compile plus a single throwaway program kept outside the repository.
+- `EntityId` uses the default `std::hash<std::string>`; this is deterministic within a program run
+  but is NOT a stable cross-process/serialization hash. No serialization hash is provided (out of scope).
+
+Interpretation:
+FND-0001's header compiles cleanly under strict warnings and its documented structural properties
+hold at runtime. This does NOT prove architectural correctness, and does NOT prove anything about
+trading, profitability, or live safety. `EntityId` is an immutable value type only.
+
 ## Future test entry format
 
 - Date

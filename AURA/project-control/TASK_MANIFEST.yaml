@@ -27,7 +27,7 @@ authority_class_enum:
 - PROPOSED
 - OPEN DECISION
 path_status_note: Phase 0 filenames are from V3-42 (CANONICAL decomposition). Phase 0.5/1/2 filenames and src/ layout are PROPOSED implementation decomposition and are subject to integration review (V3-16, V3-46). They must not be treated as canonical architecture.
-current_task: FND-0001
+current_task: FND-0002
 tasks:
 - id: TASK-BOOTSTRAP-001
   phase: BOOTSTRAP
@@ -59,11 +59,17 @@ tasks:
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: CANONICAL
-  status: READY
+  status: TESTED
   output: src/foundation/EntityId.h
   dependencies: []
   objective: Define the immutable, strongly-typed entity identifier used to name every persistent object.
   acceptance: Immutable value type; validated non-empty identity; deterministic equality/hashing; no higher-layer dependency.
+  evidence: >
+    Implemented AURA/src/foundation/EntityId.h. Compiled clean under g++ -std=c++17 and -std=c++20
+    with -Wall -Wextra -Werror -pedantic; standalone-include self-containment check passed; runtime
+    structural assertions (validity, deterministic equality/inequality, deterministic hashing,
+    ordering, hash-container key use, copy) passed. Details in TEST_LOG.md. Compilation and these
+    structural checks do not prove architectural or trading correctness.
 - id: FND-0002
   phase: '0'
   module: FOUNDATION

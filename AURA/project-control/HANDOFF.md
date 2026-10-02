@@ -8,8 +8,8 @@ Date: 2026-10-02
 
 - Repository layout is confirmed and normalized: the project lives under the nested
   `AURA/` directory inside `alimazna/AURA`; the repository root contains only `AURA/`.
-- The current repository contains only `README.md`, `docs/`, and `project-control/`.
-  There is NO application source tree, build system, or tests yet.
+- The first application source file now exists: `AURA/src/foundation/EntityId.h` (FND-0001).
+- There is still NO application build system, no test framework, and no MQL5 adapters.
 - The earlier baseline build/test audit is not reproducible from the current repository and is
   treated as unverified historical material (see `TEST_LOG.md`).
 - `TASK-MANIFEST-001` produced the detailed file-level task graph
@@ -19,13 +19,14 @@ Date: 2026-10-02
 
 - Active now: Phase 0 (36 tasks), Phase 0.5 (20), Phase 1 (21), Phase 2 (4), plus 4 phase milestones.
 - Deferred and still visible: Phases 3–11 (`DEFERRED`).
-- Ready to start: Phase 0 Wave 0A (no code dependencies), beginning with `FND-0001`
-  (`src/foundation/EntityId.h`).
+- `FND-0001` (`src/foundation/EntityId.h`) is `TESTED` (see `TEST_LOG.md`).
+- Next READY task: `FND-0002` (`src/foundation/Timestamp.h`), no code dependencies.
 - Blocked on human architectural decision: `FND-0015 ErrorCode.h` (OPEN DECISION) and
   `FND-0016 ErrorRecord.h` (BLOCKED), per V3-45. These require an `ErrorCode` taxonomy decision
   recorded in `DECISIONS.md`; do not invent it.
-- Authority note: Phase 0 filenames come from V3-42. The `src/` layout and Phase 0.5/1/2 filenames
-  are PROPOSED decomposition and require integration review; they are not canonical architecture.
+- Authority note: Phase 0 filenames come from V3-42. The `src/` layout, the `EntityId`
+  representation, and the Phase 0.5/1/2 filenames are PROPOSED decomposition and require
+  integration review; they are not canonical architecture.
 
 ### Prepared control files
 
@@ -45,8 +46,8 @@ Date: 2026-10-02
 2. Read `project-control/IMPLEMENTATION_SCOPE.md`.
 3. Read `project-control/PROJECT_STATE.md`.
 4. Read `project-control/TASK_MANIFEST.yaml` and pick the next READY task.
-5. Inspect the repository; note that no application source exists yet.
-6. Implement the next READY task (start with `FND-0001`), one task = one source file.
+5. Inspect the repository; note that only `src/foundation/EntityId.h` exists so far.
+6. Implement the next READY task (`FND-0002`), one task = one source file.
 7. Run appropriate deterministic checks; record real results in `TEST_LOG.md`.
 8. Preserve implementation + state in Git before ending the session.
 

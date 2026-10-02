@@ -25,13 +25,14 @@ This is the human-readable snapshot of where the project currently stands.
 
 ## Repository content audit (2026-10-02)
 
-- Current GitHub HEAD: `048a95f` ("Add files via upload").
-- The current repository contains only `README.md`, `docs/`, and `project-control/`.
-- No C++ source tree, CMake build system, tests, or MQL5 adapters are present in the current GitHub repository.
+- At audit time the GitHub HEAD was `048a95f` ("Add files via upload").
+- The repository then contained only `README.md`, `docs/`, and `project-control/`.
+  (This changed on 2026-10-02 with the first source file, `src/foundation/EntityId.h`.)
+- No CMake build system, tests, or MQL5 adapters are present in the repository.
 - The earlier "baseline repository audit" (reported tag `v1.0-fixed`, `175/175` build, `40/40` CTest)
   is NOT reproducible from the current repository content and is treated as unverified external
   material, not as evidence about this repository.
-- No build or test could be run against application source because no application source exists here yet.
+- No application build system exists; individual headers are verified by ad-hoc compile checks only.
 
 ## Bootstrap normalization (2026-10-02)
 
@@ -52,17 +53,27 @@ This is the human-readable snapshot of where the project currently stands.
 - Two Phase 0 contracts are blocked on human architectural decisions:
   `FND-0015 ErrorCode.h` (OPEN DECISION) and `FND-0016 ErrorRecord.h` (BLOCKED).
 
+## Phase 0 implementation (2026-10-02)
+
+- `src/foundation/EntityId.h` was created — the first application source file in the repository.
+- `FND-0001` is implemented and verified structurally; status recorded as `TESTED` in the manifest.
+- Verification: clean compile under `g++ -std=c++17` and `-std=c++20` with
+  `-Wall -Wextra -Werror -pedantic`; standalone-include check passed; runtime structural
+  assertions passed. Details in `TEST_LOG.md`.
+- No application build system exists yet; none was invented for this task.
+- The `EntityId` representation (non-empty opaque string token) is a PROPOSED implementation
+  choice: the Master V3 requires deterministic identity but does not freeze a concrete form.
+
 ## Current task
 
-- `TASK-MANIFEST-001` — status: IMPLEMENTED (pending REVIEW / INTEGRATION / TEST).
-- Next READY task: `FND-0001` — `src/foundation/EntityId.h` (no code dependencies).
+- `FND-0001` — `src/foundation/EntityId.h` — status: `TESTED`.
+- Next READY task: `FND-0002` — `src/foundation/Timestamp.h` (no code dependencies).
 
 ## Next action
 
-1. Review/integrate/test `TASK-MANIFEST-001` (structural validation recorded in `TEST_LOG.md`).
-2. Obtain the human `ErrorCode` taxonomy decision needed for `FND-0015`/`FND-0016`, or leave them BLOCKED.
-3. Start `FND-0001` and continue Phase 0 in dependency-wave order.
-4. Preserve implementation + state in Git before ending the session.
+1. Obtain the human `ErrorCode` taxonomy decision needed for `FND-0015`/`FND-0016`, or leave them BLOCKED.
+2. Implement `FND-0002` and continue Phase 0 Wave 0A in dependency order.
+3. Preserve implementation + state in Git before ending the session.
 
 ## Update rule
 
