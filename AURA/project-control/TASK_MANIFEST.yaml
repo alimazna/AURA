@@ -27,7 +27,7 @@ authority_class_enum:
 - PROPOSED
 - OPEN DECISION
 path_status_note: Phase 0 filenames are from V3-42 (CANONICAL decomposition). Phase 0.5/1/2 filenames and src/ layout are PROPOSED implementation decomposition and are subject to integration review (V3-16, V3-46). They must not be treated as canonical architecture.
-current_task: "none (no task is READY: the PHASE-0 milestone requires all Phase 0 tasks APPROVED, which is a human/integration action; Phase 0.5 depends on PHASE-0)"
+current_task: "RS-0001 (Phase 0.5) is the next READY task now that the PHASE-0 milestone is APPROVED; do not start it until explicitly authorized"
 tasks:
 - id: TASK-BOOTSTRAP-001
   phase: BOOTSTRAP
@@ -59,7 +59,7 @@ tasks:
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: CANONICAL
-  status: TESTED
+  status: APPROVED
   output: src/foundation/EntityId.h
   dependencies: []
   objective: Define the immutable, strongly-typed entity identifier used to name every persistent object.
@@ -72,155 +72,158 @@ tasks:
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: CANONICAL
-  status: REVIEW_PENDING
+  status: APPROVED
   output: src/foundation/Timestamp.h
   dependencies: []
   objective: Define the immutable timestamp value type and temporal-unit semantics used across the system.
   acceptance: Immutable; ordering-safe; explicit unit; no implicit wall-clock float conversion; deterministic comparison.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Status REVIEW_PENDING: independent APPROVAL/INTEGRATION not yet granted.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: FND-0003
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: CANONICAL
-  status: REVIEW_PENDING
+  status: APPROVED
   output: src/foundation/Version.h
   dependencies: []
   objective: Define the immutable version identifier used for configuration, strategy, and schema versioning.
   acceptance: Comparable and immutable; ordering supported; stable serialization; usable for provenance.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Status REVIEW_PENDING: independent APPROVAL/INTEGRATION not yet granted.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: FND-0004
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: CANONICAL
-  status: REVIEW_PENDING
+  status: APPROVED
   output: src/foundation/ServiceState.h
   dependencies: []
   objective: Define the canonical service/subsystem state enumeration (STARTING/ONLINE/DEGRADED/OFFLINE/RECOVERING/PAUSED/BLOCKED/ERROR).
   acceptance: Matches V3-14 exactly; no values merged or renamed; UNKNOWN not treated as safe.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Status REVIEW_PENDING: independent APPROVAL/INTEGRATION not yet granted.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: FND-0005
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: CANONICAL
-  status: REVIEW_PENDING
+  status: APPROVED
   output: src/foundation/SystemMode.h
   dependencies: []
   objective: Define the canonical system operating mode enumeration (STARTING/RECOVERY/NORMAL/DEGRADED/SHADOW/PAUSED/MANUAL/EMERGENCY/HALTED).
   acceptance: Matches V3-14 exactly; kept distinct from ServiceState; SHADOW representable as primary mode.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Status REVIEW_PENDING: independent APPROVAL/INTEGRATION not yet granted.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: FND-0006
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: CANONICAL
-  status: REVIEW_PENDING
+  status: APPROVED
   output: src/foundation/HashDigest.h
   dependencies: []
   objective: Define the immutable hash digest value type used for integrity, provenance, and identity hashing.
   acceptance: Immutable; deterministic equality; no dependency on a concrete hasher.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Status REVIEW_PENDING: independent APPROVAL/INTEGRATION not yet granted.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: FND-0007
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: CANONICAL
-  status: REVIEW_PENDING
+  status: APPROVED
   output: src/foundation/DataQualityState.h
   dependencies: []
   objective: Define the canonical data-quality state enumeration (VALID/DEGRADED/INVALID/UNKNOWN/STALE/MISSING/OUT_OF_ORDER/DUPLICATE/INCOMPLETE).
   acceptance: Matches V3-25 exactly; UNKNOWN not a neutral success; usable for capability gating.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Status REVIEW_PENDING: independent APPROVAL/INTEGRATION not yet granted.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: FND-0008
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: CANONICAL
-  status: REVIEW_PENDING
+  status: APPROVED
   output: src/foundation/ProtocolVersion.h
-  dependencies: []
+  dependencies:
+  - FND-0003
   objective: Define the immutable protocol version identifier for the message boundary.
   acceptance: Immutable and comparable; used by MessageMetadata; no payload-type dependency.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Status REVIEW_PENDING: independent APPROVAL/INTEGRATION not yet granted.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: FND-0009
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: CANONICAL
-  status: REVIEW_PENDING
+  status: APPROVED
   output: src/foundation/SchemaVersion.h
-  dependencies: []
+  dependencies:
+  - FND-0003
   objective: Define the immutable schema version identifier for events, messages, and persisted records.
   acceptance: Immutable and comparable; supports schema-evolution checks.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Status REVIEW_PENDING: independent APPROVAL/INTEGRATION not yet granted.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: FND-0012
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: CANONICAL
-  status: REVIEW_PENDING
+  status: APPROVED
   output: src/foundation/EventType.h
   dependencies: []
   objective: Define the canonical event-type enumeration/identifier for the event boundary.
   acceptance: Stable identifiers; extensible without renumbering; no payload-type dependency.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Status REVIEW_PENDING: independent APPROVAL/INTEGRATION not yet granted.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: FND-0014
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: CANONICAL
-  status: REVIEW_PENDING
+  status: APPROVED
   output: src/foundation/ErrorSeverity.h
   dependencies: []
   objective: Define the canonical error severity enumeration for structured error records.
   acceptance: Closed, ordered enumeration; used by ErrorRecord; no stringly-typed severity.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Status REVIEW_PENDING: independent APPROVAL/INTEGRATION not yet granted.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: FND-0017
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: CANONICAL
-  status: REVIEW_PENDING
+  status: APPROVED
   output: src/foundation/RecoveryAction.h
   dependencies: []
   objective: Define the recovery-action descriptor type referenced by structured error records.
   acceptance: Explicit semantics; UNKNOWN recovery representable but not treated as safe; no Guardian runtime dependency.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Status REVIEW_PENDING: independent APPROVAL/INTEGRATION not yet granted.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: FND-0011
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: CANONICAL
-  status: REVIEW_PENDING
+  status: APPROVED
   output: src/foundation/EventId.h
   dependencies:
   - FND-0001
   objective: Define the deterministic event identifier derived from entity identity.
   acceptance: Deterministic given inputs; depends only on EntityId; immutable; stable serialization.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Status REVIEW_PENDING: independent APPROVAL/INTEGRATION not yet granted.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: FND-0010
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: CANONICAL
-  status: REVIEW_PENDING
+  status: APPROVED
   output: src/foundation/MessageMetadata.h
   dependencies:
   - FND-0001
   - FND-0002
+  - FND-0006
   - FND-0008
   - FND-0009
   objective: Define the message metadata contract (protocol_version, schema_version, message_id, timestamp, source, destination, payload, checksum/hash where appropriate).
   acceptance: Fields match V3-23; immutable carrier; checksum/hash uses HashDigest; no payload interpretation.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Status REVIEW_PENDING: independent APPROVAL/INTEGRATION not yet granted.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: FND-0013
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: CANONICAL
-  status: REVIEW_PENDING
+  status: APPROVED
   output: src/foundation/EventMetadata.h
   dependencies:
   - FND-0001
@@ -230,152 +233,164 @@ tasks:
   - FND-0012
   objective: Define the event metadata contract (event_id, event_type, symbol, source, source_instance, event_time, receive_time, sequence_id, schema_version).
   acceptance: Fields match V3-23 exactly; event_time and receive_time distinct; sequence_id supports ordering; immutable.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Status REVIEW_PENDING: independent APPROVAL/INTEGRATION not yet granted.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: FND-0015
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: PROJECT DECISION
-  status: REVIEW_PENDING
+  status: APPROVED
   output: src/foundation/ErrorCode.h
   dependencies: []
   objective: Define the ErrorCode contract/taxonomy for structured errors.
   acceptance: "Closed enum class of exactly the 13 V3 section 113 ERROR categories, explicit stable numeric identity independent of compiler ordering, no UNKNOWN/OTHER, no embedded severity, no serialization; self-contained, deterministic, C++17."
-  evidence: "Implemented and reviewed 2026-10-02. Enum class ErrorCode : uint8_t with explicit values 1..13 in V3-113 order; to_string() returns canonical labels. Self-contained standalone TU and full Phase 0 harness pass under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exact values asserted. V3-45 OPEN DECISION resolved by the human decision recorded in DECISIONS.md (2026-10-02). Status REVIEW_PENDING: independent APPROVAL/INTEGRATION not yet granted; compilation does not prove architectural correctness."
+  evidence: "Implemented and reviewed 2026-10-02. Enum class ErrorCode : uint8_t with explicit values 1..13 in V3-113 order; to_string() returns canonical labels. Self-contained standalone TU and full Phase 0 harness pass under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exact values asserted. V3-45 OPEN DECISION resolved by the human decision recorded in DECISIONS.md (2026-10-02). Phase 0 integration gate (2026-10-02): APPROVED; compilation alone does not prove architectural correctness."
 - id: FND-0016
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: PROPOSED
-  status: REVIEW_PENDING
+  status: APPROVED
   output: src/foundation/ErrorRecord.h
   dependencies:
-  - FND-0015
-  - FND-0017
+  - FND-0001
   - FND-0002
   - FND-0004
   - FND-0014
+  - FND-0015
+  - FND-0017
   objective: Define the structured error record (error_id, component, severity, timestamp, state, message, context, recovery_action).
   acceptance: "Exact eight-field V3-27 error shape (error_id, component, severity, timestamp, state, message, context, recovery_action); value/contract type only; depends only on frozen foundation contracts; self-contained, deterministic, C++17."
-  evidence: "Implemented and reviewed 2026-10-02. Immutable ErrorRecord value type carrying exactly the eight V3-27 fields; no logging/recovery/retry/evaluation/serialization/persistence/networking. Includes only EntityId, ErrorCode, ErrorSeverity, RecoveryAction, ServiceState, Timestamp (all lower-layer). Self-contained standalone TU and structural harness pass under g++ -std=c++17 and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic. Status REVIEW_PENDING: independent APPROVAL/INTEGRATION not yet granted; compilation does not prove architectural correctness."
+  evidence: "Implemented and reviewed 2026-10-02. Immutable ErrorRecord value type carrying exactly the eight V3-27 fields; no logging/recovery/retry/evaluation/serialization/persistence/networking. Includes only EntityId, ErrorCode, ErrorSeverity, RecoveryAction, ServiceState, Timestamp (all lower-layer). Self-contained standalone TU and structural harness pass under g++ -std=c++17 and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic. Phase 0 integration gate (2026-10-02): APPROVED; compilation alone does not prove architectural correctness."
 - id: CFG-0001
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: PROPOSED
-  status: REVIEW_PENDING
+  status: APPROVED
   output: src/foundation/ConfigurationKey.h
   dependencies: []
   objective: Define the configuration key type for versioned configuration.
   acceptance: Stable, immutable key type; final type system not inferred until the contract is frozen (V3-44).
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Status REVIEW_PENDING: independent APPROVAL/INTEGRATION not yet granted.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: CFG-0002
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: PROPOSED
-  status: REVIEW_PENDING
+  status: APPROVED
   output: src/foundation/ConfigurationValue.h
   dependencies: []
   objective: Define the configuration value type for versioned configuration.
   acceptance: Explicit, versionable value type; no silent mutation; contract not inferred (V3-44).
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Status REVIEW_PENDING: independent APPROVAL/INTEGRATION not yet granted.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: CFG-0003
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: PROPOSED
-  status: REVIEW_PENDING
+  status: APPROVED
   output: src/foundation/ConfigurationSnapshot.h
-  dependencies: []
+  dependencies:
+  - CFG-0001
+  - CFG-0002
+  - CFG-0004
+  - FND-0003
   objective: Define the immutable configuration snapshot carrying a configuration version.
   acceptance: Immutable and versioned; supports decision provenance; no silent mutation.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Status REVIEW_PENDING: independent APPROVAL/INTEGRATION not yet granted.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: CFG-0004
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: PROPOSED
-  status: REVIEW_PENDING
+  status: APPROVED
   output: src/foundation/ConfigurationScope.h
   dependencies: []
   objective: Define runtime-vs-research configuration scope separation.
   acceptance: Scope distinguishes runtime and research configuration (V3-26); no implicit merging.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Status REVIEW_PENDING: independent APPROVAL/INTEGRATION not yet granted.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: CFG-0005
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: PROPOSED
-  status: REVIEW_PENDING
+  status: APPROVED
   output: src/foundation/ConfigurationChange.h
-  dependencies: []
+  dependencies:
+  - CFG-0001
+  - CFG-0002
+  - FND-0002
   objective: Define the configuration change record for auditable configuration mutation.
   acceptance: Change recorded, attributed, versioned; no silent configuration mutation (V3-26).
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Status REVIEW_PENDING: independent APPROVAL/INTEGRATION not yet granted.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: AUD-0001
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: PROPOSED
-  status: REVIEW_PENDING
+  status: APPROVED
   output: src/foundation/AuditAction.h
   dependencies: []
   objective: Define the audited action enumeration/identifier.
   acceptance: Stable action identifiers; append-only usage; no rewrite semantics.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Status REVIEW_PENDING: independent APPROVAL/INTEGRATION not yet granted.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: AUD-0002
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: PROPOSED
-  status: REVIEW_PENDING
+  status: APPROVED
   output: src/foundation/AuditOutcome.h
   dependencies: []
   objective: Define the audited outcome enumeration.
   acceptance: Outcomes include failed/rejected states as first-class values (V3-27).
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Status REVIEW_PENDING: independent APPROVAL/INTEGRATION not yet granted.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: AUD-0003
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: PROPOSED
-  status: REVIEW_PENDING
+  status: APPROVED
   output: src/foundation/AuditRecord.h
-  dependencies: []
+  dependencies:
+  - AUD-0001
+  - AUD-0002
+  - FND-0001
+  - FND-0002
   objective: Define the append-only audit record.
   acceptance: Append-only, attributable; carries timestamp and actor/component context; no in-place history rewrite.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Status REVIEW_PENDING: independent APPROVAL/INTEGRATION not yet granted.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: INT-0001
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: PROPOSED
-  status: REVIEW_PENDING
+  status: APPROVED
   output: src/foundation/HashAlgorithm.h
   dependencies: []
   objective: Define the supported hash algorithm identifier enumeration.
   acceptance: Explicit, versioned algorithm identifiers; unknown algorithm representable and not treated as safe.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Status REVIEW_PENDING: independent APPROVAL/INTEGRATION not yet granted.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: INT-0002
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: PROPOSED
-  status: REVIEW_PENDING
+  status: APPROVED
   output: src/foundation/IHasher.h
   dependencies:
   - INT-0001
   - FND-0006
   objective: Define the hasher interface contract returning a HashDigest.
   acceptance: Deterministic, stateless-per-call; no hidden mutable state; returns HashDigest.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Status REVIEW_PENDING: independent APPROVAL/INTEGRATION not yet granted.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: INT-0003
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: PROPOSED
-  status: REVIEW_PENDING
+  status: APPROVED
   output: src/foundation/Hasher.cpp
   dependencies:
   - INT-0001
@@ -383,24 +398,24 @@ tasks:
   - FND-0006
   objective: Implement the deterministic hasher conforming to IHasher.
   acceptance: Deterministic output for identical input/algorithm; no higher-layer dependency; unit test proves determinism.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Status REVIEW_PENDING: independent APPROVAL/INTEGRATION not yet granted.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: PER-0001
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: PROPOSED
-  status: REVIEW_PENDING
+  status: APPROVED
   output: src/foundation/PersistenceStatus.h
   dependencies: []
   objective: Define the persistence status enumeration.
   acceptance: Success/failure/unknown covered and not collapsed; failure is a safety-relevant signal.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Status REVIEW_PENDING: independent APPROVAL/INTEGRATION not yet granted.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: PER-0002
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: PROPOSED
-  status: REVIEW_PENDING
+  status: APPROVED
   output: src/foundation/PersistenceRecordMetadata.h
   dependencies:
   - FND-0001
@@ -408,75 +423,79 @@ tasks:
   - FND-0009
   objective: Define metadata attached to every persisted record.
   acceptance: Carries identity, schema version, timestamp for auditability.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Status REVIEW_PENDING: independent APPROVAL/INTEGRATION not yet granted.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: PER-0003
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: PROPOSED
-  status: REVIEW_PENDING
+  status: APPROVED
   output: src/foundation/IPersistenceStore.h
   dependencies:
+  - FND-0001
+  - FND-0006
   - PER-0001
   - PER-0002
   objective: Define the persistence store interface contract.
   acceptance: Append-oriented, auditable; failure surfaced not swallowed; no higher-layer dependency.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Status REVIEW_PENDING: independent APPROVAL/INTEGRATION not yet granted.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: PER-0004
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: PROPOSED
-  status: REVIEW_PENDING
+  status: APPROVED
   output: src/foundation/PersistenceTransaction.h
   dependencies:
-  - PER-0001
+  - FND-0001
+  - FND-0006
   - PER-0002
-  - PER-0003
   objective: Define the persistence transaction concept for atomic/auditable writes.
   acceptance: Preserves idempotency and auditability; partial failure explicit; no silent data loss.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. Review found an unused include (PersistenceStatus.h) with no usage; removed it. Status REVIEW_PENDING: independent APPROVAL/INTEGRATION not yet granted.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. Review found an unused include (PersistenceStatus.h) with no usage; removed it. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: GDN-0001
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: PROPOSED
-  status: REVIEW_PENDING
+  status: APPROVED
   output: src/foundation/GuardianStatus.h
   dependencies: []
   objective: Define the Guardian status enumeration.
   acceptance: Distinguishes normal/safe/halt; Guardian authority not self-granted.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Status REVIEW_PENDING: independent APPROVAL/INTEGRATION not yet granted.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: GDN-0002
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: PROPOSED
-  status: REVIEW_PENDING
+  status: APPROVED
   output: src/foundation/GuardianPolicy.h
   dependencies: []
   objective: Define the Guardian policy contract.
   acceptance: Explicit rules; automatic rollback only to approved KNOWN-GOOD state (V3-17); no evolution self-modification.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. Review found an unused include (GuardianStatus.h) with no usage; removed it. Status REVIEW_PENDING: independent APPROVAL/INTEGRATION not yet granted.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. Review found an unused include (GuardianStatus.h) with no usage; removed it. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: GDN-0003
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: PROPOSED
-  status: REVIEW_PENDING
+  status: APPROVED
   output: src/foundation/IGuardian.h
   dependencies:
+  - FND-0014
+  - FND-0017
   - GDN-0001
   - GDN-0002
   objective: Define the Guardian interface contract.
   acceptance: Exposes policy evaluation and safe-mode/halt decisions; no self-modification surface.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Status REVIEW_PENDING: independent APPROVAL/INTEGRATION not yet granted.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: GDN-0004
   phase: '0'
   module: FOUNDATION
   layer: IMMUTABLE_FOUNDATION
   authority: PROPOSED
-  status: REVIEW_PENDING
+  status: APPROVED
   output: src/foundation/Guardian.h
   dependencies:
   - GDN-0001
@@ -484,7 +503,7 @@ tasks:
   - GDN-0003
   objective: Implement the Guardian skeleton conforming to IGuardian.
   acceptance: Skeleton only; no autonomous authority escalation; deterministic and testable.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Status REVIEW_PENDING: independent APPROVAL/INTEGRATION not yet granted.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: RS-0001
   phase: '0.5'
   module: RESILIENCE
@@ -1135,7 +1154,7 @@ tasks:
   module: IMMUTABLE_FOUNDATIONS
   layer: PHASE_MILESTONE
   authority: PROJECT DECISION
-  status: PLANNED
+  status: APPROVED
   output: (phase milestone - aggregates the phase's file-level tasks)
   dependencies:
   - TASK-MANIFEST-001

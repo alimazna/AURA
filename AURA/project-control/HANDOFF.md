@@ -21,16 +21,17 @@ Date: 2026-10-02
 
 - Active now: Phase 0 (36 tasks), Phase 0.5 (20), Phase 1 (21), Phase 2 (4), plus 4 phase milestones.
 - Deferred and still visible: Phases 3–11 (`DEFERRED`).
-- `FND-0001` (`src/foundation/EntityId.h`) is `TESTED`.
-- Phase 0 source tasks `FND-0002..FND-0017` (excluding the removed-from-BLOCKED pair noted below),
+- `FND-0001` (`src/foundation/EntityId.h`) is `APPROVED` (was `TESTED`; advanced at the Phase 0
+  integration gate).
+- Phase 0 source tasks `FND-0002..FND-0017` (excluding the pair noted below),
   `CFG-0001..0005`, `AUD-0001..0003`, `INT-0001..0003`, `PER-0001..0004`, `GDN-0001..0004`
-  have been REVIEWED and are recorded as `REVIEW_PENDING` (not yet `APPROVED`/`INTEGRATED`).
-  `GDN-0002` and `PER-0004` required rework (unused includes) and were fixed and re-verified.
-- `FND-0015 ErrorCode.h` and `FND-0016 ErrorRecord.h` are now implemented and reviewed as
-  `REVIEW_PENDING` (previously OPEN DECISION / BLOCKED). The V3-45 OPEN DECISION was resolved by the
-  human decision recorded in `DECISIONS.md` (2026-10-02); `BLOCK-002` is RESOLVED.
-- No task is currently READY: the `PHASE-0` milestone acceptance requires all Phase 0 tasks
-  `APPROVED` (a human/integration action), and Phase 0.5 depends on `PHASE-0`.
+  have been REVIEWED and are now `APPROVED` (advanced from `REVIEW_PENDING` at the Phase 0
+  integration gate). `GDN-0002` and `PER-0004` required rework (unused includes) and were fixed.
+- `FND-0015 ErrorCode.h` and `FND-0016 ErrorRecord.h` are implemented, reviewed and `APPROVED`
+  (previously OPEN DECISION / BLOCKED). The V3-45 OPEN DECISION was resolved by the human decision
+  recorded in `DECISIONS.md` (2026-10-02); `BLOCK-002` is RESOLVED.
+- Phase 0 is complete; the `PHASE-0` milestone is `APPROVED`. The next READY task is `RS-0001`
+  (Phase 0.5); it was NOT started.
 - Authority note: Phase 0 filenames come from V3-42. The `src/` layout, the `EntityId`
   representation, the `Version` grammar, and the Phase 0.5/1/2 filenames are PROPOSED
   decomposition and require integration review; they are not canonical architecture.
@@ -61,24 +62,28 @@ Date: 2026-10-02
 3. Read `project-control/PROJECT_STATE.md`.
 4. Read `project-control/TASK_MANIFEST.yaml` and pick the next actionable task.
 5. Inspect the repository; Phase 0 `src/foundation/` headers now exist.
-6. Phase 0 files are reviewed (`REVIEW_PENDING`); `FND-0015`/`FND-0016` are implemented and the
-   ErrorCode blocker (`BLOCK-002`) is resolved. No task is currently READY: the `PHASE-0` milestone
-   requires all Phase 0 tasks `APPROVED` (a human/integration action). Do not begin Phase 0.5.
+6. Phase 0 is complete and `APPROVED` (all 36 file-level tasks + the `PHASE-0` milestone). The
+   ErrorCode blocker (`BLOCK-002`) is resolved. The next READY task is `RS-0001` (Phase 0.5); do not
+   begin Phase 0.5 without explicit authorization.
 7. Run appropriate deterministic checks; record real results in `TEST_LOG.md`.
 8. Preserve implementation + state in Git before ending the session.
 
-### Session end state (2026-10-02, FND-0015/FND-0016)
+### Session end state (2026-10-02, Phase 0 integration gate)
 
-- Pushed to `origin/main`; remote HEAD is the "Implement FND-0015 ErrorCode and FND-0016 ErrorRecord"
-  commit. `origin/main` contains the Phase 0 source files and updated control plane.
-- Remote URL is token-free (`https://github.com/alimazna/AURA.git`); no credential was persisted to
-  the repository, config, or logs.
+- Phase 0 is COMPLETE: all 36 file-level Phase 0 tasks and the `PHASE-0` milestone are `APPROVED`.
+- The integration gate re-ran the strongest available verification (70 standalone TUs across 35
+  headers × c++17/c++20 strict; full Phase 0 harness incl. SHA-256 KATs; acyclic include graph;
+  36/36 outputs; no strays/secrets) and reconciled 10 under-declared manifest dependency lists.
+- No task is BLOCKED; `BLOCK-001` and `BLOCK-002` are RESOLVED.
+- Next READY task is `RS-0001` (Phase 0.5). It was NOT started and must not start without explicit
+  authorization.
+- Pushed to `origin/main`; remote URL is token-free and no credential is persisted anywhere.
 
 ### Open blockers
 
 - None. `BLOCK-001` and `BLOCK-002` are both RESOLVED.
-- Remaining (non-blocking) state: Phase 0 files await independent `APPROVED`/`INTEGRATED`; the
-  `src/` layout and Phase 0.5/1/2 filenames remain PROPOSED and need integration review.
+- Remaining (non-blocking) state: the `src/` layout and Phase 0.5/1/2 filenames remain PROPOSED and
+  need integration review as those phases begin.
 
 ### Do not
 

@@ -263,6 +263,44 @@ compilation and structural checks do not prove architectural correctness. `BLOCK
 the manifest now has no `BLOCKED` tasks. `PHASE-0` (requires all Phase 0 tasks APPROVED) and Phase 0.5
 are not started; no task is currently READY.
 
+## 2026-10-02 — Phase 0 final review / integration gate
+
+Scope: all 36 Phase 0 file-level tasks (`src/foundation/`), reviewed against
+`TASK_MANIFEST.yaml`, `DECISIONS.md`, `BLOCKED.md`, Master V3, and the files on disk.
+
+Commands (ad-hoc; no application build system exists):
+- `g++ -std=c++17 -Wall -Wextra -Werror -pedantic -I src <harness>.cpp src/foundation/Hasher.cpp`
+- same with `-std=c++20`
+- per-header standalone TUs for all 35 headers under both standards
+- programmatic include-graph, duplicate-type, manifest-vs-filesystem, and secret scans
+
+Result: PASS.
+- 36/36 canonical Phase 0 outputs exist; no duplicate or stray files; manifest outputs match the
+  filesystem.
+- 35 headers self-contained: 70 standalone TUs (35 × c++17/c++20) — ALL PASS.
+- Full Phase 0 runtime harness passes under both standards, including genuine SHA-256 known-answer
+  tests (`abc`, empty, 448-bit FIPS vector) and the Guardian severity→recovery mapping.
+- Include graph: acyclic; no self-includes; no unknown includes; all includes lower-layer; no
+  duplicate foundation type.
+- Canonical enum values re-verified against Master V3: V3-14 `ServiceState`/`SystemMode`, V3-25
+  `DataQualityState`, section 113 `ErrorCode` (1..13) and the eight-field `ErrorRecord` shape.
+- Secret scan: no matches.
+
+Defect found and fixed:
+- 10 Phase 0 tasks under-declared their dependencies in `TASK_MANIFEST.yaml` relative to the actual
+  (correct) include contracts: `FND-0008`, `FND-0009`, `FND-0010`, `FND-0016`, `CFG-0003`, `CFG-0005`,
+  `AUD-0003`, `PER-0003`, `PER-0004`, `GDN-0003`. The dependency lists were reconciled to the verified
+  includes (e.g. `FND-0008`/`FND-0009` → `FND-0003`; `PER-0003` → `PER-0001`, `PER-0002`, `FND-0001`,
+  `FND-0006`). No source file was changed; the include graph was already correct. After the fix, no
+  genuine dependency omission remains, and the V3-44 Wave 0B dependency sets are all satisfied.
+
+Interpretation:
+Every Phase 0 file-level task passes independent review and verification and is classified
+`APPROVED`. The `PHASE-0` milestone is `APPROVED` and Phase 0 is complete. No task is `BLOCKED`;
+`BLOCK-002` stays RESOLVED. The next READY task is `RS-0001` (Phase 0.5) but it was NOT started.
+Compilation and structural checks support — but do not by themselves prove — architectural
+correctness; no profitability, calibration, broker-validation or production-safety claim is made.
+
 ## Future test entry format
 
 - Date

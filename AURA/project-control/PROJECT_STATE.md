@@ -50,8 +50,9 @@ This is the human-readable snapshot of where the project currently stands.
 - Phase 0.5 (20 tasks), Phase 1 (21 tasks), and Phase 2 (4 tasks) file names are PROPOSED
   decomposition (V3-16, V3-46) and are subject to integration review.
 - Phases 3–11 remain DEFERRED and visible.
-- Two Phase 0 contracts are blocked on human architectural decisions:
-  `FND-0015 ErrorCode.h` (OPEN DECISION) and `FND-0016 ErrorRecord.h` (BLOCKED).
+- The two Phase 0 contracts that were blocked on human architectural decisions
+  (`FND-0015 ErrorCode.h` OPEN DECISION, `FND-0016 ErrorRecord.h` BLOCKED) are now resolved and
+  `APPROVED`; see the Phase 0 integration gate below.
 
 ## Phase 0 implementation (2026-10-02)
 
@@ -69,8 +70,8 @@ This is the human-readable snapshot of where the project currently stands.
   - Persistence: `PersistenceStatus`, `PersistenceRecordMetadata`, `IPersistenceStore`,
     `PersistenceTransaction`.
   - Guardian: `GuardianStatus`, `GuardianPolicy`, `IGuardian`, `Guardian`.
-- All of the above are recorded as `IMPLEMENTED` (not `APPROVED`/`INTEGRATED`) pending independent
-  review. `FND-0001` remains `TESTED`.
+- All of the above were recorded as `IMPLEMENTED` at that time, pending independent review; the
+  Phase 0 integration gate (below) subsequently advanced every Phase 0 file to `APPROVED`.
 - Verification: clean compile under `g++ -std=c++17` and `-std=c++20` with
   `-Wall -Wextra -Werror -pedantic`; runtime structural assertions passed, including genuine
   SHA-256 known-answer tests. Details in `TEST_LOG.md`.
@@ -98,9 +99,11 @@ This is the human-readable snapshot of where the project currently stands.
   dependencies.
 - Verification: all 33 headers are self-contained (66 standalone TUs, c++17/c++20, strict warnings);
   the full runtime harness passes including SHA-256 known-answer tests. Details in `TEST_LOG.md`.
-- Status is recorded as `REVIEW_PENDING` for the reviewed files — NOT `APPROVED`/`INTEGRATED`.
-  Independent approval has not been granted, and compilation does not prove correctness.
-- No Phase 0.5 work was started. `FND-0015` remains OPEN DECISION and `FND-0016` remains BLOCKED.
+- Status was recorded as `REVIEW_PENDING` for the reviewed files at that time; it was later advanced
+  to `APPROVED` at the Phase 0 integration gate (see below). Compilation alone was never treated as
+  proof of correctness.
+- No Phase 0.5 work was started. (At that time `FND-0015` was OPEN DECISION and `FND-0016` BLOCKED;
+  both were subsequently resolved — see below.)
 
 ## Phase 0 error contracts — FND-0015 / FND-0016 (2026-10-02)
 
@@ -113,23 +116,39 @@ This is the human-readable snapshot of where the project currently stands.
 - Verification: both headers are self-contained (70 standalone TUs across 35 headers × c++17/c++20,
   strict warnings); the full Phase 0 runtime harness passes including SHA-256 known-answer tests; the
   include graph is acyclic and lower-layer only. Details in `TEST_LOG.md`.
-- Status: `FND-0015` and `FND-0016` are `REVIEW_PENDING` — implemented and reviewed, NOT yet
-  `APPROVED`/`INTEGRATED`. `BLOCK-002` is RESOLVED; the manifest has no `BLOCKED` tasks.
+- Status: `FND-0015` and `FND-0016` were implemented and reviewed here; they are now `APPROVED` at
+  the Phase 0 integration gate (see below). `BLOCK-002` is RESOLVED; the manifest has no `BLOCKED`
+  tasks.
 - No Phase 0.5 work was started.
+
+## Phase 0 final review / integration gate (2026-10-02)
+
+- All 36 Phase 0 file-level tasks were independently reviewed at the integration gate against their
+  manifest acceptance, `DECISIONS.md`, the canonical Master V3 sections, output path, namespace,
+  includes, C++17/C++20 strict self-containment, dependency direction, determinism, value semantics,
+  provenance/versioning, error semantics, and absence of future-phase behaviour.
+- Verification (re-run): 35 headers are self-contained (70 standalone TUs, c++17/c++20,
+  `-Wall -Wextra -Werror -pedantic`); the full Phase 0 runtime harness passes including genuine
+  SHA-256 known-answer tests; the include graph is acyclic and lower-layer only; 36/36 canonical
+  outputs present with no duplicate/stray files; no credentials/secrets.
+- One real defect was found and fixed: the manifest dependency lists under-declared the actual
+  include contracts for `FND-0008`, `FND-0009`, `FND-0010`, `FND-0016`, `CFG-0003`, `CFG-0005`,
+  `AUD-0003`, `PER-0003`, `PER-0004`, `GDN-0003`. The lists were reconciled to match the verified
+  includes; no source file was changed and the include graph was already correct.
+- Outcome: all 36 Phase 0 file-level tasks are `APPROVED`; the `PHASE-0` milestone is `APPROVED`.
+  Phase 0 is complete. No task is BLOCKED. `BLOCK-002` remains RESOLVED.
+- The next READY task is `RS-0001` (Phase 0.5) but it was NOT started; Phase 0.5 awaits explicit
+  authorization.
 
 ## Current task
 
-- `FND-0001` — `src/foundation/EntityId.h` — status: `TESTED`.
-- All 36 Phase 0 foundation files (incl. `ErrorCode.h`, `ErrorRecord.h`) — status: `REVIEW_PENDING`.
-- No task is currently READY: the `PHASE-0` milestone requires all Phase 0 tasks `APPROVED` (a
-  human/integration action), and Phase 0.5 depends on `PHASE-0`.
+- Phase 0 complete: all 36 Phase 0 file-level tasks and the `PHASE-0` milestone are `APPROVED`.
+- Next READY: `RS-0001` (Phase 0.5) — not started, pending explicit authorization.
 
 ## Next action
 
-1. Independently APPROVE/INTEGRATE the `REVIEW_PENDING` Phase 0 files (human/integration action) to
-   satisfy the `PHASE-0` milestone acceptance.
-2. Only then may Phase 0.5 be promoted; do not begin Phase 0.5 beforehand.
-3. Preserve implementation + state in Git before ending the session.
+1. Obtain explicit authorization before starting Phase 0.5 (`RS-0001`).
+2. Preserve implementation + state in Git before ending the session.
 
 ## Update rule
 
