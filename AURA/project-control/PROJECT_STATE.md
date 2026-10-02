@@ -158,17 +158,43 @@ This is the human-readable snapshot of where the project currently stands.
 - `PHASE-0.5` remains `PLANNED` (1 of 20 Phase 0.5 tasks complete). `RS-0002` is the next READY task
   but was NOT started.
 
+## Phase 0.5 completion (2026-10-02)
+
+- Phase 0.5 (Resilience & Graceful Degradation) is COMPLETE. All 20 file-level tasks
+  (`RS-0001`..`RS-0020`) are `APPROVED`; the `PHASE-0.5` milestone is `APPROVED`.
+- New source under `src/resilience/`: capability identity and descriptors (`CapabilityId`,
+  `CapabilityDescriptor`, `DependencyDescriptor`), health/freshness (`HealthSnapshot`,
+  `FreshnessState`, `DataFreshnessMonitor`), the explicit capability dependency graph
+  (`CapabilityRegistry`, `DependencyGraph`), impact/degradation (`DegradationImpact`,
+  `CriticalityPolicy`, `ImpactResolver`, `SubsystemIsolationManager`, `GracefulDegradationManager`),
+  recovery/pause (`RecoveryManager`, `PauseResumeManager`), coordination (`HealthStateEngine`,
+  `SystemSupervisor`), and the phase test artifact `DegradationTests.cpp`.
+- Verification: 19 resilience headers self-contained and combined TU compiles under
+  `g++ -std=c++17` and `-std=c++20` with `-Wall -Wextra -Werror -pedantic`; `DegradationTests.cpp`
+  passes under both standards and proves non-critical failure isolation, exact stale-timeframe
+  reporting, deterministic health/impact/recovery, and cycle-safe traversal. Details in `TEST_LOG.md`.
+- The capability dependency graph is encoded explicitly (V3-15) rather than implied. No runtime
+  behaviour, no live-trading enablement, no future-phase leakage.
+
+## MT5 deployment decision (2026-10-02)
+
+- Recorded in `DECISIONS.md`: one physical MT5 EA, one chart, one transport, carrying nine logically
+  independent timeframe streams (M1, M5, M15, M30, H1, H4, D1, W1, MN1). The nine logical adapter
+  responsibilities and the V3-29 authority hierarchy are unchanged. The task graph already used a
+  single adapter boundary (`RT-0001 AdapterManager.h`) and enumerated no nine physical `.mq5` files,
+  so no task replacement was needed; the `RT-0001` and `RT-0021` contracts were refined to require
+  explicit per-stream timeframe identity and independent stream state. Master V3 is unmodified.
+
 ## Current task
 
-- Phase 0 complete and `APPROVED`.
-- Phase 0.5 started under explicit authorization: `RS-0001` is implemented, reviewed and `APPROVED`.
-- Next READY: `RS-0002` (`src/resilience/CapabilityId.h`) — not started, pending explicit
-  authorization.
+- Phase 0 and Phase 0.5 are COMPLETE and `APPROVED`.
+- Next: Phase 1 (Deterministic Runtime), beginning with `RT-0001` (`src/runtime/AdapterManager.h`,
+  dependencies `RS-0019`, `FND-0010`).
 
 ## Next action
 
-1. Obtain explicit authorization before starting the next Phase 0.5 task (`RS-0002`).
-2. Preserve implementation + state in Git before ending the session.
+1. Execute Phase 1 in dependency order from `RT-0001`.
+2. Preserve implementation + state in Git after each coherent wave.
 
 ## Update rule
 

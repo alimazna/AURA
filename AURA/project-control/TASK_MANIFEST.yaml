@@ -27,7 +27,7 @@ authority_class_enum:
 - PROPOSED
 - OPEN DECISION
 path_status_note: Phase 0 filenames are from V3-42 (CANONICAL decomposition). Phase 0.5/1/2 filenames and src/ layout are PROPOSED implementation decomposition and are subject to integration review (V3-16, V3-46). They must not be treated as canonical architecture.
-current_task: "RS-0001 (ServiceDescriptor.h) APPROVED on 2026-10-02. Next READY: RS-0002 (CapabilityId.h, depends on FND-0001) — not started; do not begin without explicit authorization"
+current_task: "PHASE-0.5 APPROVED (all 20 tasks). Next READY: PHASE-1 milestone and RT-0001 (AdapterManager.h, deps RS-0019+FND-0010)."
 tasks:
 - id: TASK-BOOTSTRAP-001
   phase: BOOTSTRAP
@@ -521,41 +521,44 @@ tasks:
   module: RESILIENCE
   layer: RESILIENCE_PLANE
   authority: PROPOSED
-  status: PLANNED
+  status: APPROVED
   output: src/resilience/CapabilityId.h
   dependencies:
   - FND-0001
   objective: Define the identifier for a capability exposed to the dependency graph.
   acceptance: Stable identity; immutable; reusable across registry and impact resolution.
+  evidence: 'Implemented and reviewed 2026-10-02. Distinct CapabilityId over EntityId; stable immutable identity. Verified: self-contained standalone TU and combined all-headers TU pass under g++ -std=c++17 and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph acyclic and foundation/resilience-only; no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16; classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RS-0003
   phase: '0.5'
   module: RESILIENCE
   layer: RESILIENCE_PLANE
   authority: PROPOSED
-  status: PLANNED
+  status: APPROVED
   output: src/resilience/CapabilityDescriptor.h
   dependencies:
   - RS-0001
   - RS-0002
   objective: Define the descriptor of a capability and its owning service.
   acceptance: Binds capability to service; explicit criticality reference; no hidden defaults.
+  evidence: 'Implemented and reviewed 2026-10-02. Binds a capability to its owning ServiceDescriptor; explicit, no hidden defaults. Verified: self-contained standalone TU and combined all-headers TU pass under g++ -std=c++17 and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph acyclic and foundation/resilience-only; no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16; classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RS-0004
   phase: '0.5'
   module: RESILIENCE
   layer: RESILIENCE_PLANE
   authority: PROPOSED
-  status: PLANNED
+  status: APPROVED
   output: src/resilience/DependencyDescriptor.h
   dependencies:
   - RS-0002
   objective: Define a directed capability dependency edge.
   acceptance: Encodes direction explicitly; supports cycle detection; no implicit dependencies.
+  evidence: 'Implemented and reviewed 2026-10-02. Directed capability dependency edge; self-edges rejected. Verified: self-contained standalone TU and combined all-headers TU pass under g++ -std=c++17 and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph acyclic and foundation/resilience-only; no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16; classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RS-0005
   phase: '0.5'
   module: RESILIENCE
   layer: RESILIENCE_PLANE
   authority: PROPOSED
-  status: PLANNED
+  status: APPROVED
   output: src/resilience/HealthSnapshot.h
   dependencies:
   - RS-0001
@@ -563,68 +566,74 @@ tasks:
   - FND-0004
   objective: Define the immutable health snapshot for a service/capability.
   acceptance: Immutable, timestamped; carries state and reason; UNKNOWN not treated as safe.
+  evidence: 'Implemented and reviewed 2026-10-02. Immutable timestamped health snapshot; UNKNOWN/non-ONLINE not safe. Verified: self-contained standalone TU and combined all-headers TU pass under g++ -std=c++17 and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph acyclic and foundation/resilience-only; no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16; classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RS-0006
   phase: '0.5'
   module: RESILIENCE
   layer: RESILIENCE_PLANE
   authority: PROPOSED
-  status: PLANNED
+  status: APPROVED
   output: src/resilience/FreshnessState.h
   dependencies:
   - FND-0002
   objective: Define the data-freshness state concept.
   acceptance: Distinguishes fresh/stale/unknown; no fabricated freshness.
+  evidence: 'Implemented and reviewed 2026-10-02. FreshnessState + pure deterministic classify_freshness; no clock, no fabricated freshness. Verified: self-contained standalone TU and combined all-headers TU pass under g++ -std=c++17 and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph acyclic and foundation/resilience-only; no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16; classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RS-0007
   phase: '0.5'
   module: RESILIENCE
   layer: RESILIENCE_PLANE
   authority: PROPOSED
-  status: PLANNED
+  status: APPROVED
   output: src/resilience/DegradationImpact.h
   dependencies:
   - RS-0002
   objective: Define the impact of a capability degradation.
   acceptance: Explicitly lists affected and still-available capabilities; no implied UI-only behaviour.
+  evidence: 'Implemented and reviewed 2026-10-02. Explicit affected vs still-available capability sets. Verified: self-contained standalone TU and combined all-headers TU pass under g++ -std=c++17 and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph acyclic and foundation/resilience-only; no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16; classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RS-0008
   phase: '0.5'
   module: RESILIENCE
   layer: RESILIENCE_PLANE
   authority: PROPOSED
-  status: PLANNED
+  status: APPROVED
   output: src/resilience/CriticalityPolicy.h
   dependencies:
   - RS-0003
   objective: Define the critical-vs-non-critical capability policy.
   acceptance: Explicit classification; no silent default; supports isolation decisions.
+  evidence: 'Implemented and reviewed 2026-10-02. Explicit closed Criticality classification; UNCLASSIFIED never a silent default. Verified: self-contained standalone TU and combined all-headers TU pass under g++ -std=c++17 and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph acyclic and foundation/resilience-only; no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16; classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RS-0009
   phase: '0.5'
   module: RESILIENCE
   layer: RESILIENCE_PLANE
   authority: PROPOSED
-  status: PLANNED
+  status: APPROVED
   output: src/resilience/CapabilityRegistry.h
   dependencies:
   - RS-0003
   - RS-0004
   objective: Define the registry of capabilities and their dependencies.
   acceptance: Single source of capability metadata; deterministic lookup; no duplicate capability ids.
+  evidence: 'Implemented and reviewed 2026-10-02. Single source of capability metadata; duplicate/unregistered rejected; deterministic lookup. Verified: self-contained standalone TU and combined all-headers TU pass under g++ -std=c++17 and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph acyclic and foundation/resilience-only; no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16; classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RS-0010
   phase: '0.5'
   module: RESILIENCE
   layer: RESILIENCE_PLANE
   authority: PROPOSED
-  status: PLANNED
+  status: APPROVED
   output: src/resilience/DependencyGraph.h
   dependencies:
   - RS-0004
   objective: Define the capability dependency graph used for impact resolution.
   acceptance: Deterministic traversal; cycle-safe; encodes the capability dependency graph rather than implying it (V3-15).
+  evidence: 'Implemented and reviewed 2026-10-02. Explicit directed dependency graph; deterministic traversal; cycle-safe. Verified: self-contained standalone TU and combined all-headers TU pass under g++ -std=c++17 and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph acyclic and foundation/resilience-only; no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16; classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RS-0011
   phase: '0.5'
   module: RESILIENCE
   layer: RESILIENCE_PLANE
   authority: PROPOSED
-  status: PLANNED
+  status: APPROVED
   output: src/resilience/HealthStateEngine.h
   dependencies:
   - RS-0005
@@ -632,36 +641,39 @@ tasks:
   - RS-0010
   objective: Define the engine that derives aggregate health state from service health.
   acceptance: Deterministic aggregation; propagates dependency failure; no fabricated healthy state.
+  evidence: 'Implemented and reviewed 2026-10-02. Deterministic aggregate health; propagates dependency failure; never fabricates ONLINE. Verified: self-contained standalone TU and combined all-headers TU pass under g++ -std=c++17 and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph acyclic and foundation/resilience-only; no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16; classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RS-0012
   phase: '0.5'
   module: RESILIENCE
   layer: RESILIENCE_PLANE
   authority: PROPOSED
-  status: PLANNED
+  status: APPROVED
   output: src/resilience/DataFreshnessMonitor.h
   dependencies:
   - RS-0006
   - FND-0002
   objective: Define the monitor that evaluates data freshness.
   acceptance: Deterministic; distinguishes stale vs fresh vs unknown; no lookahead.
+  evidence: 'Implemented and reviewed 2026-10-02. Deterministic freshness monitor; caller supplies times; no lookahead. Verified: self-contained standalone TU and combined all-headers TU pass under g++ -std=c++17 and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph acyclic and foundation/resilience-only; no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16; classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RS-0013
   phase: '0.5'
   module: RESILIENCE
   layer: RESILIENCE_PLANE
   authority: PROPOSED
-  status: PLANNED
+  status: APPROVED
   output: src/resilience/StaleCandleDetector.h
   dependencies:
   - RS-0006
   - FND-0007
   objective: Define the detector for stale candles per timeframe.
   acceptance: Reports the exact stale timeframe; never treats stale data as fresh (V3-13).
+  evidence: 'Implemented and reviewed 2026-10-02. Per-timeframe stale-candle detection; exact timeframe reported; stale never fresh. Verified: self-contained standalone TU and combined all-headers TU pass under g++ -std=c++17 and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph acyclic and foundation/resilience-only; no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16; classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RS-0014
   phase: '0.5'
   module: RESILIENCE
   layer: RESILIENCE_PLANE
   authority: PROPOSED
-  status: PLANNED
+  status: APPROVED
   output: src/resilience/SubsystemIsolationManager.h
   dependencies:
   - RS-0009
@@ -669,12 +681,13 @@ tasks:
   - FND-0004
   objective: Define the manager that isolates a failed subsystem.
   acceptance: Disables only dependent capabilities; keeps safe independent capabilities running (V3-13).
+  evidence: 'Implemented and reviewed 2026-10-02. Disables only dependents; keeps independent capabilities available. Verified: self-contained standalone TU and combined all-headers TU pass under g++ -std=c++17 and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph acyclic and foundation/resilience-only; no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16; classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RS-0015
   phase: '0.5'
   module: RESILIENCE
   layer: RESILIENCE_PLANE
   authority: PROPOSED
-  status: PLANNED
+  status: APPROVED
   output: src/resilience/GracefulDegradationManager.h
   dependencies:
   - RS-0008
@@ -683,12 +696,13 @@ tasks:
   - RS-0007
   objective: Define the manager that applies graceful degradation decisions.
   acceptance: Applies policy deterministically; records affected capabilities; never fabricates data.
+  evidence: 'Implemented and reviewed 2026-10-02. Applies criticality + isolation deterministically; records affected; no fabricated data. Verified: self-contained standalone TU and combined all-headers TU pass under g++ -std=c++17 and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph acyclic and foundation/resilience-only; no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16; classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RS-0016
   phase: '0.5'
   module: RESILIENCE
   layer: RESILIENCE_PLANE
   authority: PROPOSED
-  status: PLANNED
+  status: APPROVED
   output: src/resilience/RecoveryManager.h
   dependencies:
   - RS-0011
@@ -696,12 +710,13 @@ tasks:
   - FND-0017
   objective: Define the manager that recovers subsystems when possible.
   acceptance: Recovery prefers known-valid state; recovery result is auditable.
+  evidence: 'Implemented and reviewed 2026-10-02. Recovery prefers known-valid state; unrecoverable escalates; auditable decision. Verified: self-contained standalone TU and combined all-headers TU pass under g++ -std=c++17 and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph acyclic and foundation/resilience-only; no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16; classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RS-0017
   phase: '0.5'
   module: RESILIENCE
   layer: RESILIENCE_PLANE
   authority: PROPOSED
-  status: PLANNED
+  status: APPROVED
   output: src/resilience/PauseResumeManager.h
   dependencies:
   - RS-0009
@@ -709,24 +724,26 @@ tasks:
   - FND-0005
   objective: Define the pause/resume manager for subsystems.
   acceptance: Pause/resume bounded by authority; UI can report what paused and why (V3-15).
+  evidence: 'Implemented and reviewed 2026-10-02. Pause/resume bounded by authority; reason required; paused != failed. Verified: self-contained standalone TU and combined all-headers TU pass under g++ -std=c++17 and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph acyclic and foundation/resilience-only; no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16; classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RS-0018
   phase: '0.5'
   module: RESILIENCE
   layer: RESILIENCE_PLANE
   authority: PROPOSED
-  status: PLANNED
+  status: APPROVED
   output: src/resilience/ImpactResolver.h
   dependencies:
   - RS-0007
   - RS-0010
   objective: Define the resolver that maps failures to capability impact.
   acceptance: Deterministic impact set; exact failed timeframe/capability reported (V3-15).
+  evidence: 'Implemented and reviewed 2026-10-02. Deterministic impact set; exact failed capability reported. Verified: self-contained standalone TU and combined all-headers TU pass under g++ -std=c++17 and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph acyclic and foundation/resilience-only; no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16; classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RS-0019
   phase: '0.5'
   module: RESILIENCE
   layer: RESILIENCE_PLANE
   authority: PROPOSED
-  status: PLANNED
+  status: APPROVED
   output: src/resilience/SystemSupervisor.h
   dependencies:
   - RS-0011
@@ -736,12 +753,13 @@ tasks:
   - GDN-0003
   objective: Define the supervisor that coordinates health, degradation, recovery, and pause/resume.
   acceptance: Coordinates without granting new authority; deterministic state transitions; no live-trading enablement.
+  evidence: 'Implemented and reviewed 2026-10-02. Coordinates health/degradation/recovery/pause; consults Guardian; grants no new authority. Verified: self-contained standalone TU and combined all-headers TU pass under g++ -std=c++17 and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph acyclic and foundation/resilience-only; no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16; classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RS-0020
   phase: '0.5'
   module: RESILIENCE
   layer: RESILIENCE_PLANE
   authority: PROPOSED
-  status: PLANNED
+  status: APPROVED
   output: src/resilience/DegradationTests.cpp
   dependencies:
   - RS-0015
@@ -749,6 +767,7 @@ tasks:
   - RS-0013
   objective: Define deterministic tests proving graceful degradation and isolation behaviour.
   acceptance: Tests prove non-critical failure does not fail the whole system; exact failed timeframe reported; deterministic.
+  evidence: 'Implemented and reviewed 2026-10-02. Behavioural tests prove non-critical isolation, exact stale timeframe, determinism. Verified: self-contained standalone TU and combined all-headers TU pass under g++ -std=c++17 and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph acyclic and foundation/resilience-only; no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16; classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RT-0001
   phase: '1'
   module: DETERMINISTIC_RUNTIME
@@ -760,7 +779,7 @@ tasks:
   - RS-0019
   - FND-0010
   objective: Define the MT5/MQL5 adapter manager boundary.
-  acceptance: Adapter health surfaced; per-timeframe state tracked; no fabricated data on failure.
+  acceptance: One physical MT5 EA / one transport carrying nine logically independent timeframe streams (M1,M5,M15,M30,H1,H4,D1,W1,MN1) with explicit timeframe identity per stream; independent per-stream health, closed-bar state, sequence and last-error tracking; one stream failing must not mark others unhealthy and one stream recovering must not overwrite another's state; no positional multiplexing; no fabricated data on failure (V3-29, MT5 one-EA decision).
 - id: RT-0002
   phase: '1'
   module: DETERMINISTIC_RUNTIME
@@ -994,7 +1013,7 @@ tasks:
   dependencies:
   - RT-0001
   objective: Document the C++<->MQL5 runtime boundary contract (not an implementation).
-  acceptance: Boundary contract explicit; no invented broker contract; real connection remains unproven until measured.
+  acceptance: Boundary contract explicit; each message/event carries explicit timeframe identity (no positional multiplexing); one transport may carry nine logical streams while preserving independent stream state and closed-bar identity; no invented broker contract; real connection remains unproven until measured (MT5 one-EA decision).
 - id: OB-0001
   phase: '2'
   module: OBSERVATION_OUTCOMES
@@ -1166,12 +1185,13 @@ tasks:
   module: RESILIENCE_GRACEFUL_DEGRADATION
   layer: PHASE_MILESTONE
   authority: PROJECT DECISION
-  status: PLANNED
+  status: APPROVED
   output: (phase milestone - aggregates the phase's file-level tasks)
   dependencies:
   - PHASE-0
   objective: Complete Phase 0.5 resilience and graceful-degradation foundations.
   acceptance: Capability dependency graph encoded; degradation/isolation tests prove non-critical failure isolation.
+  evidence: 'Phase 0.5 review/integration gate (2026-10-02): all 20 file-level tasks APPROVED. RS-0020 behavioural tests pass (real code paths, no mocks) under c++17/c++20 strict, proving non-critical failure isolation (independent capabilities stay available), exact stale-timeframe reporting, deterministic health/impact/recovery, and cycle-safe dependency traversal. Capability dependency graph encoded explicitly (RS-0009/RS-0010). All 19 resilience headers self-contained and combined TU compiles under both standards; include graph acyclic and foundation/resilience-only; no duplicate types; no future-phase behaviour; no live-trading enablement. Phase gate PASSED.'
 - id: PHASE-1
   phase: '1'
   module: DETERMINISTIC_RUNTIME

@@ -331,6 +331,43 @@ ServiceState; no runtime behaviour") and the V3-13/V3-15/V3-16/V3-40/V3-46/V3-49
 `APPROVED`. No source defect found; no dependency contract was changed. Compilation and structural
 checks support — but do not by themselves prove — architectural correctness.
 
+## 2026-10-02 — Phase 0.5 resilience (RS-0001..RS-0020)
+
+Scope: Phase 0.5, `src/resilience/`. 20 file-level tasks; RS-0001 completed earlier, RS-0002..RS-0020
+in this session.
+
+Commands (ad-hoc; no application build system exists):
+- per-header self-containment: `g++ -std={c++17,c++20} -Wall -Wextra -Werror -pedantic -I src <TU>`
+- combined all-headers TU incl. `src/foundation/*.cpp` under both standards
+- `g++ -std={c++17,c++20} ... src/resilience/DegradationTests.cpp src/foundation/Hasher.cpp -o t && ./t`
+- static include-graph / duplicate-type / dependency-direction analysis (python)
+
+Result: PASS.
+- All 19 resilience headers are self-contained (standalone TU) under c++17 and c++20 strict; the
+  combined all-headers TU compiles under both.
+- `DegradationTests.cpp` passes under both standards, exercising real code paths (no mocks):
+  duplicate capability ids rejected; self-edges rejected; cycle detected and topological order empty
+  on a cyclic graph; deterministic topological order (dependencies before dependents); dependency
+  failure degrades dependents; independent capability stays ONLINE; missing/unregistered health is
+  BLOCKED (never fabricated ONLINE); isolation disables only dependents and keeps independent
+  capabilities available; non-critical failure is tolerable while critical/unclassified requires
+  protection; impact names the exact failed capability; recovery prefers known-valid state and
+  escalates to SAFE_MODE when none exists; paused is not treated as failed; freshness distinguishes
+  FRESH/STALE/EXPIRED and treats future/incoherent input as UNKNOWN; per-timeframe stale detection
+  reports exactly the stale timeframe (M15) while the other eight stay VALID; pause requires a
+  reason and an operating mode; the supervisor consults the Guardian and reports HALT/SAFE_MODE
+  without escalating itself.
+- Include graph: acyclic; resilience headers include only `foundation/` and `resilience/` (no hidden
+  higher-layer dependency). No duplicate type names. No future-phase behaviour; no live-trading
+  enablement. Secret scan: none.
+
+Interpretation:
+Phase 0.5 satisfies the V3-13/V3-15/V3-16 requirements and the `PHASE-0.5` milestone acceptance
+("capability dependency graph encoded; degradation/isolation tests prove non-critical failure
+isolation"). All 20 Phase 0.5 tasks and the milestone are classified `APPROVED`. Compilation and
+structural checks support — but do not by themselves prove — architectural correctness; no
+profitability, calibration, broker-validation or production-safety claim is made.
+
 ## Future test entry format
 
 - Date

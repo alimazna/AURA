@@ -82,6 +82,20 @@ Date: 2026-10-02
   authorization.
 - Pushed to `origin/main`; remote URL is token-free and no credential is persisted anywhere.
 
+### Session end state (2026-10-02, Phase 0.5 complete)
+
+- Phase 0.5 is COMPLETE: all 20 file-level tasks (`RS-0001`..`RS-0020`) and the `PHASE-0.5`
+  milestone are `APPROVED`.
+- `src/resilience/` now holds capability identity/descriptors, health/freshness, the explicit
+  capability dependency graph, impact/degradation, recovery/pause, coordination, and the
+  `DegradationTests.cpp` behavioural test artifact.
+- Verification: 19 resilience headers self-contained + combined TU under c++17/c++20 strict;
+  `DegradationTests.cpp` passes under both standards. Details in `TEST_LOG.md`.
+- MT5 one-EA / nine-logical-stream deployment decision recorded in `DECISIONS.md`; `RT-0001` and
+  `RT-0021` contracts refined accordingly. Master V3 unmodified.
+- Next READY: Phase 1, `RT-0001` (`src/runtime/AdapterManager.h`, deps `RS-0019`, `FND-0010`).
+- Pushed to `origin/main`; remote URL is token-free and no credential is persisted anywhere.
+
 ### Session end state (2026-10-02, RS-0001)
 
 - Phase 0.5 started under explicit authorization. Exactly one task executed: `RS-0001`
