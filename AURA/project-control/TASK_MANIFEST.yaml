@@ -31,14 +31,16 @@ authority_class_enum:
 path_status_note: Phase 0 filenames are from V3-42 (CANONICAL decomposition). Phase 0.5/1/2 filenames
   and src/ layout are PROPOSED implementation decomposition and are subject to integration review (V3-16,
   V3-46). They must not be treated as canonical architecture.
-current_task: 'Canonical Phases 0-13 COMPLETE and TESTED, plus Phase 9 desktop productization and the
-  V3-37 control-center section integration. Phase 13 (durable persistence + crash recovery +
-  packaging/CI) and the Windows x64 Release package are done; Phase 9 now includes a real desktop GUI
-  (GUI-0001, Dear ImGui + GLFW + OpenGL) with a headless integration smoke, a bounded Xvfb
-  interactive-runtime smoke, and read-only projections for every V3-37 section (GUI-0004..GUI-0006:
-  wired sections bound to live runtime data; unsourced sections explicit NOT AVAILABLE). Manifest graph
-  199 tasks. Remaining are environment/data-unproven only (real-Windows-desktop interactive GUI, real
-  MT5/MetaEditor round-trip, licensed XAUUSD datasets).'
+current_task: 'Canonical Phases 0-13 COMPLETE and TESTED, plus Phase 9 desktop productization, the
+  V3-37 control-center section integration, and the renderer-compatibility fallback. Phase 13 (durable
+  persistence + crash recovery + packaging/CI) and the Windows x64 Release package are done; Phase 9
+  includes a real desktop GUI (GUI-0001, Dear ImGui + GLFW + OpenGL) with a headless integration smoke,
+  a bounded Xvfb interactive-runtime smoke, read-only projections for every V3-37 section
+  (GUI-0004..GUI-0006: wired sections bound to live runtime data; unsourced sections explicit NOT
+  AVAILABLE), and an OpenGL 3.3 -> OpenGL 2.1 renderer fallback for legacy GPUs (GUI-0007..GUI-0008,
+  TESTED on software GL; the specific Intel HD 3000 hardware is UNPROVEN, BLOCK-006). Manifest graph
+  201 tasks. Remaining are environment/data-unproven only (real-Windows-desktop interactive GUI on
+  legacy GPU, real MT5/MetaEditor round-trip, licensed XAUUSD datasets).'
 tasks:
 - id: TASK-BOOTSTRAP-001
   phase: BOOTSTRAP
@@ -2648,24 +2650,27 @@ tasks:
   layer: OPERATING_GOVERNANCE_PLANE
   authority: CANONICAL
   status: TESTED
-  output: (phase milestone - aggregates DESK-0001..DESK-0003 + GUI-0001..GUI-0006)
+  output: (phase milestone - aggregates DESK-0001..DESK-0003 + GUI-0001..GUI-0008)
   dependencies:
   - DESK-0003
   - GUI-0001
-  - GUI-0006
+  - GUI-0008
   objective: Phase 9 Desktop Control Center milestone (headless view-models + real GUI productization
-    + the full V3-37 read-only section integration).
+    + the full V3-37 read-only section integration + legacy-GPU renderer fallback).
   acceptance: All file-level tasks APPROVED/IMPLEMENTED; tests pass; GUI builds and its integration
     and interactive-runtime smokes pass; every V3-37 section is either wired to real data or explicitly
-    NOT AVAILABLE (never fabricated).
+    NOT AVAILABLE (never fabricated); the GUI prefers OpenGL 3.3 and falls back to OpenGL 2.1 on legacy
+    hardware without fabricating capability.
   evidence: 'DESK-0001..0003 APPROVED (headless view-models). GUI-0001 IMPLEMENTED (Dear ImGui + GLFW
     + OpenGL control center). GUI-0004..0006 IMPLEMENTED (read-only projections for all remaining V3-37
-    sections; wired sections bound to live runtime data; unsourced sections NOT AVAILABLE). Local:
-    DesktopTests PASS c++17/c++20 strict; default build 18/18, GUI build 19/19; aura_gui --self-test
-    PASS; Xvfb interactive smoke cycles all 19 sections and shuts down cleanly. Remote CI for these new
-    commits (run 37118241974, commit e4bde97) is ALL GREEN across 6/6 jobs and recorded in TEST_LOG.md.
-    Real-Windows-desktop interactive verification remains UNPROVEN; MT5 EA round-trip UNPROVEN. Shadow
-    only.'
+    sections; wired sections bound to live runtime data; unsourced sections NOT AVAILABLE). GUI-0007..0008
+    TESTED (OpenGL 3.3 -> 2.1 renderer fallback for legacy GPUs; forced-auto-fallback smoke proves the
+    fallback path; specific Intel HD 3000 hardware UNPROVEN, BLOCK-006). Local: DesktopTests PASS
+    c++17/c++20 strict; default build 18/18, GUI build 19/19; aura_gui --self-test PASS; Xvfb interactive
+    smoke cycles all 19 sections and shuts down cleanly; AUTO/legacy/forced-fallback renderer smokes PASS.
+    Remote CI for these new commits (run 37118241974, commit e4bde97) is ALL GREEN across 6/6 jobs and
+    recorded in TEST_LOG.md. Real-Windows-desktop interactive verification (incl. legacy GPU) remains
+    UNPROVEN; MT5 EA round-trip UNPROVEN. Shadow only.'
 - id: TG-0001
   phase: '10'
   module: AUXILIARY_TELEGRAM
@@ -3131,6 +3136,60 @@ tasks:
   evidence: 'DONE 2026-10-03: added test_section_panel_availability, test_incident_propagation_and_corruption,
     test_single_runtime_owner. DesktopTests ALL PASS under g++ c++17 and c++20 strict (real code paths,
     no mocks); registered with CTest (DesktopTests); remote CI run 37118241974 all 6 jobs green.'
+- id: GUI-0007
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: APPLICATION_PLANE
+  authority: PROPOSED
+  status: TESTED
+  output: src/desktop/RendererPolicy.h (new), tools/aura_gui.cpp, CMakeLists.txt
+  dependencies:
+  - GUI-0001
+  objective: Renderer-compatibility fallback for the desktop control center. Prefer an OpenGL 3.3 core
+    context; if the driver cannot provide one (e.g. legacy Intel HD Graphics 3000 on Windows, whose
+    driver rejects the core-profile request with WGL_ARB_create_context_profile unavailable), fall back
+    to an OpenGL 2.1 compatibility context driven by the ImGui OpenGL2 backend. Never fabricate
+    capability; report the renderer actually in use; fail with an actionable error only when no context
+    can be created.
+  acceptance: Modern-first with a legacy fallback; the legacy profile never requests a core profile and
+    uses GLSL version 120 via ImGui_ImplOpenGL2; the startup diagnostic and status bar name the ACTUAL
+    renderer (MODERN_GL33 or LEGACY_GL21) and never claim OpenGL 3.3 when it was unavailable; when no
+    context exists, exit non-zero with a message naming the attempts and pointing at the headless
+    console host; --self-test behavior unchanged; GUI remains read-only/shadow-only with no live-order
+    path; a --renderer auto|modern|legacy selector allows pinning a path for diagnostics and CI.
+  evidence: 'DONE 2026-10-03 (UNVERIFIED on the specific Intel HD 3000 hardware): added
+    src/desktop/RendererPolicy.h (pure, deterministic selection policy: hints_for, RendererSelector,
+    RendererChoice, renderer_diagnostic, no_renderer_error; no GLFW/GL, unit-testable). tools/aura_gui.cpp
+    now sets hints only from the policy, creates the modern context first and the legacy context on
+    failure, drives ImGui_ImplOpenGL2 (legacy) or ImGui_ImplOpenGL3 (modern), prints the active renderer,
+    and parses --renderer auto|modern|legacy. CMakeLists.txt compiles backends/imgui_impl_opengl2.cpp
+    into aura_imgui. Local verification (Linux, Mesa software GL): GUI OFF build 18/18 ctest PASS; GUI
+    build c++17 19/19 ctest PASS and c++20 19/19 ctest PASS; --self-test PASS; AUTO interactive smoke
+    -> renderer=MODERN_GL33, 40 frames, clean shutdown; --renderer legacy -> renderer=LEGACY_GL21,
+    40 frames, clean shutdown; AUTO with MESA_GL_VERSION_OVERRIDE=2.1 (forces modern failure)
+    -> renderer=LEGACY_GL21, 40 frames, clean shutdown; --renderer modern with Mesa capped -> exit 3
+    with the actionable no-renderer error. CI desktop-gui job extended with modern-pin, legacy, and
+    forced-auto-fallback smokes. The specific Intel HD 3000 hardware is not available in CI and remains
+    UNPROVEN (BLOCK-006). Shadow only.'
+- id: GUI-0008
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: OPERATING_GOVERNANCE_PLANE
+  authority: PROPOSED
+  status: TESTED
+  output: src/desktop/DesktopTests.cpp (extended)
+  dependencies:
+  - GUI-0007
+  objective: Deterministic unit tests for the renderer-selection policy and fallback state machine.
+  acceptance: Modern hints keep the 3.3 core request and GLSL 330; legacy hints request 2.1
+    compatibility (no core profile) and GLSL 120; the selector prefers modern, falls back to legacy
+    on failure, is terminal-fail only when both fail, and pinned selectors attempt exactly one profile;
+    the diagnostic names the actual renderer and reports 3.3 unavailable only when it truly was; the
+    no-renderer error names the attempts actually made and points at aura.exe.
+  evidence: 'DONE 2026-10-03: added test_renderer_policy_hints, test_renderer_selector_modern_success,
+    test_renderer_selector_legacy_fallback, test_renderer_selector_both_fail, test_renderer_selector_pinned
+    (real code paths, no mocks; deterministic, no GL/GLFW). DesktopTests ALL PASS under g++ c++17 and
+    c++20 strict with -Wall -Wextra -Werror -pedantic, and via CTest in the GUI build (19/19).'
 - id: MT5-REAL-0001
   phase: DEFERRED
   module: MT5_RUNTIME

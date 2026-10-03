@@ -1,5 +1,68 @@
 # AURA — Test Log
 
+## 2026-10-03 — Renderer fallback for legacy GPUs (GUI-0007/GUI-0008)
+
+Scope: make the desktop control center usable on hardware without an OpenGL 3.3 context (legacy Intel
+HD Graphics 3000 on Windows). Modern-first (OpenGL 3.3 core) with a safe OpenGL 2.1 compatibility
+fallback; never fabricate capability; no live-order path; no MQL5/MT5 changes. Shadow-only preserved.
+
+Environment: Linux (g++ 14.2.0, CMake 4.4.3, Mesa software GL under Xvfb). No Intel HD 3000 GPU is
+available here, so that specific hardware path is NOT exercised (see BLOCK-006).
+
+Changes under test:
+- New `src/desktop/RendererPolicy.h`: pure, deterministic selection policy (`hints_for`,
+  `RendererSelector` with modern->legacy fallback and pinned single-profile mode, `RendererChoice`,
+  `renderer_diagnostic`, `no_renderer_error`). No GLFW/GL, no I/O, no clock.
+- `tools/aura_gui.cpp`: sets GLFW hints only from the policy; creates the OpenGL 3.3 core context first
+  and the OpenGL 2.1 compatibility context on failure; drives `ImGui_ImplOpenGL2` (legacy, GLSL 120) or
+  `ImGui_ImplOpenGL3` (modern, GLSL 330); prints the active renderer and shows it in the status bar;
+  parses `--renderer auto|modern|legacy`.
+- `CMakeLists.txt`: compiles `backends/imgui_impl_opengl2.cpp` into `aura_imgui`.
+- `.github/workflows/ci.yml`: desktop-gui job gains modern-pin, legacy, and forced-auto-fallback smokes.
+- `src/desktop/DesktopTests.cpp`: five deterministic unit tests for the policy and fallback state
+  machine (real code paths, no mocks).
+
+Build command (local):
+`cmake -S . -B build-gui17 -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=17 -DAURA_BUILD_GUI=ON`
+then `cmake --build build-gui17 -j`; likewise `-DCMAKE_CXX_STANDARD=20` into `build-gui20`; and a
+default (GUI OFF) build into `build-off`.
+
+Build result: PASS (all three configurations; `aura_gui` links the new OpenGL2 backend).
+
+Test command:
+- `ctest --test-dir build-off` ; `ctest --test-dir build-gui17` ; `ctest --test-dir build-gui20`
+- `g++ -std=c++17|c++20 -Wall -Wextra -Werror -pedantic -Isrc src/desktop/DesktopTests.cpp
+  src/foundation/Hasher.cpp` then run the binary
+- `xvfb-run -a -s "-screen 0 1360x860x24" timeout 90 ./build-gui17/aura_gui --gui --frames 40
+  --store <p>` (AUTO); with `--renderer modern`; with `--renderer legacy`; and AUTO with
+  `MESA_GL_VERSION_OVERRIDE=2.1 MESA_GLSL_VERSION_OVERRIDE=120` (forces the modern attempt to fail)
+- `./build-gui17/aura_gui --self-test --store <p>`
+
+Test result: PASS.
+- Default build 18/18 ctest; GUI c++17 19/19; GUI c++20 19/19.
+- `DesktopTests` ALL PASS under c++17 and c++20 strict (includes the five new renderer tests).
+- `--self-test` PASS (270 frames, 9/9 streams, shadow-only, checkpoint OK, recovery CLEAN_SHUTDOWN
+  resumable) — unchanged by the fallback.
+- AUTO interactive smoke: `renderer=MODERN_GL33`, 40 frames rendered, clean shutdown checkpoint OK.
+- `--renderer legacy`: `renderer=LEGACY_GL21`, 40 frames rendered, clean shutdown checkpoint OK.
+- AUTO with Mesa capped at 2.1: `GLFW error 65543` on the modern attempt, then
+  `renderer=LEGACY_GL21 ...; OpenGL 3.3 unavailable (GLFW error 65543)`, 40 frames rendered, clean
+  shutdown checkpoint OK (the fallback path is genuinely exercised, not just linked).
+- `--renderer modern` with Mesa capped at 2.1: exit code 3 with the actionable error
+  `could not create any OpenGL context. Tried MODERN_GL33 (GLFW error 65543). Actionable: update the
+  graphics driver, or use the console host aura.exe` (no pretend-success, no fabricated renderer).
+
+Files changed: `src/desktop/RendererPolicy.h` (new), `tools/aura_gui.cpp`, `CMakeLists.txt`,
+`src/desktop/DesktopTests.cpp`, `.github/workflows/ci.yml`, and the control-plane files.
+
+Known failures: none locally. Remote CI result is recorded after push.
+
+Interpretation: the GUI no longer terminates merely because OpenGL 3.3 is unavailable; it falls back to
+OpenGL 2.1 compatibility, names the renderer actually in use, and only fails when no context can be
+created. The fallback code path is proven on software GL, but the specific Intel HD Graphics 3000 /
+driver 9.17.10.4459 hardware is NOT available in CI and remains UNPROVEN. This does NOT establish
+profitability, calibrated probability, broker validation, production safety, or live-trading readiness.
+
 ## 2026-10-03 — Phase 9 V3-37 section integration (GUI-0004/0005/0006)
 
 Scope: extend the desktop control center with read-only projections for the remaining V3-37 sections

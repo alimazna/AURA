@@ -385,11 +385,43 @@ This is the human-readable snapshot of where the project currently stands.
   GUI rendering is UNPROVEN (the Xvfb smoke is software-rendered on Linux); MT5/MetaEditor is UNPROVEN.
   Phase 9 now also ships a real GUI (`aura_gui`, see the Current task section).
 
+## Renderer compatibility fallback for legacy GPUs (2026-10-03)
+
+A real Windows 10 machine with **Intel HD Graphics 3000** (driver `9.17.10.4459`) exposed a real
+compatibility gap: `aura_gui.exe --self-test` passed, but `aura_gui.exe --gui` failed with
+`GLFW error 65543: WGL: OpenGL profile requested but WGL_ARB_create_context_profile is unavailable`,
+because the previous build requested an OpenGL 3.3 core-profile context unconditionally and exited when
+it could not be created.
+
+- `GUI-0007` (renderer fallback, `TESTED`): added a pure, deterministic selection policy
+  (`src/desktop/RendererPolicy.h`: `hints_for`, `RendererSelector`, `RendererChoice`,
+  `renderer_diagnostic`, `no_renderer_error`; no GLFW/GL, unit-testable). `tools/aura_gui.cpp` now sets
+  GLFW hints only from that policy, creates the **OpenGL 3.3 core** context first and, on failure, the
+  **OpenGL 2.1 compatibility** context, driving `ImGui_ImplOpenGL2` (legacy) or `ImGui_ImplOpenGL3`
+  (modern). The startup line and the status bar name the renderer actually in use (`MODERN_GL33` /
+  `LEGACY_GL21`); the legacy profile never requests a core profile and uses GLSL version 120. If no
+  context can be created at all, the program exits non-zero with an actionable message naming the
+  attempts and pointing at the headless console host `aura.exe`. A `--renderer auto|modern|legacy`
+  selector allows pinning a path for diagnostics and CI. `CMakeLists.txt` now compiles
+  `backends/imgui_impl_opengl2.cpp` into `aura_imgui`.
+- `GUI-0008` (fallback tests, `TESTED`): added five deterministic unit tests
+  (`test_renderer_policy_hints`, `test_renderer_selector_modern_success`,
+  `test_renderer_selector_legacy_fallback`, `test_renderer_selector_both_fail`,
+  `test_renderer_selector_pinned`) over real code paths (no mocks, no GL/GLFW).
+- The GUI remains **read-only / shadow-only**; no live-order path was added. `--self-test` is unchanged.
+- **Unproven:** the specific Intel HD 3000 hardware could not be exercised here (no such GPU in CI; the
+  Linux Xvfb runner uses software Mesa). The fallback code path is proven by forcing the legacy renderer
+  and by capping Mesa at GL 2.1 to force the AUTO fallback, but that is not the same as a verified
+  legacy-GPU render. See `BLOCK-006`.
+
 ## Explicit blockers (2026-10-03)
 
 - GUI-0001 (real desktop control center) — RESOLVED 2026-10-03: a Dear ImGui + GLFW + OpenGL GUI now
   builds and runs (`aura_gui`), with a headless integration smoke and a bounded Xvfb interactive smoke.
   One remainder is UNPROVEN: interactive rendering on a real Windows desktop has not been human-verified.
+- BLOCK-006 (legacy-GPU GUI compatibility) — BLOCKED on hardware-specific verification only: the
+  OpenGL 3.3 -> 2.1 fallback is implemented and `TESTED` on software GL, but the Intel HD Graphics 3000
+  path is UNPROVEN (no such GPU in CI). Needs a re-run of the new `aura_gui.exe` on that machine.
 - MT5-REAL-0001 (MetaEditor compile + live terminal run) — BLOCKED (no MetaEditor/MT5 on Linux).
 - VAL-EVID-0001 (historical XAUUSD validation campaign) — BLOCKED on a licensed dataset.
 See `project-control/BLOCKED.md`.
@@ -415,41 +447,49 @@ See `project-control/BLOCKED.md`.
   validation evidence, approvals, evolution graph, schedule/operating window, operating-window
   checkpoints — are shown explicitly as **`NOT AVAILABLE`**, never fabricated. The GUI exposes no
   live-order path; the shadow-only invariant is asserted in tests and self-test.
-- The manifest graph is now 199 file-level tasks (178 `APPROVED`, 7 `TESTED`, 2 `IMPLEMENTED`
+- The manifest graph is now 201 file-level tasks (178 `APPROVED`, 9 `TESTED`, 2 `IMPLEMENTED`
   [TASK-MANIFEST-001, GUI-0001], 10 `DEFERRED`, 2 `BLOCKED`). The 10 deferred Master capabilities
   remain visible.
-- Remaining unproven items are environment/data-bound (real-Windows-desktop interactive GUI, real
-  MetaEditor/MT5 run, historical dataset campaign, and wiring sources for the still-`NOT AVAILABLE`
-  panels). No live trading is enabled; Phase 11 stays a gate/registry.
+- Remaining unproven items are environment/data-bound (real-Windows-desktop interactive GUI including
+  the legacy-GPU path, real MetaEditor/MT5 run, historical dataset campaign, and wiring sources for the
+  still-`NOT AVAILABLE` panels). No live trading is enabled; Phase 11 stays a gate/registry.
 
 ## Verification (2026-10-03, local; remote CI recorded after push)
 
 - `DesktopTests` PASS under g++ `-std=c++17`/`c++20` `-Wall -Wextra -Werror -pedantic` (real code paths,
-  no mocks): added `test_section_panel_availability`, `test_incident_propagation_and_corruption`,
-  `test_single_runtime_owner`.
+  no mocks): section/incident/single-owner tests plus the five renderer-policy/fallback tests.
 - Default (GUI OFF) CMake build + ctest: **18/18 passed**. GUI build (`AURA_BUILD_GUI=ON`) c++17 and
   c++20: **19/19 passed** each.
 - `aura_gui --self-test` PASS (270 frames, 9/9 streams, shadow-only, ledger+version sourced, incidents
   wired, unsourced sections `NOT AVAILABLE`, checkpoint OK, recovery CLEAN_SHUTDOWN resumable).
 - `aura_gui --gui --frames N` interactive smoke under Xvfb software OpenGL PASS: booted, cycled through
   all 19 V3-37 sections, clean shutdown checkpoint OK.
-- NOT claimed: interactive rendering on a real Windows desktop (UNPROVEN); any profitability,
-  calibration, broker-validation or production-safety claim.
+- Renderer smokes under Xvfb (software Mesa): `--renderer modern` -> `renderer=MODERN_GL33`; `--renderer
+  legacy` -> `renderer=LEGACY_GL21`; AUTO with `MESA_GL_VERSION_OVERRIDE=2.1` (forces the modern attempt
+  to fail) -> `renderer=LEGACY_GL21` with `OpenGL 3.3 unavailable` and clean shutdown; `--renderer
+  modern` with Mesa capped -> exit 3 with the actionable no-renderer error. Each rendered frames and shut
+  down cleanly.
+- NOT claimed: interactive rendering on a real Windows desktop, and specifically the Intel HD Graphics
+  3000 path (UNPROVEN); any profitability, calibration, broker-validation or production-safety claim.
 
 ## Next action
 
-1. When a MetaEditor/MT5 environment becomes available, run Phase 11 controlled validation
+1. Re-run the updated `aura_gui.exe` (from the new Windows x64 Release package) on the Windows 10 /
+   Intel HD Graphics 3000 machine to confirm the startup line reports `renderer=LEGACY_GL21` and the
+   control center renders and shuts down cleanly; record the real result in `TEST_LOG.md` (closes
+   BLOCK-006).
+2. When a MetaEditor/MT5 environment becomes available, run Phase 11 controlled validation
    (demo/shadow only) behind the readiness gate; record real results in `TEST_LOG.md`.
-2. Optionally have a human run `aura_gui --gui` on a real Windows desktop to promote the interactive
+3. Optionally have a human run `aura_gui --gui` on a real Windows desktop to promote the interactive
    GUI from UNPROVEN to VERIFIED; do not claim it verified from the CI smoke alone.
-3. Optional hardening: a SIGKILL-during-write recovery test to prove the atomic temp+rename path
+4. Optional hardening: a SIGKILL-during-write recovery test to prove the atomic temp+rename path
    leaves either the old or the complete new file, never a torn one.
-4. Increase GUI data coverage: wire the remaining `NOT AVAILABLE` panels (prediction/observation,
+5. Increase GUI data coverage: wire the remaining `NOT AVAILABLE` panels (prediction/observation,
    knowledge, research, candidates, validation evidence, approvals, evolution, schedule, operating-window
    checkpoints) to their existing read-only ledgers when the control center actually runs those planes.
    Do not fabricate their values.
-5. Keep the control plane and manifest updated per wave; preserve state in Git.
-6. Do not enable unattended live trading or make profitability/safety claims without evidence.
+6. Keep the control plane and manifest updated per wave; preserve state in Git.
+7. Do not enable unattended live trading or make profitability/safety claims without evidence.
 
 ## Update rule
 

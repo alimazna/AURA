@@ -111,7 +111,9 @@ if(AURA_BUILD_GUI)
 
   # ImGui has no upstream CMake build; compile the core + GLFW/OpenGL3 backends as
   # a static library. The OpenGL3 backend uses ImGui's embedded GL loader, so no
-  # GLAD/GLEW dependency is required.
+  # GLAD/GLEW dependency is required. The OpenGL2 backend (fixed-function, GLSL
+  # #version 120) is the legacy fallback for hardware without an OpenGL 3.3
+  # context (e.g. Intel HD Graphics 3000); it needs no loader either.
   add_library(aura_imgui STATIC
     ${imgui_SOURCE_DIR}/imgui.cpp
     ${imgui_SOURCE_DIR}/imgui_draw.cpp
@@ -119,6 +121,7 @@ if(AURA_BUILD_GUI)
     ${imgui_SOURCE_DIR}/imgui_widgets.cpp
     ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
     ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl2.cpp
   )
   target_include_directories(aura_imgui PUBLIC
     ${imgui_SOURCE_DIR}

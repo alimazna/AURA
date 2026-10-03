@@ -306,6 +306,35 @@ Only explicit human decisions belong here.
 - **Master V3 status:** Preserved unchanged. Shadow-only upheld; live trading not enabled; no
   profitability/calibration/broker/production-safety claim.
 
+## 2026-10-03 — GUI renderer compatibility: OpenGL 3.3 preferred, OpenGL 2.1 fallback
+
+- **Date:** 2026-10-03
+- **Decision:**
+  1. The desktop control center prefers an **OpenGL 3.3 core** context but MUST NOT terminate merely
+     because one is unavailable. When the driver cannot provide it (observed on Intel HD Graphics 3000 /
+     driver 9.17.10.4459, where the core-profile request fails with `WGL_ARB_create_context_profile`
+     unavailable, GLFW error 65543), the GUI falls back to an **OpenGL 2.1 compatibility** context driven
+     by the ImGui OpenGL2 backend (GLSL 120). The legacy profile never requests a core profile.
+  2. Renderer selection is a **pure, deterministic policy** (`src/desktop/RendererPolicy.h`) with no
+     GLFW/GL calls, so it is unit-testable without a GPU. The window/context creation stays in
+     `tools/aura_gui.cpp` and applies only the policy's hints.
+  3. **No fabricated capability:** the renderer actually in use is printed at startup and shown in the
+     status bar (`MODERN_GL33` or `LEGACY_GL21`); OpenGL 3.3 is reported unavailable only when that
+     attempt truly failed. If no context can be created, the process exits non-zero with an actionable
+     message and points at the headless console host `aura.exe`.
+  4. A `--renderer auto|modern|legacy` selector pins a path for diagnostics/CI (default `auto`). This
+     does not change the GUI's read-only, shadow-only behavior or the `--self-test` path.
+- **Rationale:** A GUI that refuses to start on a large class of existing Windows machines is not a
+  usable control surface. A compatibility fallback is the minimal, standard fix and does not alter the
+  architecture or the safety posture. It is recorded here so a future AI does not "simplify" it back to
+  an unconditional OpenGL 3.3 request.
+- **Affected tasks:** new `GUI-0007` (fallback, TESTED), new `GUI-0008` (tests, TESTED);
+  `PHASE-9-MILESTONE` evidence updated.
+- **Scope-change flag:** No new phase; a compatibility refinement of the already-authorized Phase 9 GUI.
+- **Master V3 status:** Preserved unchanged. Shadow-only upheld; live trading not enabled; no
+  profitability/calibration/broker/production-safety claim. The specific legacy-GPU hardware remains
+  UNPROVEN (`BLOCK-006`).
+
 
 
 ## Decision format

@@ -92,6 +92,41 @@ jobs:
             timeout 60 ./build/aura_gui --gui --frames 120 --store "$RUNNER_TEMP/gui_live.aura"
           echo "GUI interactive smoke OK: window created, frames rendered, clean shutdown"
 
+      - name: GUI modern-renderer pin smoke (proves the OpenGL 3.3 path)
+        working-directory: AURA
+        run: |
+          xvfb-run -a -s "-screen 0 1360x860x24" \
+            timeout 60 ./build/aura_gui --gui --renderer modern --frames 30 --store "$RUNNER_TEMP/gui_modern.aura" \
+            | tee "$RUNNER_TEMP/modern.log"
+          grep -q "renderer=MODERN_GL33" "$RUNNER_TEMP/modern.log"
+          echo "Modern renderer smoke OK: OpenGL 3.3 core context created and rendered"
+
+      - name: GUI legacy-renderer smoke (proves the OpenGL 2.1 fallback path)
+        working-directory: AURA
+        run: |
+          # Force the legacy path (compatibility context, ImGui OpenGL2 backend).
+          # This exercises the same code path used on hardware without GL 3.3
+          # (e.g. Intel HD 3000) on a machine that has no such GPU, so the code is
+          # TESTED but the specific hardware remains UNPROVEN.
+          xvfb-run -a -s "-screen 0 1360x860x24" \
+            timeout 60 ./build/aura_gui --gui --renderer legacy --frames 30 --store "$RUNNER_TEMP/gui_legacy.aura" \
+            | tee "$RUNNER_TEMP/legacy.log"
+          grep -q "renderer=LEGACY_GL21" "$RUNNER_TEMP/legacy.log"
+          echo "Legacy renderer smoke OK: OpenGL 2.1 compatibility context created and rendered"
+
+      - name: GUI auto-fallback smoke (modern unavailable -> legacy)
+        working-directory: AURA
+        run: |
+          # Cap Mesa at GL 2.1 so the OpenGL 3.3 attempt genuinely fails; the AUTO
+          # selector must then fall back to the legacy renderer instead of exiting.
+          MESA_GL_VERSION_OVERRIDE=2.1 MESA_GLSL_VERSION_OVERRIDE=120 \
+            xvfb-run -a -s "-screen 0 1360x860x24" \
+            timeout 60 ./build/aura_gui --gui --frames 30 --store "$RUNNER_TEMP/gui_auto.aura" \
+            | tee "$RUNNER_TEMP/auto.log"
+          grep -q "renderer=LEGACY_GL21" "$RUNNER_TEMP/auto.log"
+          grep -q "OpenGL 3.3 unavailable" "$RUNNER_TEMP/auto.log"
+          echo "Auto-fallback smoke OK: modern failed, legacy fallback rendered"
+
   # Canonical Windows x64 Release package (self-contained aura.exe).
   windows-release:
     name: windows-x64-release-package
@@ -197,7 +232,7 @@ jobs:
           ========================================
 
           Contents:
-            aura_gui.exe   desktop control center (Dear ImGui + GLFW + OpenGL 3.3)
+            aura_gui.exe   desktop control center (Dear ImGui + GLFW + OpenGL)
             aura.exe       headless console host / diagnostics / CI smoke
             README.md      build + usage notes
 
@@ -207,8 +242,18 @@ jobs:
           only file read/written is the persistence store you pass with --store
           (created on first use).
 
+          Graphics: aura_gui.exe prefers an OpenGL 3.3 core context and, if the
+          driver cannot provide one (e.g. legacy Intel HD Graphics 3000 on Windows),
+          automatically falls back to an OpenGL 2.1 compatibility context using the
+          ImGui OpenGL2 backend. The renderer actually in use is printed at startup
+          (renderer=MODERN_GL33 or renderer=LEGACY_GL21) and shown in the status bar.
+          If neither context can be created, aura_gui.exe exits with a clear,
+          actionable error and points at the console host aura.exe (headless, no
+          OpenGL required).
+
           Usage:
             aura_gui.exe --gui [--store <path>] [--serve <port>] [--replay <frames>]
+                         [--renderer auto|modern|legacy]
             aura_gui.exe --self-test [--store <path>] [--keep]
             aura.exe     --self-test [--store <path>] [--keep]
             aura.exe     --replay <frames-file> [--store <path>]
@@ -219,7 +264,9 @@ jobs:
           Execution mode: SHADOW ONLY. No live order path, no buy/sell controls.
           Interactive GUI runtime is verified only when actually exercised (see
           project-control/TEST_LOG.md); a headless CI runner proves the build and the
-          integration path, not interactive rendering. No profitability, calibration
+          integration path, not interactive rendering. The legacy fallback code is
+          exercised in CI on software GL, but the specific Intel HD 3000 hardware is
+          not available in CI and remains UNPROVEN. No profitability, calibration
           or production-safety claim.
           "@ | Set-Content -Encoding UTF8 (Join-Path $dist "RUNNING.txt")
           Get-ChildItem $dist | Format-Table Name, Length

@@ -13,8 +13,10 @@ Do not rely on any prior conversation memory.
 - All canonical Phases 0-11 are COMPLETE and `APPROVED`. Phase 12 (integration/application), Phase 13
   (durable persistence + crash recovery + packaging/CI) and the Windows x64 Release package are
   implemented and `TESTED`. Phase 9's Desktop Control Center now includes a **real GUI**
-  (`GUI-0001`, IMPLEMENTED) plus read-only projections for every remaining V3-37 section
-  (`GUI-0004..GUI-0006`, APPROVED).
+  (`GUI-0001`, IMPLEMENTED), read-only projections for every remaining V3-37 section
+  (`GUI-0004..GUI-0006`, APPROVED), and an **OpenGL 3.3 -> OpenGL 2.1 renderer fallback** for legacy
+  GPUs (`GUI-0007..GUI-0008`, TESTED on software GL; the specific Intel HD Graphics 3000 hardware is
+  UNPROVEN, `BLOCK-006`).
 - Authoritative build: `AURA/CMakeLists.txt` (header-only C++17/20 + the `aura_foundation` SHA-256 TU).
   It builds the `aura` console host, 18 behavioural test executables, and installs `bin/aura` +
   headers + docs. `ctest` is 18/18 green under C++17 AND C++20. On Windows/MSVC the CRT is linked
@@ -23,9 +25,9 @@ Do not rely on any prior conversation memory.
   `aura --self-test [--keep]` (bounded offline smoke), `aura --dump-frames <file>`, `aura --recover
   <store>` (report the V2-36 decision). `--store <path>` enables file-backed persistence of
   per-timeframe progress + the shadow ledger.
-- Manifest graph: 199 tasks -- 178 `APPROVED`, 7 `TESTED` (PERSIST-0001, PERSIST-0002, BUILD-0002,
-  BUILD-0003, GUI-0002, GUI-0003, PHASE-9-MILESTONE), 2 `IMPLEMENTED` (TASK-MANIFEST-001, GUI-0001),
-  10 `DEFERRED`, 2 `BLOCKED`.
+- Manifest graph: 201 tasks -- 178 `APPROVED`, 9 `TESTED` (PERSIST-0001, PERSIST-0002, BUILD-0002,
+  BUILD-0003, GUI-0002, GUI-0003, PHASE-9-MILESTONE, GUI-0007, GUI-0008), 2 `IMPLEMENTED`
+  (TASK-MANIFEST-001, GUI-0001), 10 `DEFERRED`, 2 `BLOCKED`.
 - CI: `.github/workflows/ci.yml` builds/tests Linux C++17+C++20 (blocking) with the smoke test and an
   install check, plus MSVC Windows C++17/C++20, plus a `desktop-gui` job (Dear ImGui + GLFW + Xvfb
   bounded interactive smoke), plus a `windows-x64-release-package` job that builds `aura.exe` and
@@ -38,8 +40,9 @@ Do not rely on any prior conversation memory.
   = 714,226 bytes (verified to contain both exes; each re-ran `--self-test` PASS).
 - Verified but still NOT claimed: profitability, calibrated probability, broker validation,
   production safety, or live trading. Shadow mode remains the only execution path. Real-Windows-desktop
-  interactive GUI rendering is UNPROVEN (the Xvfb smoke is software-rendered on Linux); MT5/MetaEditor
-  is UNPROVEN.
+  interactive GUI rendering is UNPROVEN (the Xvfb smoke is software-rendered on Linux), and the legacy
+  Intel HD Graphics 3000 render path is UNPROVEN (`BLOCK-006`); MT5/MetaEditor is UNPROVEN. The CI
+  result for the newest commits is recorded in `TEST_LOG.md` after push.
 
 ### Phase 9 V3-37 section integration deliverables (this session)
 
@@ -91,6 +94,30 @@ Do not rely on any prior conversation memory.
 - `.github/workflows/ci.yml` — new `desktop-gui` job (Linux + Xvfb bounded interactive smoke);
   `windows-release` now builds the GUI, runs `aura_gui --self-test`, and packages
   `AURA_Windows_x64_GUI_Release.zip` (aura_gui.exe + aura.exe).
+
+### Legacy-GPU renderer fallback deliverables (this session)
+
+- `src/desktop/RendererPolicy.h` (new) — pure, deterministic renderer-selection policy:
+  `RendererProfile` (MODERN_GL33 / LEGACY_GL21 / NONE), `RendererHints` + `hints_for` (the legacy
+  profile never requests a core profile and uses GLSL 120), `RendererAttempt`, `RendererSelector`
+  (modern-first with legacy fallback and a pinned single-profile mode), `RendererChoice` +
+  `renderer_choice_from_string`, `renderer_diagnostic`, `no_renderer_error`. No GLFW/GL, no I/O, no
+  clock — unit-testable anywhere.
+- `tools/aura_gui.cpp` — GLFW hints now come only from the policy; tries OpenGL 3.3 core first and
+  OpenGL 2.1 compatibility on failure; drives `ImGui_ImplOpenGL2` (legacy) or `ImGui_ImplOpenGL3`
+  (modern); prints `renderer=MODERN_GL33|LEGACY_GL21` at startup and in the status bar; parses
+  `--renderer auto|modern|legacy`; exits non-zero with an actionable message only when no context can
+  be created (pointing at `aura.exe`). `--self-test` unchanged; GUI stays read-only/shadow-only.
+- `CMakeLists.txt` — compiles `backends/imgui_impl_opengl2.cpp` into `aura_imgui`.
+- `.github/workflows/ci.yml` — `desktop-gui` job gains modern-pin, legacy, and forced-auto-fallback
+  (Mesa capped at GL 2.1) smokes; the Windows package notes document the fallback.
+- `src/desktop/DesktopTests.cpp` — 5 new tests (`test_renderer_policy_hints`,
+  `test_renderer_selector_modern_success`, `test_renderer_selector_legacy_fallback`,
+  `test_renderer_selector_both_fail`, `test_renderer_selector_pinned`).
+- Verification: default 18/18, GUI 19/19 (c++17 and c++20); AUTO -> MODERN_GL33; `--renderer legacy`
+  -> LEGACY_GL21; AUTO with Mesa capped -> LEGACY_GL21 with `OpenGL 3.3 unavailable`; `--renderer
+  modern` with Mesa capped -> exit 3 with the actionable error. Recorded in `TEST_LOG.md`. The specific
+  Intel HD 3000 hardware is UNPROVEN (`BLOCK-006`).
 
 ### Next actions
 

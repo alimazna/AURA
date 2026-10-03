@@ -7,6 +7,7 @@
 #include "desktop/ControlCenterState.h"
 #include "desktop/DashboardProjector.h"
 #include "desktop/DesktopModel.h"
+#include "desktop/RendererPolicy.h"
 #include "evolution/Candidate.h"
 #include "evolution/CandidateRegistry.h"
 #include "evolution/EvolutionGraph.h"
@@ -461,6 +462,138 @@ static void test_single_runtime_owner() {
 }
 
 
+static void test_renderer_policy_hints() {
+    // Modern path keeps the OpenGL 3.3 core-profile request and the OpenGL3 GLSL.
+    const auto modern = desktop::hints_for(desktop::RendererProfile::MODERN_GL33);
+    CHECK(modern.context_version_major == 3);
+    CHECK(modern.context_version_minor == 3);
+    CHECK(modern.request_core_profile);
+    CHECK(std::string(modern.glsl_version) == "#version 330");
+
+    // Legacy path must NOT request a core profile (legacy drivers reject it) and
+    // must use the fixed-function OpenGL2 GLSL.
+    const auto legacy = desktop::hints_for(desktop::RendererProfile::LEGACY_GL21);
+    CHECK(legacy.context_version_major == 2);
+    CHECK(legacy.context_version_minor == 1);
+    CHECK(!legacy.request_core_profile);
+    CHECK(!legacy.forward_compatible);
+    CHECK(std::string(legacy.glsl_version) == "#version 120");
+}
+
+static void test_renderer_selector_modern_success() {
+    // Modern hardware: first attempt succeeds; the legacy path is never used.
+    desktop::RendererSelector s;
+    CHECK(s.candidate() == desktop::RendererProfile::MODERN_GL33);
+    desktop::RendererAttempt a;
+    a.profile = desktop::RendererProfile::MODERN_GL33;
+    a.created = true;
+    CHECK(s.record(a));
+    CHECK(s.done());
+    CHECK(s.has_renderer());
+    CHECK(s.active() == desktop::RendererProfile::MODERN_GL33);
+    CHECK(s.attempt_count() == 1);
+}
+
+static void test_renderer_selector_legacy_fallback() {
+    // Intel HD 3000 scenario: OpenGL 3.3 fails (WGL profile unavailable), so the
+    // selector must advance to OpenGL 2.1 and succeed there. Never terminal-fail
+    // merely because the modern context is unavailable.
+    desktop::RendererSelector s;
+    desktop::RendererAttempt modern;
+    modern.profile = desktop::RendererProfile::MODERN_GL33;
+    modern.created = false;
+    modern.glfw_error = 65543;  // GLFW_API_UNAVAILABLE (observed on HD 3000)
+    CHECK(!s.record(modern));
+    CHECK(!s.done());
+    CHECK(s.candidate() == desktop::RendererProfile::LEGACY_GL21);
+
+    desktop::RendererAttempt legacy;
+    legacy.profile = desktop::RendererProfile::LEGACY_GL21;
+    legacy.created = true;
+    CHECK(s.record(legacy));
+    CHECK(s.done());
+    CHECK(s.has_renderer());
+    CHECK(s.active() == desktop::RendererProfile::LEGACY_GL21);
+    CHECK(s.error_for(desktop::RendererProfile::MODERN_GL33) == 65543);
+    CHECK(s.attempt_count() == 2);
+
+    // The diagnostic names the ACTUAL renderer, and reports 3.3 as unavailable.
+    const std::string diag =
+        desktop::renderer_diagnostic(s.active(), 65543, "context created");
+    CHECK(diag.find("LEGACY_GL21") != std::string::npos);
+    CHECK(diag.find("OpenGL 2.1 compatibility") != std::string::npos);
+    CHECK(diag.find("OpenGL 3.3 unavailable") != std::string::npos);
+    CHECK(diag.find("65543") != std::string::npos);
+}
+
+static void test_renderer_selector_both_fail() {
+    // No context at all: the selector is terminal with no renderer and the error
+    // is actionable (names both attempts and points at the console host).
+    desktop::RendererSelector s;
+    desktop::RendererAttempt modern;
+    modern.profile = desktop::RendererProfile::MODERN_GL33;
+    modern.created = false;
+    modern.glfw_error = 65543;
+    CHECK(!s.record(modern));
+    desktop::RendererAttempt legacy;
+    legacy.profile = desktop::RendererProfile::LEGACY_GL21;
+    legacy.created = false;
+    legacy.glfw_error = 65542;
+    CHECK(!s.record(legacy));
+    CHECK(s.done());
+    CHECK(!s.has_renderer());
+    CHECK(s.active() == desktop::RendererProfile::NONE);
+
+    const std::string err = desktop::no_renderer_error(s.attempts());
+    CHECK(err.find("MODERN_GL33") != std::string::npos);
+    CHECK(err.find("LEGACY_GL21") != std::string::npos);
+    CHECK(err.find("65543") != std::string::npos);
+    CHECK(err.find("65542") != std::string::npos);
+    CHECK(err.find("aura.exe") != std::string::npos);
+
+    // A pinned modern selector must NOT claim it tried the legacy path.
+    desktop::RendererSelector pinned =
+        desktop::RendererSelector::only(desktop::RendererProfile::MODERN_GL33);
+    desktop::RendererAttempt pf;
+    pf.profile = desktop::RendererProfile::MODERN_GL33;
+    pf.created = false;
+    pf.glfw_error = 65543;
+    CHECK(!pinned.record(pf));
+    const std::string perr = desktop::no_renderer_error(pinned.attempts());
+    CHECK(perr.find("MODERN_GL33") != std::string::npos);
+    CHECK(perr.find("LEGACY_GL21") == std::string::npos);
+}
+
+static void test_renderer_selector_pinned() {
+    // Pinned selectors (used by CI smokes and --renderer) attempt exactly one
+    // profile and become terminal, so the modern path can be proven without the
+    // legacy fallback masking a modern failure, and vice versa.
+    desktop::RendererSelector modern =
+        desktop::RendererSelector::only(desktop::RendererProfile::MODERN_GL33);
+    CHECK(modern.candidate() == desktop::RendererProfile::MODERN_GL33);
+    desktop::RendererAttempt f;
+    f.profile = desktop::RendererProfile::MODERN_GL33;
+    f.created = false;
+    CHECK(!modern.record(f));
+    CHECK(modern.done());
+    CHECK(!modern.has_renderer());
+    CHECK(modern.attempt_count() == 1);  // did NOT silently fall back
+
+    desktop::RendererSelector legacy =
+        desktop::RendererSelector::only(desktop::RendererProfile::LEGACY_GL21);
+    CHECK(legacy.candidate() == desktop::RendererProfile::LEGACY_GL21);
+    desktop::RendererAttempt ok;
+    ok.profile = desktop::RendererProfile::LEGACY_GL21;
+    ok.created = true;
+    CHECK(legacy.record(ok));
+    CHECK(legacy.active() == desktop::RendererProfile::LEGACY_GL21);
+
+    CHECK(desktop::renderer_choice_from_string("modern") == desktop::RendererChoice::MODERN);
+    CHECK(desktop::renderer_choice_from_string("legacy") == desktop::RendererChoice::LEGACY);
+    CHECK(desktop::renderer_choice_from_string("auto") == desktop::RendererChoice::AUTO);
+    CHECK(desktop::renderer_choice_from_string("garbage") == desktop::RendererChoice::AUTO);
+}
+
 int main() {
     test_dashboard_no_fabrication();
     test_knowledge_projection_readonly();
@@ -472,6 +605,11 @@ int main() {
     test_section_panel_availability();
     test_incident_propagation_and_corruption();
     test_single_runtime_owner();
+    test_renderer_policy_hints();
+    test_renderer_selector_modern_success();
+    test_renderer_selector_legacy_fallback();
+    test_renderer_selector_both_fail();
+    test_renderer_selector_pinned();
     if (g_failures == 0) {
         std::printf("DesktopTests: ALL PASS\n");
         return 0;

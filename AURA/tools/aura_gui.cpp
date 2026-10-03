@@ -22,9 +22,11 @@
 
 #include "desktop/ControlCenterState.h"
 #include "desktop/GuiPanels.h"
+#include "desktop/RendererPolicy.h"
 
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
+#include <imgui_impl_opengl2.h>
 #include <imgui_impl_opengl3.h>
 
 #define GL_SILENCE_DEPRECATION
@@ -58,6 +60,7 @@ int usage() {
                  "usage:\n"
                  "  aura --gui    [--store <path>] [--serve <port>] [--replay <frames>] [--keep]\n"
                  "                  [--frames <n>]  bounded render for CI smoke\n"
+                 "                  [--renderer auto|modern|legacy]  (default auto: GL3.3 then GL2.1)\n"
                  "  aura --self-test [--store <path>] [--keep]\n"
                  "  (run without --gui and without --self-test, or with --help, for this text)\n"
                  "Execution mode: SHADOW ONLY. No live order path.\n");
@@ -174,28 +177,97 @@ void glfw_error_callback(int error, const char* description) {
     std::fprintf(stderr, "GLFW error %d: %s\n", error, description);
 }
 
+// A created window/context plus which ImGui backend must drive it.
+struct RendererContext {
+    GLFWwindow* window{nullptr};
+    aura::desktop::RendererProfile profile{aura::desktop::RendererProfile::NONE};
+    const char* glsl_version{"#version 120"};
+};
+
+// Create a window/context by applying the pure policy's hints for `profile`.
+// This is the ONLY place GLFW window hints are set. The legacy profile never
+// requests a core profile, so legacy drivers (Intel HD 3000) are not rejected.
+RendererContext create_context(aura::desktop::RendererProfile profile) {
+    RendererContext ctx;
+    const aura::desktop::RendererHints hints = aura::desktop::hints_for(profile);
+    glfwDefaultWindowHints();
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, hints.context_version_major);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, hints.context_version_minor);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, hints.request_core_profile ? GLFW_OPENGL_CORE_PROFILE
+                                                                   : GLFW_OPENGL_ANY_PROFILE);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, hints.forward_compatible ? GLFW_TRUE : GLFW_FALSE);
+    ctx.window = glfwCreateWindow(1360, 860, "AURA Control Center (SHADOW ONLY)", nullptr, nullptr);
+    if (ctx.window != nullptr) {
+        ctx.profile = profile;
+        ctx.glsl_version = hints.glsl_version;
+    }
+    return ctx;
+}
+
+// Try the modern OpenGL 3.3 core renderer, then the legacy OpenGL 2.1
+// compatibility renderer. Records each observed attempt (never fabricates
+// capability) and returns the active context, or a context with a null window
+// when no renderer could be created.
+//
+// `choice` lets CI pin one path: MODERN forces only OpenGL 3.3 (proves the
+// modern renderer), LEGACY forces only OpenGL 2.1 (a legacy-renderer smoke on
+// software GL), AUTO tries modern then falls back.
+RendererContext create_best_context(aura::desktop::RendererChoice choice) {
+    aura::desktop::RendererSelector selector;
+    if (choice == aura::desktop::RendererChoice::MODERN) {
+        selector = aura::desktop::RendererSelector::only(aura::desktop::RendererProfile::MODERN_GL33);
+    } else if (choice == aura::desktop::RendererChoice::LEGACY) {
+        selector = aura::desktop::RendererSelector::only(aura::desktop::RendererProfile::LEGACY_GL21);
+    }
+    while (!selector.done()) {
+        const aura::desktop::RendererProfile candidate = selector.candidate();
+        RendererContext ctx = create_context(candidate);
+        aura::desktop::RendererAttempt attempt;
+        attempt.profile = candidate;
+        attempt.created = ctx.window != nullptr;
+        attempt.glfw_error = ctx.window == nullptr ? glfwGetError(nullptr) : 0;
+        if (ctx.window == nullptr) {
+            std::fprintf(stderr, "aura-gui: %s context unavailable (GLFW error %d)\n",
+                         aura::desktop::to_string(candidate), attempt.glfw_error);
+        }
+        if (selector.record(attempt)) {
+            // The modern attempt's GLFW error (0 if modern succeeded) so the
+            // diagnostic can report "OpenGL 3.3 unavailable" only when it truly was.
+            const int modern_error = selector.error_for(aura::desktop::RendererProfile::MODERN_GL33);
+            std::printf("%s\n",
+                        aura::desktop::renderer_diagnostic(selector.active(), modern_error,
+                                                           "context created")
+                            .c_str());
+            std::fflush(stdout);
+            return ctx;
+        }
+        if (ctx.window != nullptr) glfwDestroyWindow(ctx.window);
+    }
+    std::fprintf(stderr, "%s\n", aura::desktop::no_renderer_error(selector.attempts()).c_str());
+    RendererContext none;
+    return none;
+}
+
 // Interactive control center. Returns the process exit code. `max_frames` bounds
 // the render loop (0 = unbounded); a non-zero bound is used by CI to prove the
 // window/render lifecycle starts and shuts down cleanly, then exits.
-int run_gui(const aura::desktop::ControlCenterOptions& options, long max_frames) {
+int run_gui(const aura::desktop::ControlCenterOptions& options, long max_frames,
+            aura::desktop::RendererChoice renderer_choice) {
     glfwSetErrorCallback(glfw_error_callback);
     if (!glfwInit()) {
         std::fprintf(stderr, "aura-gui: GLFW init failed (no windowing system?)\n");
         return 3;
     }
 
-    const char* glsl_version = "#version 330";
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-    GLFWwindow* window =
-        glfwCreateWindow(1360, 860, "AURA Control Center (SHADOW ONLY)", nullptr, nullptr);
-    if (window == nullptr) {
-        std::fprintf(stderr, "aura-gui: failed to create window / OpenGL 3.3 context\n");
+    // Modern-first with a safe legacy fallback. Never terminate merely because
+    // OpenGL 3.3 is unavailable; only fail when no context at all can be made.
+    const RendererContext rctx = create_best_context(renderer_choice);
+    if (rctx.window == nullptr) {
         glfwTerminate();
         return 3;
     }
+    GLFWwindow* window = rctx.window;
+    const bool legacy = rctx.profile == aura::desktop::RendererProfile::LEGACY_GL21;
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
 
@@ -208,7 +280,13 @@ int run_gui(const aura::desktop::ControlCenterOptions& options, long max_frames)
     ImGui::GetStyle().FrameRounding = 3.0f;
 
     ImGui_ImplGlfw_InitForOpenGL(window, true);
-    ImGui_ImplOpenGL3_Init(glsl_version);
+    if (legacy) {
+        // Legacy OpenGL 2.1 compatibility context: use the fixed-function ImGui
+        // OpenGL2 backend (GLSL #version 120), not the OpenGL3 core backend.
+        ImGui_ImplOpenGL2_Init();
+    } else {
+        ImGui_ImplOpenGL3_Init(rctx.glsl_version);
+    }
 
     aura::desktop::ControlCenterState state(options);
     // Report-only recovery evaluation at boot; it never auto-resumes state.
@@ -235,8 +313,12 @@ int run_gui(const aura::desktop::ControlCenterOptions& options, long max_frames)
         const auto& report = state.refresh_report();
         const auto& snap = report.snapshot;
 
-        ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
+        if (legacy) {
+            ImGui_ImplOpenGL2_NewFrame();
+        } else {
+            ImGui_ImplOpenGL3_NewFrame();
+        }
         ImGui::NewFrame();
 
         const ImGuiViewport* viewport = ImGui::GetMainViewport();
@@ -296,6 +378,9 @@ int run_gui(const aura::desktop::ControlCenterOptions& options, long max_frames)
                            snap.overview.aggregate.c_str());
         ImGui::SameLine();
         ImGui::Text("| %s", state.paused() ? "PAUSED" : "RUNNING");
+        ImGui::SameLine();
+        // Expose the renderer actually in use (never claim OpenGL 3.3 if we fell back).
+        ImGui::Text("| renderer %s", aura::desktop::to_string(rctx.profile));
 
         ImGui::End();
 
@@ -305,7 +390,11 @@ int run_gui(const aura::desktop::ControlCenterOptions& options, long max_frames)
         glViewport(0, 0, w, h);
         glClearColor(0.07f, 0.08f, 0.10f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        if (legacy) {
+            ImGui_ImplOpenGL2_RenderDrawData(ImGui::GetDrawData());
+        } else {
+            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        }
         glfwSwapBuffers(window);
 
         if (max_frames > 0 && ++rendered >= max_frames) {
@@ -325,7 +414,11 @@ int run_gui(const aura::desktop::ControlCenterOptions& options, long max_frames)
     std::printf("aura-gui: shutdown checkpoint -> %s\n",
                 std::string(aura::foundation::to_string(status)).c_str());
 
-    ImGui_ImplOpenGL3_Shutdown();
+    if (legacy) {
+        ImGui_ImplOpenGL2_Shutdown();
+    } else {
+        ImGui_ImplOpenGL3_Shutdown();
+    }
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
     glfwDestroyWindow(window);
@@ -344,5 +437,7 @@ int main(int argc, char** argv) {
     if (self_test) return headless_self_test(options);
     const std::string frames = value_of(argc, argv, "--frames");
     const long max_frames = frames.empty() ? 0 : std::atol(frames.c_str());
-    return run_gui(options, max_frames);
+    const aura::desktop::RendererChoice choice =
+        aura::desktop::renderer_choice_from_string(value_of(argc, argv, "--renderer"));
+    return run_gui(options, max_frames, choice);
 }
