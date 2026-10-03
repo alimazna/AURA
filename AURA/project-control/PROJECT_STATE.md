@@ -49,7 +49,9 @@ This is the human-readable snapshot of where the project currently stands.
 - Phase 0 (36 tasks) uses the V3-42 canonical filenames; the `src/foundation/` layout is PROPOSED.
 - Phase 0.5 (20 tasks), Phase 1 (21 tasks), and Phase 2 (4 tasks) file names are PROPOSED
   decomposition (V3-16, V3-46) and are subject to integration review.
-- Phases 3–11 remain DEFERRED and visible.
+- Phases 3–11 were later promoted into active scope and implemented (see the Phase 5–11 sections);
+  deferred Master capabilities (research gaps, live trading, multi-asset expansion, real MT5 validation)
+  remain visible in the manifest as `DEFERRED`.
 - The two Phase 0 contracts that were blocked on human architectural decisions
   (`FND-0015 ErrorCode.h` OPEN DECISION, `FND-0016 ErrorRecord.h` BLOCKED) are now resolved and
   `APPROVED`; see the Phase 0 integration gate below.

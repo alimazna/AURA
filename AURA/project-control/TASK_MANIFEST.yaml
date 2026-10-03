@@ -2794,4 +2794,117 @@ tasks:
   acceptance: All file-level tasks APPROVED; tests pass.
   evidence: All 3 APPROVED; tests pass c++17/c++20. Execution remains a separate human action; no live
     trading enabled.
+- id: DEFERRED-GAP-A
+  phase: DEFERRED
+  module: Master V3
+  layer: DEFERRED_MASTER
+  authority: CANONICAL
+  status: DEFERRED
+  output: (not scheduled in current scope)
+  dependencies: []
+  objective: 'Master V3-40 Gap A: adaptive search over evolving, non-stationary financial data.'
+  acceptance: Requires a research track; no implementation in current scope.
+  evidence: Deferred by design; kept visible per TASK-MANIFEST-001. Not implemented.
+- id: DEFERRED-GAP-B
+  phase: DEFERRED
+  module: Master V3
+  layer: DEFERRED_MASTER
+  authority: CANONICAL
+  status: DEFERRED
+  output: (not scheduled in current scope)
+  dependencies: []
+  objective: 'Master V3-40 Gap B: self-evolving validation without the evaluator becoming an optimization
+    target.'
+  acceptance: Requires a research track; no implementation in current scope.
+  evidence: Deferred by design; kept visible per TASK-MANIFEST-001. Not implemented.
+- id: DEFERRED-GAP-C
+  phase: DEFERRED
+  module: Master V3
+  layer: DEFERRED_MASTER
+  authority: CANONICAL
+  status: DEFERRED
+  output: (not scheduled in current scope)
+  dependencies: []
+  objective: 'Master V3-40 Gap C: couple RCA to candidate generation without unjustified certainty.'
+  acceptance: Requires a research track; no implementation in current scope.
+  evidence: Deferred by design; kept visible per TASK-MANIFEST-001. Not implemented.
+- id: DEFERRED-GAP-D
+  phase: DEFERRED
+  module: Master V3
+  layer: DEFERRED_MASTER
+  authority: CANONICAL
+  status: DEFERRED
+  output: (not scheduled in current scope)
+  dependencies: []
+  objective: 'Master V3-40 Gap D: human review compression at scale.'
+  acceptance: Requires a research track; no implementation in current scope.
+  evidence: Deferred by design; kept visible per TASK-MANIFEST-001. Not implemented.
+- id: DEFERRED-GAP-E
+  phase: DEFERRED
+  module: Master V3
+  layer: DEFERRED_MASTER
+  authority: CANONICAL
+  status: DEFERRED
+  output: (not scheduled in current scope)
+  dependencies: []
+  objective: 'Master V3-40 Gap E: failure learning without evidence leakage.'
+  acceptance: Requires a research track; no implementation in current scope.
+  evidence: Deferred by design; kept visible per TASK-MANIFEST-001. Not implemented.
+- id: DEFERRED-GAP-F
+  phase: DEFERRED
+  module: Master V3
+  layer: DEFERRED_MASTER
+  authority: CANONICAL
+  status: DEFERRED
+  output: (not scheduled in current scope)
+  dependencies: []
+  objective: 'Master V3-40 Gap F: meta-evolution safety.'
+  acceptance: Requires a research track; no implementation in current scope.
+  evidence: Deferred by design; kept visible per TASK-MANIFEST-001. Not implemented.
+- id: DEFERRED-GAP-G
+  phase: DEFERRED
+  module: Master V3
+  layer: DEFERRED_MASTER
+  authority: CANONICAL
+  status: DEFERRED
+  output: (not scheduled in current scope)
+  dependencies: []
+  objective: 'Master V3-40 Gap G: adaptive/privacy-preserving holdout.'
+  acceptance: Explicit future research track; not a first-implementation dependency.
+  evidence: Deferred by design; kept visible per TASK-MANIFEST-001. Not implemented.
+- id: DEFERRED-LIVE
+  phase: DEFERRED
+  module: Master V3
+  layer: DEFERRED_MASTER
+  authority: CANONICAL
+  status: DEFERRED
+  output: (not scheduled in current scope)
+  dependencies: []
+  objective: 'Master: unattended live trading / production activation.'
+  acceptance: Deliberately not authorized. Shadow is the primary mode; live execution requires a gated
+    human action and real MT5 evidence.
+  evidence: Deferred by design; kept visible per TASK-MANIFEST-001. Not implemented.
+- id: DEFERRED-MULTIASSET
+  phase: DEFERRED
+  module: Master V3
+  layer: DEFERRED_MASTER
+  authority: CANONICAL
+  status: DEFERRED
+  output: (not scheduled in current scope)
+  dependencies: []
+  objective: 'Master V3-41: analytical expansion beyond the XAUUSD MVP.'
+  acceptance: Deferred until the XAUUSD shadow core is trustworthy; adapters may exist earlier than analytical
+    authority.
+  evidence: Deferred by design; kept visible per TASK-MANIFEST-001. Not implemented.
+- id: DEFERRED-MT5-REAL
+  phase: DEFERRED
+  module: Master V3
+  layer: DEFERRED_MASTER
+  authority: CANONICAL
+  status: DEFERRED
+  output: (not scheduled in current scope)
+  dependencies: []
+  objective: Phase 11 real MT5 terminal validation in a live/demo terminal.
+  acceptance: Environment-limited here (no MetaEditor/MT5 on Linux). Remains the final gated step.
+  evidence: Deferred by design; kept visible per TASK-MANIFEST-001. Not implemented.
 last_updated: '2026-10-02'

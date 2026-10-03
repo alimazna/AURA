@@ -110,7 +110,7 @@ Date: 2026-10-02
 - Verification: all Phase 8/9/10/11 headers self-contained + combined TU under c++17/c++20 strict; all
   16 test suites PASS under both standards. No live trading path; Phase 11 execution remains a
   separate, gated human action; real MT5 readiness still UNPROVEN.
-- Manifest now 172 tasks; Phases 0-11 all decomposed with acceptance criteria + evidence.
+- Manifest now 182 entries: Phases 0-11 decomposed plus 10 visible DEFERRED Master capabilities.
 
 
 ### Session end state (2026-10-02, canonical Phases 5–7)
