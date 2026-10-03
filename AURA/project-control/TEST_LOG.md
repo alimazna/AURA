@@ -78,7 +78,13 @@ that Linux/GCC did not: `src/desktop/AuraWidgets.h` used `min`/`max` as local va
 float' to 'const ImVec2'`, plus cascading `C2065: 'min'/'max' undeclared`). Fixed by renaming the locals
 to `lo`/`hi` and defining `NOMINMAX` in `tools/aura_gui.cpp` before the GLFW include, so the macros
 cannot rewrite this translation unit again. Re-verified locally (GUI build 19/19, `--self-test` PASS)
-before pushing.
+before pushing. Remote CI run 37128118600 (commit `d1c42f0`, after the fix) is ALL GREEN across 6/6
+jobs, including `windows-x64-release-package` (Release x64 MSVC build of `aura.exe` + `aura_gui.exe`,
+full suite, both exes smoked, ZIP packed and verified) and `desktop-gui-linux` (Dear ImGui + Xvfb bounded
+interactive smoke). The failed run 37127787443 (commit `95b2d60`) is the one that surfaced the defect.
+The refreshed Windows package from run 37128118600 contains `aura_gui.exe` = 1,134,080 bytes,
+`aura.exe` = 440,320 bytes, `AURA_Windows_x64_GUI_Release.zip` = 765,806 bytes (both exes re-ran
+`--self-test` PASS on the runner).
 
 Interpretation: the control center now uses an original, consistent, legible design language, and the
 new presentation code is verified to build clean, to keep ImGui's layout invariants across all 19

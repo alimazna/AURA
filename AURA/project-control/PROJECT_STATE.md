@@ -492,8 +492,10 @@ See `project-control/BLOCKED.md`.
   legacy` -> `renderer=LEGACY_GL21`; AUTO with `MESA_GL_VERSION_OVERRIDE=2.1` (forces the modern attempt
   to fail) -> `renderer=LEGACY_GL21` with `OpenGL 3.3 unavailable` and clean shutdown; `--renderer
   modern` with Mesa capped -> exit 3 with the actionable no-renderer error. Each rendered frames and shut
-  down cleanly. Remote CI run 37125095527 (commit f3e1886) ALL GREEN across 6/6 jobs, including the
-  extended `desktop-gui-linux` renderer smokes.
+  down cleanly. Remote CI run 37128118600 (commit d1c42f0, redesign + MSVC min/max fix) is ALL GREEN
+  across 6/6 jobs, including the extended `desktop-gui-linux` renderer smokes and the
+  `windows-x64-release-package` job that builds and packages `aura_gui.exe`; the earlier run
+  37125095527 (commit f3e1886) was also ALL GREEN.
 - NOT claimed: interactive rendering on a real Windows desktop, and specifically the Intel HD Graphics
   3000 path (UNPROVEN); any profitability, calibration, broker-validation or production-safety claim.
   The visual quality of the redesign is verified structurally (layout, no assertions, both backends) and
