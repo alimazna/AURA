@@ -113,6 +113,32 @@ int headless_self_test(const aura::desktop::ControlCenterOptions& options) {
         std::printf("aura-gui: snapshot rows=%zu streams=%zu/%zu shadow_only=%s\n",
                     snap.timeframes.rows.size(), snap.overview.streams_healthy,
                     snap.overview.streams_total, snap.shadow_only ? "yes" : "no");
+
+        // Additional V3-37 section projections (read-only; no fabrication).
+        const auto& rep = state.refresh_report();
+        std::printf("aura-gui: sections version_available=%s ledger_entries=%zu "
+                    "incidents_wired=%s incidents=%zu\n",
+                    rep.version.available ? "yes" : "no", rep.shadow_ledger.total,
+                    rep.incidents.source_wired ? "yes" : "no", rep.incidents.count);
+        if (!rep.version.available || rep.version.schema_version.empty()) {
+            std::printf("aura-gui: SELF-TEST FAIL (version context not sourced)\n");
+            return 1;
+        }
+        if (rep.shadow_ledger.total == 0 || !rep.shadow_ledger.available) {
+            std::printf("aura-gui: SELF-TEST FAIL (shadow ledger not populated from real runtime)\n");
+            return 1;
+        }
+        if (!rep.incidents.source_wired) {
+            std::printf("aura-gui: SELF-TEST FAIL (incident detector not wired)\n");
+            return 1;
+        }
+        // These planes have no source wired in the control center yet: they must be
+        // NOT AVAILABLE, never fabricated.
+        if (rep.predictions.available || rep.knowledge.available || rep.research.available ||
+            rep.candidates.available || rep.validation.available || rep.schedule.available) {
+            std::printf("aura-gui: SELF-TEST FAIL (an unsourced section fabricated availability)\n");
+            return 1;
+        }
         const auto status = state.persist_checkpoint();
         std::printf("aura-gui: checkpoint -> %s\n",
                     std::string(aura::foundation::to_string(status)).c_str());
@@ -206,7 +232,8 @@ int run_gui(const aura::desktop::ControlCenterOptions& options, long max_frames)
 
         // Advance the transport by one bounded cycle so the loop stays responsive.
         state.poll_transport(0);
-        const auto& snap = state.refresh();
+        const auto& report = state.refresh_report();
+        const auto& snap = report.snapshot;
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
@@ -255,7 +282,7 @@ int run_gui(const aura::desktop::ControlCenterOptions& options, long max_frames)
 
         // Content area.
         ImGui::BeginChild("content", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()), true);
-        aura::desktop::draw_section(snap, selected);
+        aura::desktop::draw_section(report, selected);
         ImGui::EndChild();
 
         // Status bar.
@@ -285,6 +312,11 @@ int run_gui(const aura::desktop::ControlCenterOptions& options, long max_frames)
             std::printf("aura-gui: rendered %ld frames (bounded smoke); requesting close\n",
                         rendered);
             glfwSetWindowShouldClose(window, GLFW_TRUE);
+        } else if (max_frames > 0) {
+            // Bounded smoke: cycle through every V3-37 section so each panel's
+            // draw path is exercised (a real render of each section, not just the
+            // default one) before the bounded loop exits.
+            selected = (selected + 1) % static_cast<int>(sections.size());
         }
     }
 

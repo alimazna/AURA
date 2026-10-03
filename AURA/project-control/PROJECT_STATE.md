@@ -405,11 +405,35 @@ See `project-control/BLOCKED.md`.
   actions only, and **no live-order path**. It displays the nine timeframes by explicit identity and
   shows unknown/absent state as `NOT AVAILABLE`. Reports the V2-36 recovery decision but never
   auto-resumes corrupted/incompatible state. Build with `-DAURA_BUILD_GUI=ON`; executable `aura_gui`.
-- The manifest graph is now 196 file-level tasks (175 `APPROVED`, 7 `TESTED`, 2 `IMPLEMENTED`, 10
+- Phase 9 integration wave (GUI-0004..GUI-0006, `IMPLEMENTED` 2026-10-03): the remaining V3-37
+  control-center sections are now projected read-only (`src/desktop/ControlCenterPanels.h`) and rendered
+  (`GuiPanels.h`), combined into a single `ControlCenterReport` (`ControlCenterState.h`). Sections bound
+  to a real source are live: **configuration/version context** (from the pipeline config) and the
+  **shadow ledger** (from the append-only runtime ledger); **incidents** are detected from the real
+  adapter stream health via the existing Phase 2 engine (so an empty list is a genuine "no incidents").
+  Sections with no source wired yet — prediction/observation, knowledge, research, candidates,
+  validation evidence, approvals, evolution graph, schedule/operating window, operating-window
+  checkpoints — are shown explicitly as **`NOT AVAILABLE`**, never fabricated. The GUI exposes no
+  live-order path; the shadow-only invariant is asserted in tests and self-test.
+- The manifest graph is now 199 file-level tasks (175 `APPROVED`, 7 `TESTED`, 5 `IMPLEMENTED`, 10
   `DEFERRED`, 2 `BLOCKED`). The 10 deferred Master capabilities remain visible.
 - Remaining unproven items are environment/data-bound (real-Windows-desktop interactive GUI, real
-  MetaEditor/MT5 run, historical dataset campaign). No live trading is enabled; Phase 11 stays a
-  gate/registry.
+  MetaEditor/MT5 run, historical dataset campaign, and wiring sources for the still-`NOT AVAILABLE`
+  panels). No live trading is enabled; Phase 11 stays a gate/registry.
+
+## Verification (2026-10-03, local; remote CI recorded after push)
+
+- `DesktopTests` PASS under g++ `-std=c++17`/`c++20` `-Wall -Wextra -Werror -pedantic` (real code paths,
+  no mocks): added `test_section_panel_availability`, `test_incident_propagation_and_corruption`,
+  `test_single_runtime_owner`.
+- Default (GUI OFF) CMake build + ctest: **18/18 passed**. GUI build (`AURA_BUILD_GUI=ON`) c++17 and
+  c++20: **19/19 passed** each.
+- `aura_gui --self-test` PASS (270 frames, 9/9 streams, shadow-only, ledger+version sourced, incidents
+  wired, unsourced sections `NOT AVAILABLE`, checkpoint OK, recovery CLEAN_SHUTDOWN resumable).
+- `aura_gui --gui --frames N` interactive smoke under Xvfb software OpenGL PASS: booted, cycled through
+  all 19 V3-37 sections, clean shutdown checkpoint OK.
+- NOT claimed: interactive rendering on a real Windows desktop (UNPROVEN); any profitability,
+  calibration, broker-validation or production-safety claim.
 
 ## Next action
 
@@ -419,9 +443,10 @@ See `project-control/BLOCKED.md`.
    GUI from UNPROVEN to VERIFIED; do not claim it verified from the CI smoke alone.
 3. Optional hardening: a SIGKILL-during-write recovery test to prove the atomic temp+rename path
    leaves either the old or the complete new file, never a torn one.
-4. Increase GUI data coverage: wire more of the V3-37 sections (Research/Knowledge/Candidates/
-   Validation/Approval/Evolution/Incidents/Schedule/Audit) to read-only adapters (currently `NOT
-   AVAILABLE`). Do not fabricate their values.
+4. Increase GUI data coverage: wire the remaining `NOT AVAILABLE` panels (prediction/observation,
+   knowledge, research, candidates, validation evidence, approvals, evolution, schedule, operating-window
+   checkpoints) to their existing read-only ledgers when the control center actually runs those planes.
+   Do not fabricate their values.
 5. Keep the control plane and manifest updated per wave; preserve state in Git.
 6. Do not enable unattended live trading or make profitability/safety claims without evidence.
 

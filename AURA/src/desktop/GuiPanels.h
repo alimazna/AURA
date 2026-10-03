@@ -1,6 +1,7 @@
 #ifndef AURA_DESKTOP_GUIPANELS_H
 #define AURA_DESKTOP_GUIPANELS_H
 
+#include "desktop/ControlCenterState.h"
 #include "desktop/DesktopModel.h"
 
 #include <imgui.h>
@@ -158,23 +159,6 @@ inline void draw_positions(const ControlCenterSnapshot& s) {
     ImGui::Text("Append-only ledger entries: %zu", s.positions.ledger_entries);
 }
 
-inline void draw_persistence(const ControlCenterSnapshot& s) {
-    ImGui::TextColored(ImVec4(0.85f, 0.87f, 0.95f, 1.0f), "Checkpoints / Recovery");
-    ImGui::Separator();
-    kv("Store", s.persistence.store_path);
-    ImGui::Text("Persisted records: %zu", s.persistence.records);
-    labelled_status("Last persist status:", s.persistence.last_status);
-    labelled_status("Lifecycle state:", s.persistence.lifecycle);
-    labelled_status("Resumable:", s.persistence.resumable ? "YES" : "NO");
-    ImGui::Text("Fresh start: %s   Known-good: %s", s.persistence.fresh_start ? "yes" : "no",
-                s.persistence.used_known_good ? "yes" : "no");
-    ImGui::TextWrapped("Reason: %s", s.persistence.reason.c_str());
-    if (s.persistence.lifecycle == "CORRUPTED_STATE") {
-        ImGui::TextColored(status_color("CORRUPTED_STATE"),
-                           "Recovery is REFUSED for corrupted state; the GUI will not resume it.");
-    }
-}
-
 inline void draw_health(const ControlCenterSnapshot& s) {
     ImGui::TextColored(ImVec4(0.85f, 0.87f, 0.95f, 1.0f), "Health / Watchdog");
     ImGui::Separator();
@@ -209,22 +193,348 @@ inline void draw_placeholder(const char* title, const char* detail) {
     ImGui::TextWrapped("%s", detail);
 }
 
+// A bounded "nothing to show" note with an explanation, used by wired sections
+// whose real source is currently empty (a genuine empty state, not missing data).
+inline void empty_note(const char* detail) {
+    ImGui::TextColored(ImVec4(0.62f, 0.62f, 0.66f, 1.0f), "%s", detail);
+}
+
+inline void section_title(const char* title) {
+    ImGui::TextColored(ImVec4(0.85f, 0.87f, 0.95f, 1.0f), "%s", title);
+    ImGui::Separator();
+}
+
+inline void draw_prediction(const ControlCenterReport& r) {
+    section_title("Prediction / Observation");
+    if (!r.predictions.available) {
+        not_available_note("Prediction ledger");
+        ImGui::TextWrapped("%s", r.predictions.note.c_str());
+        return;
+    }
+    ImGui::Text("Predictions: %zu", r.predictions.total);
+    if (ImGui::BeginTable("pred_table", 6, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg)) {
+        ImGui::TableSetupColumn("Timeframe");
+        ImGui::TableSetupColumn("Direction");
+        ImGui::TableSetupColumn("Symbol");
+        ImGui::TableSetupColumn("Score (ranking, not probability)");
+        ImGui::TableSetupColumn("Reference");
+        ImGui::TableSetupColumn("Predicted at (ns)");
+        ImGui::TableHeadersRow();
+        for (const PredictionRow& p : r.predictions.rows) {
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn(); ImGui::TextUnformatted(p.timeframe.c_str());
+            ImGui::TableNextColumn(); ImGui::TextUnformatted(p.direction.c_str());
+            ImGui::TableNextColumn(); ImGui::TextUnformatted(p.symbol.c_str());
+            ImGui::TableNextColumn(); ImGui::Text("%.4f", p.score);
+            ImGui::TableNextColumn(); ImGui::TextUnformatted(p.reference_price.c_str());
+            ImGui::TableNextColumn(); ImGui::TextUnformatted(p.predicted_at.c_str());
+        }
+        ImGui::EndTable();
+    }
+}
+
+inline void draw_shadow_ledger(const ControlCenterReport& r) {
+    section_title("Shadow Ledger (append-only)");
+    ImGui::TextWrapped(
+        "The persistent shadow ledger is the historical source of truth (V3-22). Entries are "
+        "appended and never mutated, reordered or erased.");
+    ImGui::Text("Entries: %zu   append-only: %s", r.shadow_ledger.total,
+                r.shadow_ledger.append_only ? "yes" : "no");
+    if (!r.shadow_ledger.available) {
+        empty_note("No ledger entries yet (a shadow session has not produced any).");
+        return;
+    }
+    if (ImGui::BeginTable("ledger_table", 4, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg |
+                                                   ImGuiTableFlags_ScrollY)) {
+        ImGui::TableSetupColumn("Type");
+        ImGui::TableSetupColumn("Decision id");
+        ImGui::TableSetupColumn("Recorded at (ns)");
+        ImGui::TableSetupColumn("Payload");
+        ImGui::TableHeadersRow();
+        for (const LedgerEntryRow& e : r.shadow_ledger.recent) {
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn(); ImGui::TextUnformatted(e.type.c_str());
+            ImGui::TableNextColumn(); ImGui::TextUnformatted(e.decision_id.c_str());
+            ImGui::TableNextColumn(); ImGui::TextUnformatted(e.recorded_at.c_str());
+            ImGui::TableNextColumn(); ImGui::TextUnformatted(e.payload.c_str());
+        }
+        ImGui::EndTable();
+    }
+}
+
+inline void draw_research(const ControlCenterReport& r) {
+    section_title("Research");
+    if (!r.research.available) {
+        not_available_note("Experiment ledger");
+        ImGui::TextWrapped("No experiment has been recorded in this session.");
+        return;
+    }
+    ImGui::Text("Experiments: %zu", r.research.total);
+    if (ImGui::BeginTable("exp_table", 4, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg)) {
+        ImGui::TableSetupColumn("Question");
+        ImGui::TableSetupColumn("Decision");
+        ImGui::TableSetupColumn("Evidence zone");
+        ImGui::TableSetupColumn("Contamination");
+        ImGui::TableHeadersRow();
+        for (const ResearchRow& e : r.research.rows) {
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn(); ImGui::TextWrapped("%s", e.question.c_str());
+            ImGui::TableNextColumn(); ImGui::TextUnformatted(e.decision.c_str());
+            ImGui::TableNextColumn(); ImGui::TextUnformatted(e.evidence_zone.c_str());
+            ImGui::TableNextColumn(); ImGui::TextUnformatted(e.contamination.c_str());
+        }
+        ImGui::EndTable();
+    }
+}
+
+inline void draw_knowledge(const ControlCenterReport& r) {
+    section_title("Knowledge");
+    if (!r.knowledge.available) {
+        not_available_note("Knowledge store");
+        ImGui::TextWrapped("No knowledge revision has been recorded in this session.");
+        return;
+    }
+    ImGui::Text("Identities: %zu   revisions: %zu", r.knowledge.identities, r.knowledge.revisions);
+    if (ImGui::BeginTable("kn_table", 4, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg)) {
+        ImGui::TableSetupColumn("Status");
+        ImGui::TableSetupColumn("Rev");
+        ImGui::TableSetupColumn("Scope");
+        ImGui::TableSetupColumn("Observation");
+        ImGui::TableHeadersRow();
+        for (const KnowledgeRow& k : r.knowledge.rows) {
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::TextColored(status_color(k.status), "%s", k.status.c_str());
+            ImGui::TableNextColumn(); ImGui::Text("%u", (unsigned)k.revision);
+            ImGui::TableNextColumn(); ImGui::TextUnformatted(k.validity_scope.c_str());
+            ImGui::TableNextColumn(); ImGui::TextWrapped("%s", k.observation.c_str());
+        }
+        ImGui::EndTable();
+    }
+}
+
+inline void draw_candidates(const ControlCenterReport& r) {
+    section_title("Candidates");
+    if (!r.candidates.available) {
+        not_available_note("Candidate registry");
+        ImGui::TextWrapped("No candidate has been registered in this session.");
+        return;
+    }
+    ImGui::Text("Population: %zu", r.candidates.population);
+    if (ImGui::BeginTable("cand_table", 4, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg)) {
+        ImGui::TableSetupColumn("Candidate");
+        ImGui::TableSetupColumn("Parent");
+        ImGui::TableSetupColumn("Change");
+        ImGui::TableSetupColumn("State");
+        ImGui::TableHeadersRow();
+        for (const CandidateRow& c : r.candidates.rows) {
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn(); ImGui::TextUnformatted(c.candidate_id.c_str());
+            ImGui::TableNextColumn(); ImGui::TextUnformatted(c.parent_version.c_str());
+            ImGui::TableNextColumn(); ImGui::TextUnformatted(c.change_type.c_str());
+            ImGui::TableNextColumn();
+            ImGui::TextColored(status_color(c.state), "%s", c.state.c_str());
+        }
+        ImGui::EndTable();
+    }
+}
+
+inline void draw_validation(const ControlCenterReport& r) {
+    section_title("Validation Evidence");
+    if (!r.validation.available) {
+        not_available_note("Validation evidence");
+        ImGui::TextWrapped(
+            "No validation campaign source is wired. A missing campaign is NOT a pass "
+            "(Phase 6: absent evidence is never treated as validation). No profitability or "
+            "calibration claim is made here.");
+        return;
+    }
+}
+
+inline void draw_approvals(const ControlCenterReport& r) {
+    section_title("Approval Center");
+    ImGui::TextWrapped(
+        "Human decisions are recorded immutably; automated actors cannot record an accepted "
+        "human decision (Phase 7).");
+    if (!r.approvals.available) {
+        empty_note("No human decision has been recorded in this session.");
+        return;
+    }
+    ImGui::Text("Decisions: %zu", r.approvals.total);
+    if (ImGui::BeginTable("appr_table", 4, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg)) {
+        ImGui::TableSetupColumn("Decision");
+        ImGui::TableSetupColumn("Status");
+        ImGui::TableSetupColumn("Actor");
+        ImGui::TableSetupColumn("Question");
+        ImGui::TableHeadersRow();
+        for (const ApprovalRow& a : r.approvals.rows) {
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn(); ImGui::TextUnformatted(a.decision_id.c_str());
+            ImGui::TableNextColumn();
+            ImGui::TextColored(status_color(a.status), "%s", a.status.c_str());
+            ImGui::TableNextColumn(); ImGui::TextUnformatted(a.actor.c_str());
+            ImGui::TableNextColumn(); ImGui::TextWrapped("%s", a.question.c_str());
+        }
+        ImGui::EndTable();
+    }
+}
+
+inline void draw_evolution(const ControlCenterReport& r) {
+    section_title("Evolution Graph");
+    if (!r.evolution.available) {
+        not_available_note("Evolution graph");
+        ImGui::TextWrapped("No version lineage has been recorded in this session.");
+        return;
+    }
+    ImGui::Text("Nodes: %zu   edges: %zu", r.evolution.nodes, r.evolution.edges.size());
+    for (const EvolutionEdgeRow& e : r.evolution.edges) {
+        ImGui::Bullet();
+        ImGui::Text("%s -> %s", e.parent_version.c_str(), e.child_version.c_str());
+    }
+}
+
+inline void draw_schedule(const ControlCenterReport& r) {
+    section_title("Schedule / Operating Window");
+    if (!r.schedule.available) {
+        not_available_note("Operating window");
+        ImGui::TextWrapped("%s", r.schedule.note.c_str());
+        ImGui::TextWrapped(
+            "The window is human-bounded and cannot self-extend (Phase 8). This view is not "
+            "wired to an accepted schedule yet, so it is shown NOT AVAILABLE rather than as an "
+            "invented ACTIVE window.");
+        return;
+    }
+}
+
+inline void draw_incidents(const ControlCenterReport& r) {
+    section_title("Incidents");
+    if (!r.incidents.available) {
+        not_available_note("Incident source");
+        ImGui::TextWrapped("No failure detection source is wired.");
+        return;
+    }
+    ImGui::Text("Detected incidents: %zu", r.incidents.count);
+    if (r.incidents.rows.empty()) {
+        empty_note("No incidents detected from the current adapter stream health.");
+        return;
+    }
+    if (ImGui::BeginTable("inc_table", 5, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg)) {
+        ImGui::TableSetupColumn("Severity");
+        ImGui::TableSetupColumn("Component");
+        ImGui::TableSetupColumn("State");
+        ImGui::TableSetupColumn("Recovery");
+        ImGui::TableSetupColumn("Message");
+        ImGui::TableHeadersRow();
+        for (const IncidentRow& i : r.incidents.rows) {
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::TextColored(status_color(i.severity), "%s", i.severity.c_str());
+            ImGui::TableNextColumn(); ImGui::TextUnformatted(i.component.c_str());
+            ImGui::TableNextColumn(); ImGui::TextUnformatted(i.state.c_str());
+            ImGui::TableNextColumn(); ImGui::TextUnformatted(i.recovery_action.c_str());
+            ImGui::TableNextColumn(); ImGui::TextWrapped("%s", i.message.c_str());
+        }
+        ImGui::EndTable();
+    }
+}
+
+inline void draw_checkpoints(const ControlCenterReport& r) {
+    section_title("Checkpoints / Recovery");
+    // Persistence/recovery decision (V2-36) — always sourced from the live shell.
+    const PersistencePanel& s = r.snapshot.persistence;
+    kv("Store", s.store_path);
+    ImGui::Text("Persisted records: %zu", s.records);
+    labelled_status("Last persist status:", s.last_status);
+    labelled_status("Lifecycle state:", s.lifecycle);
+    labelled_status("Resumable:", s.resumable ? "YES" : "NO");
+    ImGui::Text("Fresh start: %s   Known-good: %s", s.fresh_start ? "yes" : "no",
+                s.used_known_good ? "yes" : "no");
+    ImGui::TextWrapped("Reason: %s", s.reason.c_str());
+    if (s.lifecycle == "CORRUPTED_STATE") {
+        ImGui::TextColored(status_color("CORRUPTED_STATE"),
+                           "Recovery is REFUSED for corrupted state; the GUI will not resume it.");
+    }
+    ImGui::Spacing();
+    ImGui::TextUnformatted("Operating-window checkpoints:");
+    if (!r.checkpoints.available) {
+        ImGui::TextColored(ImVec4(0.62f, 0.62f, 0.66f, 1.0f),
+                           "NOT AVAILABLE (no operating-window checkpoint source wired)");
+        return;
+    }
+    ImGui::Text("Checkpoints: %zu", r.checkpoints.total);
+    if (ImGui::BeginTable("cp_table", 3, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg)) {
+        ImGui::TableSetupColumn("Checkpoint");
+        ImGui::TableSetupColumn("Validity");
+        ImGui::TableSetupColumn("Schema");
+        ImGui::TableHeadersRow();
+        for (const CheckpointRow& c : r.checkpoints.recent) {
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn(); ImGui::TextUnformatted(c.checkpoint_id.c_str());
+            ImGui::TableNextColumn();
+            ImGui::TextColored(status_color(c.validity), "%s", c.validity.c_str());
+            ImGui::TableNextColumn(); ImGui::TextUnformatted(c.schema_version.c_str());
+        }
+        ImGui::EndTable();
+    }
+}
+
+inline void draw_audit(const ControlCenterReport& r) {
+    section_title("Audit");
+    ImGui::TextWrapped("The audit ledger is append-only; history is never edited or deleted.");
+    if (!r.audit.available) {
+        empty_note("No audit record has been appended in this session.");
+        return;
+    }
+    ImGui::Text("Records: %zu", r.audit.total);
+    if (ImGui::BeginTable("audit_table", 4, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg)) {
+        ImGui::TableSetupColumn("Category"); ImGui::TableSetupColumn("Actor");
+        ImGui::TableSetupColumn("Action"); ImGui::TableSetupColumn("Recorded at (ns)");
+        ImGui::TableHeadersRow();
+        for (const AuditRow& a : r.audit.rows) {
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn(); ImGui::TextUnformatted(a.category.c_str());
+            ImGui::TableNextColumn(); ImGui::TextUnformatted(a.actor.c_str());
+            ImGui::TableNextColumn(); ImGui::TextUnformatted(a.action.c_str());
+            ImGui::TableNextColumn(); ImGui::TextUnformatted(a.recorded_at.c_str());
+        }
+        ImGui::EndTable();
+    }
+}
+
+inline void draw_version(const ControlCenterReport& r) {
+    section_title("Configuration / Version Context");
+    kv("Schema version", r.version.schema_version);
+    kv("Strategy version", r.version.strategy_version);
+    kv("Configuration version", r.version.configuration_version);
+    kv("Strategy family", r.version.strategy_family);
+    kv("Symbol", r.version.symbol);
+    ImGui::TextWrapped(
+        "Version identity is verified before any resume; an incompatible persisted state is "
+        "refused rather than mis-resumed.");
+}
+
 // Draws the content area for the selected section index (see DesktopModel::sections()).
-inline void draw_section(const ControlCenterSnapshot& s, int section) {
+inline void draw_section(const ControlCenterReport& r, int section) {
     switch (section) {
-        case 0:  draw_overview(s); break;
-        case 1:  draw_data_health(s); break;
-        case 2:  draw_timeframes(s); break;
-        case 3:  draw_signals(s); break;
-        case 4:  draw_risk(s); break;
-        case 5:  draw_positions(s); break;
-        case 15: draw_persistence(s); break;
-        case 16: draw_health(s); break;
-        case 18:
-            draw_placeholder("Configuration / Version",
-                             "Version identity is carried by the persisted manifest. The "
-                             "configuration/version context panel is not yet wired to a view model.");
-            break;
+        case 0:  draw_overview(r.snapshot); break;
+        case 1:  draw_data_health(r.snapshot); break;
+        case 2:  draw_timeframes(r.snapshot); break;
+        case 3:  draw_signals(r.snapshot); break;
+        case 4:  draw_risk(r.snapshot); break;
+        case 5:  draw_positions(r.snapshot); break;
+        case 6:  draw_prediction(r); break;
+        case 7:  draw_research(r); break;
+        case 8:  draw_knowledge(r); break;
+        case 9:  draw_candidates(r); break;
+        case 10: draw_validation(r); break;
+        case 11: draw_approvals(r); break;
+        case 12: draw_evolution(r); break;
+        case 13: draw_incidents(r); break;
+        case 14: draw_schedule(r); break;
+        case 15: draw_checkpoints(r); break;
+        case 16: draw_health(r.snapshot); break;
+        case 17: draw_audit(r); break;
+        case 18: draw_version(r); break;
         default:
             draw_placeholder(
                 DesktopModel::sections().at(static_cast<std::size_t>(section)).c_str(),

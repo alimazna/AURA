@@ -31,11 +31,13 @@ authority_class_enum:
 path_status_note: Phase 0 filenames are from V3-42 (CANONICAL decomposition). Phase 0.5/1/2 filenames
   and src/ layout are PROPOSED implementation decomposition and are subject to integration review (V3-16,
   V3-46). They must not be treated as canonical architecture.
-current_task: 'Canonical Phases 0-13 COMPLETE and TESTED, plus Phase 9 desktop productization.
-  Phase 13 (durable persistence + crash recovery + packaging/CI) and the Windows x64 Release package
-  are done; Phase 9 now includes a real desktop GUI (GUI-0001, Dear ImGui + GLFW + OpenGL) with a
-  headless integration smoke and a bounded Xvfb interactive-runtime smoke. Manifest graph 197 tasks.
-  Remaining are environment/data-unproven only (real-Windows-desktop interactive GUI, real
+current_task: 'Canonical Phases 0-13 COMPLETE and TESTED, plus Phase 9 desktop productization and the
+  V3-37 control-center section integration. Phase 13 (durable persistence + crash recovery +
+  packaging/CI) and the Windows x64 Release package are done; Phase 9 now includes a real desktop GUI
+  (GUI-0001, Dear ImGui + GLFW + OpenGL) with a headless integration smoke, a bounded Xvfb
+  interactive-runtime smoke, and read-only projections for every V3-37 section (GUI-0004..GUI-0006:
+  wired sections bound to live runtime data; unsourced sections explicit NOT AVAILABLE). Manifest graph
+  199 tasks. Remaining are environment/data-unproven only (real-Windows-desktop interactive GUI, real
   MT5/MetaEditor round-trip, licensed XAUUSD datasets).'
 tasks:
 - id: TASK-BOOTSTRAP-001
@@ -2646,16 +2648,23 @@ tasks:
   layer: OPERATING_GOVERNANCE_PLANE
   authority: CANONICAL
   status: TESTED
-  output: (phase milestone - aggregates DESK-0001..DESK-0003 + GUI-0001)
+  output: (phase milestone - aggregates DESK-0001..DESK-0003 + GUI-0001..GUI-0006)
   dependencies:
   - DESK-0003
   - GUI-0001
-  objective: Phase 9 Desktop Control Center milestone (headless view-models + real GUI productization).
+  - GUI-0006
+  objective: Phase 9 Desktop Control Center milestone (headless view-models + real GUI productization
+    + the full V3-37 read-only section integration).
   acceptance: All file-level tasks APPROVED/IMPLEMENTED; tests pass; GUI builds and its integration
-    and interactive-runtime smokes pass.
+    and interactive-runtime smokes pass; every V3-37 section is either wired to real data or explicitly
+    NOT AVAILABLE (never fabricated).
   evidence: 'DESK-0001..0003 APPROVED (headless view-models). GUI-0001 IMPLEMENTED (Dear ImGui + GLFW
-    + OpenGL control center). DesktopTests + GuiSelfTest pass; GUI interactive smoke passes under Xvfb
-    software OpenGL. Real-Windows-desktop interactive verification remains UNPROVEN.'
+    + OpenGL control center). GUI-0004..0006 IMPLEMENTED (read-only projections for all remaining V3-37
+    sections; wired sections bound to live runtime data; unsourced sections NOT AVAILABLE). Local:
+    DesktopTests PASS c++17/c++20 strict; default build 18/18, GUI build 19/19; aura_gui --self-test
+    PASS; Xvfb interactive smoke cycles all 19 sections and shuts down cleanly. Remote CI for these new
+    commits is recorded in TEST_LOG.md once pushed. Real-Windows-desktop interactive verification
+    remains UNPROVEN; MT5 EA round-trip UNPROVEN. Shadow only.'
 - id: TG-0001
   phase: '10'
   module: AUXILIARY_TELEGRAM
@@ -3060,6 +3069,66 @@ tasks:
     aura_gui.exe + aura.exe, extracts and re-runs both. Local: GUI build PASS c++17/c++20; default
     (GUI OFF) build 18/18 tests PASS; GUI build 19/19 tests PASS. Remote CI result recorded in
     TEST_LOG.md.'
+- id: GUI-0004
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: APPLICATION_PLANE
+  authority: PROPOSED
+  status: IMPLEMENTED
+  output: src/desktop/ControlCenterPanels.h
+  dependencies:
+  - DESK-0002
+  - OB-0001
+  - VALID-0001
+  - GOV-0004
+  objective: Read-only desktop projectors for the additional V3-37 control-center sections (prediction,
+    shadow ledger, incidents, knowledge, research, candidates, validation, approvals, evolution,
+    schedule, checkpoints, audit, configuration/version).
+  acceptance: Pure read-only projections over supplied records; a section is `available` only when a
+    real source is wired; unsourced sections are NOT AVAILABLE and are never fabricated; no GUI toolkit,
+    no network, no clock, no input mutation.
+  evidence: 'DONE 2026-10-03: added PanelSources + ControlCenterPanels (pure, deterministic). Verified
+    by DesktopTests test_section_panel_availability (unsourced -> NOT AVAILABLE; wired -> available;
+    deterministic) under g++ c++17/c++20 strict.'
+- id: GUI-0005
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: APPLICATION_PLANE
+  authority: PROPOSED
+  status: IMPLEMENTED
+  output: src/desktop/ControlCenterState.h, src/desktop/GuiPanels.h, tools/aura_gui.cpp
+  dependencies:
+  - GUI-0001
+  - GUI-0004
+  objective: Integrate the additional sections into the single-runtime-owner control center - a
+    ControlCenterReport combining the core snapshot with the new projections; real incident detection
+    over the live adapter streams; real shadow-ledger and version-context sourcing; panels rendered in
+    the GUI (wired sections bound to live data, unsourced sections explicit NOT AVAILABLE).
+  acceptance: One runtime owner; version context and shadow ledger sourced from the live pipeline;
+    incidents detected from real stream health; unsourced planes NOT AVAILABLE; no live-order path;
+    section cycling renders every panel; read-only.
+  evidence: 'DONE 2026-10-03: refresh_report() builds the report; incidents via FailureDetectionEngine
+    over live adapters; ledger snapshot cached by size (re-copied only when it grows). Verified by
+    DesktopTests test_incident_propagation_and_corruption + test_single_runtime_owner; GuiSelfTest now
+    asserts version/ledger/incident sourcing and NOT-AVAILABLE for unsourced planes; Xvfb interactive
+    smoke cycles all 19 sections and shuts down cleanly. Shadow only.'
+- id: GUI-0006
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: OPERATING_GOVERNANCE_PLANE
+  authority: PROPOSED
+  status: IMPLEMENTED
+  output: src/desktop/DesktopTests.cpp (extended)
+  dependencies:
+  - GUI-0004
+  - GUI-0005
+  objective: Behavioural tests proving the additional desktop section integration.
+  acceptance: Unsourced sections NOT AVAILABLE; wired sections available and deterministic; real
+    incident propagation (only the failing stream is reported); corrupted persisted state surfaced as
+    CORRUPTED_STATE and refused; single runtime owner.
+  evidence: 'DONE 2026-10-03: added test_section_panel_availability, test_incident_propagation_and_corruption,
+    test_single_runtime_owner. DesktopTests ALL PASS under g++ c++17 and c++20 strict (real code paths,
+    no mocks); registered with CTest (DesktopTests).'
 - id: MT5-REAL-0001
   phase: DEFERRED
   module: MT5_RUNTIME

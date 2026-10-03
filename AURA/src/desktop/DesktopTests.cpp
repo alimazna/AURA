@@ -3,17 +3,26 @@
 // Deterministic; no GUI, no clock, no I/O. Exits non-zero on the first failure.
 
 #include "desktop/ControlCenterViewModels.h"
+#include "desktop/ControlCenterPanels.h"
 #include "desktop/ControlCenterState.h"
 #include "desktop/DashboardProjector.h"
 #include "desktop/DesktopModel.h"
 #include "evolution/Candidate.h"
+#include "evolution/CandidateRegistry.h"
 #include "evolution/EvolutionGraph.h"
+#include "foundation/ErrorRecord.h"
 #include "governance/AuditLedger.h"
 #include "governance/HumanDecision.h"
 #include "learning/KnowledgeObject.h"
+#include "learning/KnowledgeStore.h"
 #include "mt5/ProtocolCodec.h"
+#include "observation/FailureDetectionEngine.h"
+#include "observation/PredictionLedger.h"
+#include "operatingwindow/Checkpoint.h"
 #include "operatingwindow/OperatingWindow.h"
 #include "research/Experiment.h"
+#include "research/ExperimentLedger.h"
+#include "runtime/AdapterManager.h"
 #include "runtime/ApplicationShell.h"
 
 #include <cstdio>
@@ -264,6 +273,194 @@ static void test_control_center_state_smoke() {
 }
 
 
+// Section availability must reflect whether a real source is wired: unsourced
+// planes stay NOT AVAILABLE, sourced planes become available, and the shadow
+// ledger / incidents / version context are derived from the live runtime.
+static void test_section_panel_availability() {
+    desktop::ControlCenterOptions options;  // in-memory
+    desktop::ControlCenterState state(options);
+    for (const std::string& f : frames(5)) state.shell().feed(f + "\n");
+
+    // No sources wired yet: these must be NOT AVAILABLE (never fabricated).
+    const auto& empty = state.refresh_report();
+    CHECK(!empty.predictions.available);
+    CHECK(!empty.knowledge.available);
+    CHECK(!empty.research.available);
+    CHECK(!empty.candidates.available);
+    CHECK(!empty.approvals.available);
+    CHECK(!empty.evolution.available);
+    CHECK(!empty.validation.available);
+    CHECK(!empty.schedule.available);
+    // Version context is always sourced from the live config.
+    CHECK(empty.version.available);
+    CHECK(empty.version.schema_version == "1.0.0");
+    CHECK(empty.version.symbol == "XAUUSD");
+    // Incidents are always wired (detector runs against live stream health) and,
+    // after 5 healthy frames, are empty (a real "no incidents", not missing data).
+    CHECK(empty.incidents.source_wired);
+    CHECK(empty.incidents.available);
+    CHECK(empty.incidents.count == 0);
+    // Shadow ledger is sourced from the real runtime (some entries after frames).
+    CHECK(empty.shadow_ledger.available);
+    CHECK(empty.shadow_ledger.append_only);
+
+    // Wire real records from the Phase 2-7 layers.
+    std::vector<observation::Prediction> predictions;
+    observation::Prediction p;
+    p.prediction_id = foundation::EntityId("PRED|1");
+    p.symbol = "XAUUSD";
+    p.timeframe = runtime::Timeframe::M15;
+    p.direction = runtime::SignalDirection::LONG;
+    p.score = 0.42;
+    p.reference_price = 1234.5;
+    p.predicted_at = foundation::Timestamp::from_seconds(600);
+    p.valid = true;
+    predictions.push_back(p);
+
+    learning::KnowledgeObject k;
+    k.knowledge_id = learning::make_knowledge_id("strategy", "obs", "scope");
+    k.observation = "obs";
+    k.validity_scope = "scope";
+    k.status = learning::KnowledgeStatus::SUPPORTED;
+
+    research::Experiment e;
+    e.experiment_id = research::make_experiment_id("C1", "q", "cand");
+    e.question = "q";
+    e.decision = research::ExperimentOutcome::PROMISING;
+
+    evolution::Candidate c;
+    c.candidate_id = foundation::EntityId("CAND|1");
+    c.state = evolution::CandidateState::PROPOSED;
+    c.change_type = evolution::ChangeType::PARAMETER;
+
+    governance::DecisionRecord d;
+    d.decision_id = foundation::EntityId("DEC|1");
+    d.question = "q";
+    d.actor = "human";
+    d.status = governance::DecisionStatus::ACCEPTED;
+
+    std::vector<evolution::EvolutionNode> nodes{{"V1.0", "", {}, true},
+                                                {"V1.1", "V1.0", {}, true}};
+
+    operatingwindow::Checkpoint cp;
+    cp.checkpoint_id = foundation::EntityId("CP|1");
+    cp.schema_version = "1.0.0";
+    cp.artifact_digest = "abcd";
+    cp.validity = operatingwindow::CheckpointValidity::VALID;
+
+    governance::AuditRecord a;
+    a.audit_id = foundation::EntityId("AUD|1");
+    a.category = governance::AuditCategory::DECISION;
+    a.actor = "human";
+    a.action = "accept";
+
+    state.set_predictions(predictions);
+    state.set_knowledge({k}, 1);
+    state.set_experiments({e});
+    state.set_candidates({c}, 1);
+    state.set_approvals({d});
+    state.set_evolution_nodes(nodes);
+    state.set_checkpoints({cp});
+    state.set_audit({a});
+
+    const auto& wired = state.refresh_report();
+    CHECK(wired.predictions.available);
+    CHECK(wired.predictions.total == 1);
+    CHECK(wired.predictions.rows.size() == 1);
+    CHECK(wired.predictions.rows[0].timeframe == "M15");
+    CHECK(wired.predictions.rows[0].direction == "LONG");
+    CHECK(wired.knowledge.available);
+    CHECK(wired.knowledge.identities == 1);
+    CHECK(wired.research.available && wired.research.rows.size() == 1);
+    CHECK(wired.candidates.available && wired.candidates.population == 1);
+    CHECK(wired.approvals.available);
+    CHECK(wired.approvals.rows[0].status == "ACCEPTED");
+    CHECK(wired.evolution.available && wired.evolution.edges.size() == 1);
+    CHECK(wired.checkpoints.available && wired.checkpoints.recent[0].validity == "VALID");
+    CHECK(wired.audit.available && wired.audit.rows[0].category == "DECISION");
+    CHECK(wired.snapshot.shadow_only);
+
+    // Determination: identical sources -> identical projection.
+    const auto& again = state.refresh_report();
+    CHECK(again.predictions.total == wired.predictions.total);
+    CHECK(again.knowledge.revisions == wired.knowledge.revisions);
+    CHECK(again.evolution.nodes == wired.evolution.nodes);
+}
+
+// Real state must propagate into the panels: a stream that fails must appear as a
+// real incident with a real severity, not be hidden. Exercised over the real
+// failure-detection engine and adapter boundary.
+static void test_incident_propagation_and_corruption() {
+    runtime::AdapterManager adapters;  // declared nine streams, all STARTING
+    for (const runtime::Timeframe tf : runtime::all_timeframes())
+        adapters.report_bar(tf, foundation::Timestamp::from_seconds(60), 1);
+    adapters.report_disconnected(runtime::Timeframe::M5, "test drop");
+
+    observation::FailureDetectionEngine detector;
+    const std::vector<foundation::ErrorRecord> records =
+        detector.detect_adapter_failures(adapters, foundation::Timestamp::from_seconds(120));
+    CHECK(!records.empty());
+    bool found_m5 = false, healthy_hidden = true;
+    for (const auto& rec : records) {
+        if (rec.context().find("M5") != std::string::npos) found_m5 = true;
+        if (rec.context().find("H1") != std::string::npos) healthy_hidden = false;
+    }
+    CHECK(found_m5);
+    CHECK(healthy_hidden);  // a healthy stream is not reported as an incident
+
+    desktop::PanelSources src;
+    src.incidents = records;
+    src.incident_source_wired = true;
+    const auto panel = desktop::ControlCenterPanels::incidents(src);
+    CHECK(panel.source_wired);
+    CHECK(panel.available);
+    CHECK(panel.count == records.size());
+    CHECK(!panel.rows.empty());
+    bool row_has_state = false;
+    for (const auto& row : panel.rows) {
+        if (row.state == "OFFLINE") row_has_state = true;
+    }
+    CHECK(row_has_state);
+
+    // Corrupted-state presentation: a store of junk must surface CORRUPTED_STATE
+    // and be refused, and the persistence panel must render it explicitly.
+    const std::string store = "aura_desktop_corrupt.aura";
+    {
+        std::FILE* fp = std::fopen(store.c_str(), "wb");
+        CHECK(fp != nullptr);
+        if (fp != nullptr) {
+            const char junk[] = "not a valid aura store";
+            std::fwrite(junk, 1, sizeof(junk) - 1, fp);
+            std::fclose(fp);
+        }
+        desktop::ControlCenterOptions options;
+        options.store_path = store;
+        desktop::ControlCenterState state(options);
+        const auto& outcome = state.evaluate_recovery(false);
+        CHECK(outcome.detected == runtime::LifecycleState::CORRUPTED_STATE);
+        CHECK(!outcome.resumable);
+        const auto& rep = state.refresh_report();
+        CHECK(rep.snapshot.persistence.lifecycle == "CORRUPTED_STATE");
+        CHECK(!rep.snapshot.persistence.resumable);
+    }
+    std::remove(store.c_str());
+}
+
+// One runtime owner: two states never share the same pipeline, and no panel
+// snapshot creates a second shell.
+static void test_single_runtime_owner() {
+    desktop::ControlCenterOptions a, b;
+    desktop::ControlCenterState s1(a), s2(b);
+    for (const std::string& f : frames(3)) s1.shell().feed(f + "\n");
+    // s2 is untouched: zero accepted frames proves they are independent (and that
+    // feeding through one owner never mutates another).
+    CHECK(s1.shell().pipeline().status().accepted > 0);
+    CHECK(s2.shell().pipeline().status().accepted == 0);
+    s1.refresh_report();
+    CHECK(s2.shell().pipeline().status().accepted == 0);
+}
+
+
 int main() {
     test_dashboard_no_fabrication();
     test_knowledge_projection_readonly();
@@ -272,6 +469,9 @@ int main() {
     test_desktop_model_empty_state();
     test_desktop_model_nine_timeframes();
     test_control_center_state_smoke();
+    test_section_panel_availability();
+    test_incident_propagation_and_corruption();
+    test_single_runtime_owner();
     if (g_failures == 0) {
         std::printf("DesktopTests: ALL PASS\n");
         return 0;

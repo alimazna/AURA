@@ -1,5 +1,47 @@
 # AURA — Test Log
 
+## 2026-10-03 — Phase 9 V3-37 section integration (GUI-0004/0005/0006)
+
+Scope: extend the desktop control center with read-only projections for the remaining V3-37 sections
+and wire the ones that have a real source, leaving the rest explicit `NOT AVAILABLE`. Shadow-only; no
+live-order path; no MQL5/MT5 changes.
+
+Environment: Linux (g++ 14.2.0, CMake 4.4.3, xvfb + mesa software GL), no network needed for the
+core/desktop build.
+
+Changes under test:
+- New `src/desktop/ControlCenterPanels.h` (pure, deterministic projections; no GUI toolkit, no I/O, no
+  clock, no input mutation).
+- `ControlCenterState.h` builds a single `ControlCenterReport`: version context and shadow ledger from
+  the live pipeline; incidents from the real adapter stream health via `FailureDetectionEngine`;
+  supplied records for the remaining planes. Ledger snapshot cached by size (re-copied only when the
+  append-only ledger grows).
+- `GuiPanels.h` renders every section; `tools/aura_gui.cpp` cycles all sections in a bounded smoke.
+
+Test commands and results (locally reproduced 2026-10-03):
+- `g++ -std=c++17/-std=c++20 -Wall -Wextra -Werror -pedantic -Isrc src/desktop/DesktopTests.cpp
+  src/foundation/Hasher.cpp` -> builds clean; run -> `DesktopTests: ALL PASS` for both standards.
+  New tests: `test_section_panel_availability` (unsourced sections `NOT AVAILABLE`; wired sections
+  available + deterministic; version/ledger/incidents sourced from the real runtime),
+  `test_incident_propagation_and_corruption` (a real adapter stream taken offline yields a real
+  incident for that stream only; a healthy stream is not reported; a corrupt store surfaces
+  `CORRUPTED_STATE` and is refused), `test_single_runtime_owner` (two states are independent; no panel
+  snapshot creates a second shell).
+- Default (GUI OFF) `cmake --build` + `ctest` -> **18/18 PASS**.
+- GUI (`AURA_BUILD_GUI=ON`) c++17 -> `ctest` **19/19 PASS**; c++20 -> `ctest` **19/19 PASS**.
+- `aura_gui --self-test` -> PASS: `fed 270 frames`, `snapshot rows=9 streams=9/9 shadow_only=yes`,
+  `sections version_available=yes ledger_entries=111 incidents_wired=yes incidents=0`,
+  `checkpoint -> OK`, `recovery -> CLEAN_SHUTDOWN (resumable=yes)`, `SELF-TEST PASS` (exit 0). The
+  self-test additionally fails if version context is unsourced, if the ledger is not populated from the
+  real runtime, if incident detection is not wired, or if any unsourced section fabricates availability.
+- Interactive smoke under Xvfb: `xvfb-run -a -s "-screen 0 1360x860x24" aura_gui --gui --frames 57
+  --store /tmp/gui_cycle.aura` -> `rendered 57 frames` cycling all 19 sections, `shutdown checkpoint ->
+  OK`, exit 0.
+
+Honest limitations: this is local Linux verification. Remote CI for these commits is recorded below
+once the push completes. Interactive rendering on a real Windows desktop remains UNPROVEN. No
+profitability, calibration, broker-validation or production-safety claim is made.
+
 ## 2026-10-03 — Phase 9 desktop productization: real GUI (GUI-0001/0002/0003)
 
 Scope: build and verify a real desktop control-center GUI (Dear ImGui + GLFW + OpenGL 3.3) over the

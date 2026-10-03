@@ -1,9 +1,11 @@
 #ifndef AURA_DESKTOP_CONTROLCENTERSTATE_H
 #define AURA_DESKTOP_CONTROLCENTERSTATE_H
 
+#include "desktop/ControlCenterPanels.h"
 #include "desktop/DesktopModel.h"
 #include "foundation/PersistenceStatus.h"
 #include "mt5/ProtocolCodec.h"
+#include "observation/FailureDetectionEngine.h"
 #include "runtime/ApplicationRecovery.h"
 #include "runtime/ApplicationShell.h"
 
@@ -42,6 +44,26 @@ inline std::vector<std::string> builtin_frames(int steps) {
     }
     return out;
 }
+
+// The complete read-only report the GUI renders: the core runtime snapshot plus
+// the additional V3-37 section projections. Built by the single runtime owner
+// (ControlCenterState); the GUI never reaches into an engine itself.
+struct ControlCenterReport {
+    ControlCenterSnapshot snapshot{};
+    PredictionPanel predictions{};
+    ShadowLedgerPanel shadow_ledger{};
+    IncidentPanel incidents{};
+    KnowledgePanel knowledge{};
+    ResearchPanel research{};
+    CandidatePanel candidates{};
+    ValidationPanel validation{};
+    ApprovalPanel approvals{};
+    EvolutionPanel evolution{};
+    SchedulePanel schedule{};
+    CheckpointPanel checkpoints{};
+    AuditPanel audit{};
+    VersionPanel version{};
+};
 
 // Runtime options for the desktop control center. Kept dependency-free so the
 // state object can be constructed and exercised without a windowing system.
@@ -146,6 +168,99 @@ public:
         return snapshot_;
     }
 
+    // ---- Additional V3-37 section sources (read-only copies) ----------------
+    //
+    // These records are produced by the trusted logic layers (Phase 2-8). They are
+    // held as copies so the projector is pure and the GUI never reaches into an
+    // engine. The control center does not yet run those planes in its own loop, so
+    // unless a source is supplied the corresponding section stays NOT AVAILABLE.
+
+    void set_predictions(std::vector<observation::Prediction> predictions) {
+        predictions_ = std::move(predictions);
+        prediction_source_wired_ = true;
+    }
+    void set_knowledge(std::vector<learning::KnowledgeObject> knowledge,
+                       std::size_t identities) {
+        knowledge_ = std::move(knowledge);
+        knowledge_identities_ = identities;
+    }
+    void set_experiments(std::vector<research::Experiment> experiments) {
+        experiments_ = std::move(experiments);
+    }
+    void set_candidates(std::vector<evolution::Candidate> candidates, std::size_t population) {
+        candidates_ = std::move(candidates);
+        candidate_population_ = population;
+    }
+    void set_approvals(std::vector<governance::DecisionRecord> approvals) {
+        approvals_ = std::move(approvals);
+    }
+    void set_evolution_nodes(std::vector<evolution::EvolutionNode> nodes) {
+        evolution_nodes_ = std::move(nodes);
+    }
+    void set_checkpoints(std::vector<operatingwindow::Checkpoint> checkpoints) {
+        checkpoints_ = std::move(checkpoints);
+    }
+    void set_audit(std::vector<governance::AuditRecord> records) { audit_ = std::move(records); }
+
+    // Snapshot of the append-only shadow ledger (bounded by the projector).
+    std::vector<runtime::LedgerEntry> ledger_entries() {
+        return shell_.pipeline().ledger().ordered();
+    }
+
+    // Detects incidents (structured failure records) from the live adapter streams
+    // using the existing Phase 2 detector. Marks the incident source as wired, so
+    // an empty result is a real "no incidents", not "no data source".
+    std::vector<foundation::ErrorRecord> detect_incidents() {
+        return incidents_.detect_adapter_failures(shell_.pipeline().adapters(),
+                                                  shell_.pipeline().last_observation());
+    }
+
+    // Builds the full read-only report for the GUI. Pure projection over copies.
+    const ControlCenterReport& refresh_report() {
+        refresh();
+        PanelSources src;
+        src.pipeline = &shell_.pipeline();
+        src.predictions = predictions_;
+        src.prediction_source_wired = prediction_source_wired_;
+        // Copying the whole ledger every frame is avoided: only re-snapshot when
+        // the ledger has actually grown (the append-only ledger only ever grows).
+        const std::size_t ledger_size = shell_.pipeline().ledger().size();
+        if (ledger_size != cached_ledger_size_) {
+            cached_ledger_ = shell_.pipeline().ledger().ordered();
+            cached_ledger_size_ = ledger_size;
+        }
+        src.ledger = cached_ledger_;
+        src.incidents = incidents_.detect_adapter_failures(shell_.pipeline().adapters(),
+                                                           shell_.pipeline().last_observation());
+        src.incident_source_wired = true;
+        src.knowledge = knowledge_;
+        src.knowledge_identities = knowledge_identities_;
+        src.experiments = experiments_;
+        src.candidates = candidates_;
+        src.candidate_population = candidate_population_;
+        src.approvals = approvals_;
+        src.evolution_nodes = evolution_nodes_;
+        src.checkpoints = checkpoints_;
+
+        report_.snapshot = snapshot_;
+        report_.predictions = ControlCenterPanels::predictions(src);
+        report_.shadow_ledger = ControlCenterPanels::shadow_ledger(src);
+        report_.incidents = ControlCenterPanels::incidents(src);
+        report_.knowledge = ControlCenterPanels::knowledge(src);
+        report_.research = ControlCenterPanels::research(src);
+        report_.candidates = ControlCenterPanels::candidates(src);
+        report_.validation = ControlCenterPanels::validation();
+        report_.approvals = ControlCenterPanels::approvals(src);
+        report_.evolution = ControlCenterPanels::evolution(src);
+        report_.schedule = ControlCenterPanels::schedule();
+        report_.checkpoints = ControlCenterPanels::checkpoints(src);
+        report_.audit = ControlCenterPanels::audit(src, audit_);
+        report_.version = ControlCenterPanels::version(shell_.pipeline());
+        return report_;
+    }
+
+    const ControlCenterReport& report() const noexcept { return report_; }
+
     const ControlCenterSnapshot& snapshot() const noexcept { return snapshot_; }
     bool recovery_evaluated() const noexcept { return recovery_evaluated_; }
     const ControlCenterOptions& options() const noexcept { return options_; }
@@ -155,7 +270,22 @@ private:
     runtime::ApplicationShell shell_;
     runtime::RecoveryOutcome recovery_{};
     ControlCenterSnapshot snapshot_{};
+    ControlCenterReport report_{};
     foundation::PersistenceStatus last_persist_{foundation::PersistenceStatus::UNKNOWN};
+    observation::FailureDetectionEngine incidents_{};
+    std::vector<runtime::LedgerEntry> cached_ledger_{};
+    std::size_t cached_ledger_size_{0};
+    std::vector<observation::Prediction> predictions_{};
+    bool prediction_source_wired_{false};
+    std::vector<learning::KnowledgeObject> knowledge_{};
+    std::size_t knowledge_identities_{0};
+    std::vector<research::Experiment> experiments_{};
+    std::vector<evolution::Candidate> candidates_{};
+    std::size_t candidate_population_{0};
+    std::vector<governance::DecisionRecord> approvals_{};
+    std::vector<evolution::EvolutionNode> evolution_nodes_{};
+    std::vector<operatingwindow::Checkpoint> checkpoints_{};
+    std::vector<governance::AuditRecord> audit_{};
     bool paused_{false};
     bool recovery_evaluated_{false};
 };

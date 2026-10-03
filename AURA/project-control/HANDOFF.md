@@ -13,7 +13,8 @@ Do not rely on any prior conversation memory.
 - All canonical Phases 0-11 are COMPLETE and `APPROVED`. Phase 12 (integration/application), Phase 13
   (durable persistence + crash recovery + packaging/CI) and the Windows x64 Release package are
   implemented and `TESTED`. Phase 9's Desktop Control Center now includes a **real GUI**
-  (`GUI-0001`, IMPLEMENTED).
+  (`GUI-0001`, IMPLEMENTED) plus read-only projections for every remaining V3-37 section
+  (`GUI-0004..GUI-0006`, IMPLEMENTED).
 - Authoritative build: `AURA/CMakeLists.txt` (header-only C++17/20 + the `aura_foundation` SHA-256 TU).
   It builds the `aura` console host, 18 behavioural test executables, and installs `bin/aura` +
   headers + docs. `ctest` is 18/18 green under C++17 AND C++20. On Windows/MSVC the CRT is linked
@@ -22,9 +23,9 @@ Do not rely on any prior conversation memory.
   `aura --self-test [--keep]` (bounded offline smoke), `aura --dump-frames <file>`, `aura --recover
   <store>` (report the V2-36 decision). `--store <path>` enables file-backed persistence of
   per-timeframe progress + the shadow ledger.
-- Manifest graph: 196 tasks -- 175 `APPROVED`, 7 `TESTED` (PERSIST-0001, PERSIST-0002, BUILD-0002,
-  BUILD-0003, GUI-0002, GUI-0003, PHASE-9-MILESTONE), 2 `IMPLEMENTED` (TASK-MANIFEST-001, GUI-0001),
-  10 `DEFERRED`, 2 `BLOCKED`.
+- Manifest graph: 199 tasks -- 175 `APPROVED`, 7 `TESTED` (PERSIST-0001, PERSIST-0002, BUILD-0002,
+  BUILD-0003, GUI-0002, GUI-0003, PHASE-9-MILESTONE), 5 `IMPLEMENTED` (TASK-MANIFEST-001, GUI-0001,
+  GUI-0004, GUI-0005, GUI-0006), 10 `DEFERRED`, 2 `BLOCKED`.
 - CI: `.github/workflows/ci.yml` builds/tests Linux C++17+C++20 (blocking) with the smoke test and an
   install check, plus MSVC Windows C++17/C++20, plus a `desktop-gui` job (Dear ImGui + GLFW + Xvfb
   bounded interactive smoke), plus a `windows-x64-release-package` job that builds `aura.exe` and
@@ -39,6 +40,27 @@ Do not rely on any prior conversation memory.
   production safety, or live trading. Shadow mode remains the only execution path. Real-Windows-desktop
   interactive GUI rendering is UNPROVEN (the Xvfb smoke is software-rendered on Linux); MT5/MetaEditor
   is UNPROVEN.
+
+### Phase 9 V3-37 section integration deliverables (this session)
+
+- `src/desktop/ControlCenterPanels.h` (new) — pure, deterministic read-only projectors for the
+  remaining V3-37 sections (prediction, shadow ledger, incidents, knowledge, research, candidates,
+  validation, approvals, evolution, schedule, checkpoints, audit, configuration/version) over a
+  `PanelSources` set of copied records. No GUI toolkit, no I/O, no clock, no input mutation.
+- `src/desktop/ControlCenterState.h` — builds a single `ControlCenterReport` (core snapshot + all
+  section projections). Version context and the shadow ledger come from the live pipeline; incidents
+  come from the real adapter stream health via `FailureDetectionEngine`; the remaining planes accept
+  supplied records. Ledger snapshot cached by size to avoid re-copying every frame.
+- `src/desktop/GuiPanels.h` — renders every section; wired sections bind to live data, unsourced
+  sections show explicit `NOT AVAILABLE`. `draw_section` now takes the full `ControlCenterReport`.
+- `tools/aura_gui.cpp` — refresh via `refresh_report()`; `--self-test` now asserts version/ledger/
+  incident sourcing and `NOT AVAILABLE` for unsourced planes; bounded `--frames` smoke cycles all 19
+  sections.
+- `src/desktop/DesktopTests.cpp` — 3 new tests (`test_section_panel_availability`,
+  `test_incident_propagation_and_corruption`, `test_single_runtime_owner`).
+- Verification: DesktopTests ALL PASS c++17/c++20 strict; default 18/18, GUI 19/19; `aura_gui
+  --self-test` PASS; Xvfb interactive smoke cycles all sections and shuts down cleanly. Recorded in
+  `TEST_LOG.md`.
 
 ### Phase 14 deliverables (this session)
 
@@ -76,7 +98,9 @@ Do not rely on any prior conversation memory.
    have a human run `aura_gui --gui` on Windows to promote it), real MetaEditor/MT5 round-trip
    (`MT5-REAL-0001`), and the historical XAUUSD validation campaign (`VAL-EVID-0001`). See
    `BLOCKED.md`. Do not invent datasets/toolchains.
-2. Wire more V3-37 sections to read-only adapters (currently `NOT AVAILABLE`); do not fabricate.
+2. Wire the still-`NOT AVAILABLE` panels (prediction/observation, knowledge, research, candidates,
+   validation evidence, approvals, evolution, schedule, operating-window checkpoints) to their existing
+   read-only ledgers once the control center runs those planes; do not fabricate.
 3. Optional hardening: a SIGKILL-during-write recovery test for the atomic rename path.
 4. If new GUI work starts, keep the approved stack (Dear ImGui + GLFW + OpenGL).
 
