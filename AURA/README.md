@@ -14,3 +14,25 @@ Start here:
 Architecture reference:
 
 `docs/AURA_MASTER_UNIFIED_PROJECT_v3.0.md`
+
+## Build and run
+
+AURA is header-only C++17/20 with a Foundation translation unit. An authoritative CMake build is
+provided (see the build system and `project-control/TEST_LOG.md`):
+
+```sh
+cmake -S . -B build
+cmake --build build -j
+ctest --test-dir build --output-on-failure   # 17 behavioural suites incl. the end-to-end test
+```
+
+The build produces the `aura` host executable (console host, shadow mode only):
+
+```sh
+aura --replay <frames-file>   # run the whole pipeline over recorded canonical frames
+aura --serve  <port>          # serve the single MT5 transport connection; Ctrl-C to stop
+```
+
+Status: AURA is an advanced engineered foundation/prototype, not a finished product. Live trading is
+not enabled; no profitability, calibration, broker-validation, or production-safety claim is made.
+See `project-control/PROJECT_STATE.md` and `project-control/BLOCKED.md` for the current state.

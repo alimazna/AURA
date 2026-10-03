@@ -307,13 +307,50 @@ This is the human-readable snapshot of where the project currently stands.
 - Manifest now 172 tasks; Phases 0–11 are all decomposed into file-level tasks with acceptance
   criteria and evidence.
 
+## Gap audit and Phase 12 integration (2026-10-02)
+
+- A comprehensive Master-to-repository gap audit (`GAP_AUDIT_2026-10-02`) was reviewed against
+  the actual repository. Its central finding is accurate and accepted: AURA has a large,
+  tested architectural/contract/gate foundation plus a real one-EA MT5 source and a real shadow
+  decision pipeline, but did NOT yet have an integrated application runtime, a build system, or a
+  real end-to-end path. The CLAIMED "Penetration 1" report that this repository is a finished
+  Windows trading product is NOT supported by repository evidence.
+- Phase 12 (Integration / Application) was promoted into active scope and implemented:
+  - `src/runtime/ApplicationPipeline.h` (APP-0001) wires one real MT5 wire frame through the whole
+    approved runtime: codec -> nine-stream receiver -> adapter boundary -> H4 structure/regime ->
+    M15 features -> eligibility -> signal -> score/confidence/market-quality -> risk -> shadow fill
+    -> simulated position -> append-only shadow ledger -> health. No live path; no fabrication.
+  - `src/runtime/ApplicationShell.h` (APP-0002) provides a real, dependency-free socket transport
+    (POSIX on Linux, Winsock on Windows) with an interruptible accept/read loop and newline frame
+    reassembly, plus a host-driven application loop.
+  - `tools/run_pipeline.cpp` (APP-0003) is a real application entrypoint (`aura --replay`,
+    `aura --serve`), deliberately shadow-only and console-hosted.
+  - `src/runtime/EndToEndTests.cpp` (E2E-0001) is one reproducible end-to-end integration test over
+    a real loopback socket covering all nine streams, rejection paths, isolation and determinism.
+  - `CMakeLists.txt` (BUILD-0001) is the authoritative build: a static library, all test targets, the
+    `aura` executable, and CTest registration.
+- Verification: CMake configure/build succeeds; `ctest` runs 17/17 suites green; all 17 suites also
+  pass under `g++ -std=c++17` and `-std=c++20` strict. The `aura` executable replayed 360 real frames
+  (9/9 streams healthy, 360 accepted, 0 rejected, 38 signals/proposals/fills, 151 ledger entries,
+  HEALTHY) both offline and over a real socket via `--serve`.
+- Still deliberately NOT claimed: profitability, calibrated probability, broker validation,
+  production safety, or live trading. Phase 11 remains a gate/registry only.
+
+## Explicit blockers (2026-10-02)
+
+- GUI-0001 (native Windows desktop application) — BLOCKED on a Windows toolchain (no MSVC/Win).
+- MT5-REAL-0001 (MetaEditor compile + live terminal run) — BLOCKED (no MetaEditor/MT5 on Linux).
+- VAL-EVID-0001 (historical XAUUSD validation campaign) — BLOCKED on a licensed dataset.
+See `project-control/BLOCKED.md`.
+
 ## Current task
 
-- All canonical Phases 0–11 are COMPLETE and `APPROVED` at the statically-verified, behaviourally
-  tested level. Phase 11 is deliberately gated: real MT5 execution readiness is UNPROVEN in this
-  environment and no unattended live trading is enabled.
-- Real MT5 terminal validation remains the final gated step and is environment-limited (no
-  MetaEditor/MT5 on Linux).
+- All canonical Phases 0–11 are COMPLETE and `APPROVED`. Phase 12 (Integration/Application) is
+  implemented: end-to-end pipeline + socket transport + real host executable + CMake build + an
+  end-to-end test, all green under c++17/c++20 and CTest.
+- The remaining P0/P1 items are environment-blocked (native Windows GUI, real MetaEditor/MT5 run,
+  historical dataset campaign) or are the next unblocked step (PERSIST-0001 file-backed persistence
+  wired into the application). No live trading is enabled; Phase 11 stays a gate/registry.
 
 ## Next action
 

@@ -223,6 +223,32 @@ Only explicit human decisions belong here.
 - **Scope-change flag:** No. Implements the promoted scope; execution authority is unchanged.
 - **Master V3 status:** Preserved unchanged.
 
+## 2026-10-02 — Gap-audit review; Phase 12 Integration/Application promoted into scope
+
+- **Date:** 2026-10-02
+- **Decision:**
+  1. The Master-to-repository gap audit (`GAP_AUDIT_2026-10-02`) is accepted as an accurate
+     characterization: the repository is an advanced engineered foundation/prototype platform, not a
+     finished Windows trading product. Any report claiming a finished product/penetration is treated
+     as unverified external material, not repository evidence.
+  2. Phase 12 (Integration / Application) is promoted into active scope: real end-to-end pipeline
+     wiring, a real dependency-free transport, a real host executable, and an authoritative CMake
+     build with a CTest-registered end-to-end test. These are the uncoupled, environment-independent
+     parts of the audit's P0 list.
+  3. The audited items that require an unavailable environment are recorded as real blockers rather
+     than implemented with invented substitutes: native Windows GUI (no Windows toolchain), real
+     MT5/MetaEditor run (not available on Linux), and the historical XAUUSD validation campaign (no
+     licensed dataset).
+  4. Live trading remains disabled; Phase 11 remains a gate/registry; no profitability, calibrated
+     probability, broker-validation, or production-safety claim is made.
+- **Rationale:** The audit correctly identifies INTEGRATION, not more architecture, as the need. This
+  decision authorizes exactly that integration while keeping the safety model and refusing to fake
+  environment-bound proof.
+- **Affected tasks:** `APP-0001`..`APP-0003`, `E2E-0001`, `BUILD-0001`, and the blocked
+  `GUI-0001`/`MT5-REAL-0001`/`VAL-EVID-0001`; new `PERSIST-0001`.
+- **Scope-change flag:** Yes (Phase 12 promoted). Execution authority is unchanged.
+- **Master V3 status:** Preserved unchanged.
+
 ## Decision format
 
 For each future material decision record:

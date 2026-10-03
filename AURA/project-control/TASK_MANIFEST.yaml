@@ -31,8 +31,9 @@ authority_class_enum:
 path_status_note: Phase 0 filenames are from V3-42 (CANONICAL decomposition). Phase 0.5/1/2 filenames
   and src/ layout are PROPOSED implementation decomposition and are subject to integration review (V3-16,
   V3-46). They must not be treated as canonical architecture.
-current_task: All canonical Phases 0-11 implemented; Phase 11 remains gated (real MT5 UNPROVEN, no live
-  trading).
+current_task: 'Canonical Phases 0-11 complete. Phase 12 integration/application started: end-to-end pipeline
+  + socket transport + real host executable + CMake build done. Remaining are environment-blocked (Windows
+  GUI, real MT5, datasets) and app persistence wiring.'
 tasks:
 - id: TASK-BOOTSTRAP-001
   phase: BOOTSTRAP
@@ -2907,4 +2908,134 @@ tasks:
   objective: Phase 11 real MT5 terminal validation in a live/demo terminal.
   acceptance: Environment-limited here (no MetaEditor/MT5 on Linux). Remains the final gated step.
   evidence: Deferred by design; kept visible per TASK-MANIFEST-001. Not implemented.
+- id: APP-0001
+  phase: '12'
+  module: INTEGRATION
+  layer: APPLICATION_PLANE
+  authority: PROJECT DECISION
+  status: APPROVED
+  output: src/runtime/ApplicationPipeline.h
+  dependencies:
+  - RT-0001
+  - RT-0004
+  - RT-0005
+  - RT-0007
+  - RT-0009
+  - RT-0010
+  - RT-0011
+  - RT-0012
+  - RT-0016
+  - MT5-0008
+  - MT5-0009
+  - OB-0004
+  - RT-0015
+  objective: Wire one real MT5 frame through the whole approved runtime end to end.
+  acceptance: Frame -> codec -> nine-stream receiver -> adapter -> H4 structure/regime -> M15 features
+    -> eligibility -> signal -> score/confidence/quality -> risk -> shadow fill -> position -> ledger
+    -> health, with no live path and no fabrication.
+  evidence: g++ c++17/c++20 strict; exercised by EndToEndTests and the aura executable over a real socket.
+- id: APP-0002
+  phase: '12'
+  module: INTEGRATION
+  layer: APPLICATION_PLANE
+  authority: PROJECT DECISION
+  status: APPROVED
+  output: src/runtime/ApplicationShell.h
+  dependencies:
+  - APP-0001
+  objective: Real, dependency-free socket transport (Linux POSIX + Windows Winsock) and host loop.
+  acceptance: Single-transport accept/read with interruptible timeout, newline frame reassembly, clean
+    drain; no order, no clock, no fabrication.
+  evidence: g++ c++17/c++20 strict; EndToEndTests drives it over loopback TCP; aura --serve smoke-tested.
+- id: APP-0003
+  phase: '12'
+  module: INTEGRATION
+  layer: APPLICATION_PLANE
+  authority: PROJECT DECISION
+  status: APPROVED
+  output: tools/run_pipeline.cpp
+  dependencies:
+  - APP-0002
+  objective: 'Real application entrypoint (console host): --replay and --serve (shadow only).'
+  acceptance: Builds a runnable aura binary; prints a real status summary; never places a live order.
+  evidence: Built via CMake; replay of 360 frames produced 9/9 streams, 360 accepted, 38 signals/38 proposals/38
+    fills, 151 ledger entries, HEALTHY.
+- id: E2E-0001
+  phase: '12'
+  module: INTEGRATION
+  layer: APPLICATION_PLANE
+  authority: PROJECT DECISION
+  status: APPROVED
+  output: src/runtime/EndToEndTests.cpp
+  dependencies:
+  - APP-0002
+  objective: One reproducible end-to-end integration test across the full pipeline over a real socket.
+  acceptance: Nine-stream availability, explicit-timeframe routing, closed-bar acceptance, duplicate/malformed/future-dated
+    rejection, per-stream isolation, deterministic output, append-only ledger, shadow-only.
+  evidence: PASS c++17/c++20 (also under CTest).
+- id: BUILD-0001
+  phase: '12'
+  module: BUILD
+  layer: APPLICATION_PLANE
+  authority: PROJECT DECISION
+  status: APPROVED
+  output: CMakeLists.txt
+  dependencies:
+  - FND-0001
+  objective: 'Authoritative CMake build: static library + all test targets + the aura executable + CTest.'
+  acceptance: cmake configure/build succeeds; ctest runs every suite; no GNU-only constructs in source.
+  evidence: 'Configured and built with CMake 4.x/GNU; ctest: 17/17 passed. Linux verified only.'
+- id: GUI-0001
+  phase: DEFERRED
+  module: WINDOWS_GUI
+  layer: APPLICATION_PLANE
+  authority: PROJECT DECISION
+  status: BLOCKED
+  output: '(no source yet: Windows desktop host)'
+  dependencies:
+  - DESK-0002
+  - GOAL-WIN
+  objective: Real native Windows desktop control-center application (windows, controls, live dashboard).
+  acceptance: A built Windows GUI executable consuming the Phase 9 view-models.
+  evidence: 'BLOCKED: no Windows toolchain in this environment. See BLOCKED.md.'
+- id: MT5-REAL-0001
+  phase: DEFERRED
+  module: MT5_RUNTIME
+  layer: APPLICATION_PLANE
+  authority: PROJECT DECISION
+  status: BLOCKED
+  output: '(no source: MetaEditor compile + live terminal run)'
+  dependencies:
+  - MT5-0009
+  - APP-0001
+  objective: Compile the MQL5 EA in MetaEditor and run it against a real terminal.
+  acceptance: MetaEditor compile clean; EA attach; nine streams; frames received by aura --serve; reconnect.
+  evidence: 'BLOCKED: no MetaEditor/MT5 in this environment (Linux). See BLOCKED.md.'
+- id: VAL-EVID-0001
+  phase: DEFERRED
+  module: VALIDATION_EVIDENCE
+  layer: APPLICATION_PLANE
+  authority: PROJECT DECISION
+  status: BLOCKED
+  output: '(data + report: historical XAUUSD campaign)'
+  dependencies:
+  - VALID-0006
+  objective: Run a real historical/OOS XAUUSD validation campaign over the existing firewall.
+  acceptance: Dataset provenance, train/test/walk-forward partitions, realistic costs, recorded results.
+  evidence: 'BLOCKED: no licensed historical XAUUSD dataset in this environment. See BLOCKED.md.'
+- id: PERSIST-0001
+  phase: '13'
+  module: INTEGRATION
+  layer: APPLICATION_PLANE
+  authority: PROJECT DECISION
+  status: READY
+  output: (wire IPersistenceStore backing into the application)
+  dependencies:
+  - APP-0001
+  - PER-0003
+  objective: Durable persistence across restarts for timeframe state + ledgers in the running application.
+  acceptance: A file-backed IPersistenceStore persists and restores TimeframeStateStore/ShadowLedger;
+    restart resumes without reprocessing or repainting.
+  evidence: 'PLANNED: interfaces exist and are tested; the concrete file-backed store and app wiring are
+    the remaining work.'
 last_updated: '2026-10-02'

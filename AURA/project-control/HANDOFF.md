@@ -91,6 +91,27 @@ Date: 2026-10-02
   explicit `DECISIONS.md` entry.
 - Pushed to `origin/main`; remote URL is token-free and no credential is persisted anywhere.
 
+### Session end state (2026-10-02, gap audit + Phase 12 integration)
+
+- Reviewed the Master-to-repository gap audit against the real repository and accepted its central
+  finding: AURA was a large tested foundation + real MT5 source + shadow pipeline, but had no
+  integrated application runtime, build system, or real end-to-end path. The "finished Windows
+  product" claim is not supported by repository evidence.
+- Phase 12 (Integration/Application) implemented and `APPROVED`:
+  - APP-0001 `src/runtime/ApplicationPipeline.h` — one real frame -> full runtime -> shadow -> ledger.
+  - APP-0002 `src/runtime/ApplicationShell.h` — real dependency-free socket transport + host loop
+    (POSIX/Winsock), interruptible accept, newline frame reassembly, clean drain.
+  - APP-0003 `tools/run_pipeline.cpp` — real `aura` executable (`--replay`, `--serve`), shadow only.
+  - E2E-0001 `src/runtime/EndToEndTests.cpp` — one reproducible end-to-end test over a real socket.
+  - BUILD-0001 `CMakeLists.txt` — static lib + all tests + `aura` + CTest.
+- Verification: `ctest` 17/17 green; all 17 suites pass under c++17 and c++20 strict; `aura --replay`
+  of 360 frames gave 9/9 streams, 360 accepted, 0 rejected, 38 signals/proposals/fills, 151 ledger
+  entries, HEALTHY; `aura --serve` smoke-tested over a real socket with clean SIGTERM shutdown.
+- Real blockers recorded: GUI-0001 (Windows GUI, needs a Windows toolchain), MT5-REAL-0001
+  (MetaEditor/MT5 unavailable on Linux), VAL-EVID-0001 (no licensed historical XAUUSD dataset).
+- Next unblocked step: PERSIST-0001, wire a file-backed `IPersistenceStore` into the application so
+  timeframe state and ledgers survive restart. No live trading; no profitability/safety claims.
+
 ### Session end state (2026-10-02, canonical Phases 8-11)
 
 - Phase 8 (Operating Window & Recovery) COMPLETE and `APPROVED`: `src/operatingwindow/` --

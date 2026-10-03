@@ -580,6 +580,32 @@ Full-suite regression: all 16 test suites PASS under both c++17 and c++20.
 Interpretation: Phase 11 is a gate/registry only. No live trading path is enabled; real MT5
 execution readiness remains UNPROVEN in this environment (no MetaEditor/MT5 on Linux).
 
+## 2026-10-02 - Phase 12 Integration / Application (gap-audit closure)
+Toolchain: g++ 14.2.0; CMake (pip) configure/build; -std=c++17 and -std=c++20,
+-Wall -Wextra -Werror -pedantic (direct) / -Wall -Wextra -Wpedantic (CMake).
+New sources under test: src/runtime/ApplicationPipeline.h (APP-0001),
+src/runtime/ApplicationShell.h (APP-0002), tools/run_pipeline.cpp (APP-0003),
+src/runtime/EndToEndTests.cpp (E2E-0001), CMakeLists.txt (BUILD-0001).
+Results:
+- CMake configure + build: SUCCESS (static lib aura_foundation, 17 test targets, aura executable).
+- CTest: 17/17 tests PASSED (including EndToEndTests).
+- Direct strict compile of all 17 suites: ALL PASS under both c++17 and c++20.
+- New headers self-contained (standalone TU) under c++17 and c++20.
+- EndToEndTests (real loopback TCP, no mocks): proves nine-stream availability, explicit-timeframe
+  routing, closed-bar acceptance, duplicate/malformed/future-dated rejection, per-stream isolation,
+  deterministic decision/proposal identity and ledger size across identical runs, and a strictly
+  shadow-only path (proposal.is_order == false).
+- aura --replay of 360 real canonical frames: 9/9 streams HEALTHY, 360 accepted, 0 rejected,
+  0 malformed, 38 signals, 38 risk proposals, 38 shadow fills, 151 ledger entries, aggregate ONLINE.
+- aura --serve smoke test over a real socket: same counts; clean SIGTERM shutdown (no hang).
+- Live-lifecycle fix verified: accept() is now interruptible (select with timeout), so the host loop
+  observes shutdown without a client connected.
+Interpretation: This closes the audit's integration P0 for the environment-independent parts. A real
+end-to-end MT5 -> analysis -> shadow path now exists and is proven over a real socket, but a real MT5
+terminal round-trip, a native Windows GUI, and a historical dataset campaign remain BLOCKED (no
+toolchain/terminal/dataset here). No profitability, calibration, broker-validation, production-safety
+or live-trading claim is made.
+
 ## Future test entry format
 
 - Date
