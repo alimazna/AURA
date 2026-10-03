@@ -49,8 +49,24 @@ desktop (no human `aura_gui --gui` run on Windows yet); the Xvfb smoke is softwa
 Interpretation: Phase 9 now delivers a real desktop control center that builds and runs, with its
 integration path and interactive lifecycle verified by reproducible local runs. This is NOT a claim of
 Windows visual verification, correctness of unverified sections, profitability, calibration, broker
-validation, production safety, or live-trading readiness. Shadow only. (Remote CI for this commit is
-recorded in the handoff once the run completes; the local results above are the reproducible evidence.)
+validation, production safety, or live-trading readiness. Shadow only.
+
+Remote CI (run 37117057898, branch phase13-persistence-recovery, commit aaeb135) — ALL GREEN, 6/6 jobs:
+- `desktop-gui-linux (Dear ImGui + Xvfb)`: 19/19 ctest PASS (incl. DesktopTests + GuiSelfTest);
+  headless `aura_gui --self-test` PASS (`fed 270 frames`, `rows=9 streams=9/9 shadow_only=yes`,
+  checkpoint OK, CLEAN_SHUTDOWN resumable); **interactive Xvfb smoke PASS in CI** (`boot recovery ->
+  UNKNOWN_STATE`, `rendered 120 frames`, `shutdown checkpoint -> OK`), i.e. the window + render +
+  clean-shutdown lifecycle is proven on the runner, not only on the author machine.
+- `windows-x64-release-package`: builds `aura.exe` + `aura_gui.exe` (GUI ON) and passes
+  `aura_gui --self-test` on the real Windows runner (`fed 270 frames`, `rows=9 streams=9/9`,
+  CLEAN_SHUTDOWN resumable). Sizes: `aura.exe` = 440,320 bytes; `aura_gui.exe` = 1,016,832 bytes;
+  `AURA_Windows_x64_GUI_Release.zip` = 714,226 bytes. ZIP verified to contain both exes; the extracted
+  `aura_gui.exe` re-ran `--self-test` PASS. Artifacts uploaded: `aura-windows-x64-exe`
+  (707,096 bytes: aura.exe + aura_gui.exe) and `AURA_Windows_x64_GUI_Release` (713,997 bytes).
+- ubuntu-latest c++17 and c++20 gcc: PASS (18/18, GUI OFF default matrix unchanged).
+- windows-latest c++17 and c++20 msvc: PASS.
+Remaining UNPROVEN unchanged: real-Windows-desktop interactive visual verification (no human run);
+MT5/MetaEditor round-trip; historical XAUUSD campaign.
 
 ## Future test entry format
 

@@ -31,6 +31,10 @@ Do not rely on any prior conversation memory.
   `aura_gui.exe`, runs the full suite, smokes both exes, packs `AURA_Windows_x64_GUI_Release.zip`,
   verifies it and uploads the artifacts. CI previously caught and we fixed two real Windows
   portability defects (missing `ws2_32` linkage; `std::rename` not overwriting) -- see TEST_LOG.md.
+- Remote CI run 37117057898 (commit `aaeb135`) is ALL GREEN across 6/6 jobs (ubuntu c++17/c++20,
+  windows msvc c++17/c++20, `desktop-gui`, `windows-x64-release-package`). GUI artifacts:
+  `aura_gui.exe` = 1,016,832 bytes, `aura.exe` = 440,320 bytes, `AURA_Windows_x64_GUI_Release.zip`
+  = 714,226 bytes (verified to contain both exes; each re-ran `--self-test` PASS).
 - Verified but still NOT claimed: profitability, calibrated probability, broker validation,
   production safety, or live trading. Shadow mode remains the only execution path. Real-Windows-desktop
   interactive GUI rendering is UNPROVEN (the Xvfb smoke is software-rendered on Linux); MT5/MetaEditor
