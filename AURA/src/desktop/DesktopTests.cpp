@@ -3,14 +3,18 @@
 // Deterministic; no GUI, no clock, no I/O. Exits non-zero on the first failure.
 
 #include "desktop/ControlCenterViewModels.h"
+#include "desktop/ControlCenterState.h"
 #include "desktop/DashboardProjector.h"
+#include "desktop/DesktopModel.h"
 #include "evolution/Candidate.h"
 #include "evolution/EvolutionGraph.h"
 #include "governance/AuditLedger.h"
 #include "governance/HumanDecision.h"
 #include "learning/KnowledgeObject.h"
+#include "mt5/ProtocolCodec.h"
 #include "operatingwindow/OperatingWindow.h"
 #include "research/Experiment.h"
+#include "runtime/ApplicationShell.h"
 
 #include <cstdio>
 #include <string>
@@ -132,11 +136,142 @@ static void test_approval_audit_and_graph_projection() {
     CHECK(gvm.edges[1].child_version == "V1.2");
 }
 
+// A deterministic canonical frame set is provided by ControlCenterState.h
+// (desktop::builtin_frames) and shared with the GUI self-test.
+static std::vector<std::string> frames(int steps) { return desktop::builtin_frames(steps); }
+
+// The nine-timeframe display must always carry nine rows in canonical order, and
+// a silent stream must be labelled NOT AVAILABLE rather than fabricated.
+static void test_desktop_model_empty_state() {
+    runtime::ApplicationShell shell(runtime::ApplicationPipeline::Config{}, std::string{});
+    runtime::RecoveryOutcome outcome;
+    outcome.detected = runtime::LifecycleState::UNKNOWN_STATE;
+    outcome.fresh_start = true;
+
+    const auto snap = desktop::DesktopModel::capture(shell, outcome);
+    CHECK(snap.timeframes.rows.size() == 9);
+    CHECK(!snap.timeframes.any_present);          // no silent fabrication of a healthy row
+    CHECK(snap.timeframes.rows[0].label == "M1");
+    CHECK(snap.timeframes.rows[0].service_state == "NOT AVAILABLE");
+    CHECK(snap.timeframes.rows[0].quality == "NOT AVAILABLE");
+    CHECK(snap.timeframes.rows[0].last_close.available == false);
+    CHECK(snap.timeframes.rows[0].last_close.value == "NOT AVAILABLE");
+    CHECK(snap.overview.streams_healthy == 0);
+    // Identity is explicit per row, not positional.
+    const auto tfs = runtime::all_timeframes();
+    for (std::size_t i = 0; i < tfs.size(); ++i)
+        CHECK(snap.timeframes.rows[i].timeframe == tfs[i]);
+    CHECK(snap.shadow_only);  // no live-order capability
+    CHECK(snap.persistence.lifecycle == "UNKNOWN_STATE");
+    CHECK(snap.persistence.resumable == false);
+    // All Master control-center sections are present.
+    const auto secs = desktop::DesktopModel::sections();
+    CHECK(secs.size() == 19);
+    bool has_recovery = false, has_timeframes = false;
+    for (const auto& s : secs) {
+        if (s == "Checkpoints / Recovery") has_recovery = true;
+        if (s == "Timeframes") has_timeframes = true;
+    }
+    CHECK(has_recovery);
+    CHECK(has_timeframes);
+}
+
+// After feeding real frames, the populated streams must be present and
+// distinguishable, and a failure in one stream must not alter another.
+static void test_desktop_model_nine_timeframes() {
+    desktop::ControlCenterOptions options;  // in-memory
+    desktop::ControlCenterState state(options);
+    for (const std::string& f : frames(30)) state.shell().feed(f + "\n");
+
+    const auto& snap = state.refresh();
+    CHECK(snap.timeframes.rows.size() == 9);
+    CHECK(snap.timeframes.any_present);
+    // The operational stream (M15) and structural stream (H4) received bars.
+    int m15_present = 0, h4_present = 0, h1_present = 0;
+    for (const auto& r : snap.timeframes.rows) {
+        if (r.label == "M15") m15_present = r.present ? 1 : 0;
+        if (r.label == "H4") h4_present = r.present ? 1 : 0;
+        if (r.label == "H1") h1_present = r.present ? 1 : 0;
+    }
+    CHECK(m15_present == 1);
+    CHECK(h4_present == 1);
+    // H1 also receives bars in the deterministic set; all nine do.
+    CHECK(h1_present == 1);
+    CHECK(snap.overview.streams_total == 9);
+    CHECK(snap.overview.accepted > 0);
+    CHECK(snap.shadow_only);
+    // A shadow run never reports a live order.
+    CHECK(snap.risk.is_order == false);
+}
+
+// Full desktop integration path: empty -> fed -> checkpoint -> cross-process
+// recovery report -> lifecycle presented; and no auto-resume of corrupted state.
+static void test_control_center_state_smoke() {
+    const std::string store = "aura_desktop_test.aura";
+    std::remove(store.c_str());
+
+    {
+        desktop::ControlCenterOptions options;
+        options.store_path = store;
+        desktop::ControlCenterState state(options);
+        for (const std::string& f : frames(30)) state.shell().feed(f + "\n");
+        state.refresh();
+        const auto status = state.persist_checkpoint();
+        CHECK(status == foundation::PersistenceStatus::OK);
+        // Safe control-plane ops only.
+        CHECK(!state.paused());
+        state.toggle_pause();
+        CHECK(state.paused());
+        state.toggle_pause();
+        CHECK(!state.paused());
+    }
+
+    // Fresh owner recovers the clean shutdown and reports it (read-only).
+    {
+        desktop::ControlCenterOptions options;
+        options.store_path = store;
+        desktop::ControlCenterState state(options);
+        const auto& outcome = state.evaluate_recovery(false);
+        CHECK(outcome.detected == runtime::LifecycleState::CLEAN_SHUTDOWN);
+        CHECK(outcome.resumable);
+        const auto& snap = state.refresh();
+        CHECK(snap.persistence.lifecycle == "CLEAN_SHUTDOWN");
+        CHECK(snap.persistence.resumable);
+        CHECK(snap.persistence.records > 0);
+    }
+
+    // A corrupted store must be REFUSED, never auto-resumed just because the UI
+    // is open.
+    {
+        std::FILE* fp = std::fopen(store.c_str(), "wb");
+        CHECK(fp != nullptr);
+        if (fp != nullptr) {
+            const char junk[] = "garbage not a valid store";
+            std::fwrite(junk, 1, sizeof(junk) - 1, fp);
+            std::fclose(fp);
+        }
+        desktop::ControlCenterOptions options;
+        options.store_path = store;
+        desktop::ControlCenterState state(options);
+        const auto& outcome = state.evaluate_recovery(false);
+        CHECK(outcome.detected == runtime::LifecycleState::CORRUPTED_STATE);
+        CHECK(!outcome.resumable);
+        const auto& snap = state.refresh();
+        CHECK(snap.persistence.lifecycle == "CORRUPTED_STATE");
+        CHECK(!snap.persistence.resumable);
+    }
+    std::remove(store.c_str());
+}
+
+
 int main() {
     test_dashboard_no_fabrication();
     test_knowledge_projection_readonly();
     test_research_and_candidate_projection();
     test_approval_audit_and_graph_projection();
+    test_desktop_model_empty_state();
+    test_desktop_model_nine_timeframes();
+    test_control_center_state_smoke();
     if (g_failures == 0) {
         std::printf("DesktopTests: ALL PASS\n");
         return 0;

@@ -41,6 +41,32 @@ recovery path. A corrupted or version-incompatible store is refused, never silen
 CI (`.github/workflows/ci.yml`) builds and tests on Linux under C++17 and C++20 and runs the smoke
 test; an MSVC Windows job is included as a non-blocking portability check.
 
+## Desktop control center (Phase 9 / GUI-0001)
+
+AURA has a real desktop application, built with **Dear ImGui + GLFW + OpenGL 3.3**. It is the
+human control surface over the existing runtime: it presents read-only state and offers only safe
+control-plane operations (pause/resume the local transport, refresh, checkpoint, bounded stop,
+read-only recovery report). It never places an order and is **SHADOW ONLY**.
+
+Build it with the GUI option (dependencies are pinned and fetched reproducibly by CMake):
+
+```sh
+cmake -S . -B build -DAURA_BUILD_GUI=ON -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j
+aura_gui --gui [--store <path>] [--serve <port>] [--replay <frames>]   # interactive
+aura_gui --self-test [--store <path>]                                   # headless integration smoke
+```
+
+The control center has a sidebar covering the Master V3-37 areas (System Overview, Market/Data
+Health, Timeframes, Signals, Risk, Shadow Positions, Prediction/Observation, Research, Knowledge,
+Candidates, Validation, Approval Center, Evolution Graph, Incidents, Schedule/Operating Window,
+Checkpoints/Recovery, Health/Watchdog, Audit, Configuration/Version). Areas not yet backed by a
+read-only adapter are shown as `NOT AVAILABLE` rather than fabricated. The nine logical streams
+(M1, M5, M15, M30, H1, H4, D1, W1, MN1) are displayed individually by explicit identity, never
+merged into one anonymous health status.
+
 Status: AURA is an advanced engineered foundation/prototype, not a finished product. Live trading is
 not enabled; no profitability, calibration, broker-validation, or production-safety claim is made.
-See `project-control/PROJECT_STATE.md` and `project-control/BLOCKED.md` for the current state.
+The interactive GUI render loop is verified by a bounded software-OpenGL smoke on CI; the MT5 EA
+round-trip remains UNPROVEN. See `project-control/PROJECT_STATE.md` and `project-control/BLOCKED.md`
+for the current state.

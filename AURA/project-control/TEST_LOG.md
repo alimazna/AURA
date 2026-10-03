@@ -1,5 +1,59 @@
 # AURA — Test Log
 
+## 2026-10-03 — Phase 9 desktop productization: real GUI (GUI-0001/0002/0003)
+
+Scope: build and verify a real desktop control-center GUI (Dear ImGui + GLFW + OpenGL 3.3) over the
+existing runtime. Shadow-only; no live-order path.
+
+Environment: Linux (g++ 14.2.0, CMake 4.4.3, libgl1-mesa-dev + xorg-dev + xvfb + mesa software GL
+installed this session), plus the existing Windows CI runner.
+
+Build commands verified locally:
+- `cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=17` then `cmake --build build -j`
+  (GUI OFF, default) -> BUILD PASS.
+- `cmake -S . -B build -DAURA_BUILD_GUI=ON ... -DCMAKE_CXX_STANDARD=17` and `...=20` -> BUILD PASS
+  (`aura_gui` links; pinned FetchContent glfw 3.4 + imgui v1.90.9).
+
+Test commands and results (locally reproduced):
+- `ctest --test-dir <GUI OFF build>` -> **18/18 PASS** (core matrix unchanged).
+- `ctest --test-dir <GUI ON build>` -> **19/19 PASS** (adds `GuiSelfTest`).
+- `DesktopTests` (direct, g++ -std=c++17 -Wall -Wextra -Wpedantic) -> `DesktopTests: ALL PASS`; also
+  compiles clean under C++20. New tests: `test_desktop_model_empty_state`,
+  `test_desktop_model_nine_timeframes`, `test_control_center_state_smoke`.
+- `aura_gui --self-test --store /tmp/g20.aura` -> PASS: `fed 270 frames`, `snapshot rows=9 streams=9/9
+  shadow_only=yes`, `checkpoint -> OK`, `recovery -> CLEAN_SHUTDOWN (resumable=yes)`, `SELF-TEST PASS`
+  (exit 0). The empty-state run also printed `rows=9 shadow_only=yes` with no fabrication.
+- **Interactive runtime smoke (genuine window + render + shutdown)**:
+  `xvfb-run -a -s "-screen 0 1360x860x24" aura_gui --gui --frames 120 --store /tmp/gui_interactive.aura`
+  -> `boot recovery -> UNKNOWN_STATE (resumable=no): no prior persisted state; clean fresh start`,
+  `rendered 120 frames (bounded smoke); requesting close`, `shutdown checkpoint -> OK`, exit 0.
+  This proves the GLFW window creation, ImGui GL3 render loop, bounded stop and clean-shutdown
+  checkpoint actually run — not merely that the target links.
+
+Behavioural checks exercised (real code paths, no mocks):
+- Nine timeframes presented individually by identity (M1..MN1), in canonical order; absent streams
+  shown `NOT AVAILABLE`, never fabricated as healthy.
+- Fed deterministic frames -> 9/9 streams present, accepted > 0.
+- `shadow_only` invariant true; no live-order path exists in the GUI.
+- Checkpoint -> OK; fresh process cross-process recovery -> `CLEAN_SHUTDOWN`/resumable.
+- Corrupted store -> `CORRUPTED_STATE`, refused, not auto-resumed just because the UI is open.
+
+Files changed: `tools/aura_gui.cpp`, `src/desktop/DesktopModel.h`, `src/desktop/ControlCenterState.h`,
+`src/desktop/GuiPanels.h`, `src/desktop/DesktopTests.cpp`, `CMakeLists.txt`, `.github/workflows/ci.yml`,
+`README.md`, and the control-plane files.
+
+Known failures / unproven: none observed locally. **UNPROVEN:** interactive rendering on a real Windows
+desktop (no human `aura_gui --gui` run on Windows yet); the Xvfb smoke is software-rendered on Linux.
+**UNPROVEN:** MT5/MetaEditor round-trip and any historical XAUUSD campaign.
+
+Interpretation: Phase 9 now delivers a real desktop control center that builds and runs, with its
+integration path and interactive lifecycle verified by reproducible local runs. This is NOT a claim of
+Windows visual verification, correctness of unverified sections, profitability, calibration, broker
+validation, production safety, or live-trading readiness. Shadow only. (Remote CI for this commit is
+recorded in the handoff once the run completes; the local results above are the reproducible evidence.)
+
+## Future test entry format
+
 ## 2026-10-02 — Baseline repository audit (unverified external material)
 
 Source:

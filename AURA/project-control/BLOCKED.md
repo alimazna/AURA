@@ -47,15 +47,11 @@ Affected tasks:
 These are real blockers: the required environment is not available in this workspace, so the task is
 recorded rather than implemented with an invented substitute.
 
-### BLOCK-003 — GUI-0001 native Windows desktop application
+### BLOCK-003 — GUI-0001 real desktop control center (RESOLVED 2026-10-03)
 
-- Status: BLOCKED
-- Blocker: no Windows toolchain (MSVC/clang-cl/winsdk) or windowing system is available; this
-  workspace is Linux-only and root package installation is not possible.
-- Why it matters: Phase 9 currently delivers headless deterministic view-models, not a windowed
-  control center; the product's stated target is native Windows.
-- Smallest required dependency: a Windows build host (or CI) with a GUI toolchain.
-- Affected tasks: `GUI-0001`; Phase 9 desktop productization.
+Status: RESOLVED with one UNPROVEN remainder. See the entry above (moved here from the open-blocker
+list). The GUI now builds and runs; real-Windows-desktop interactive visual verification remains
+UNPROVEN (the Xvfb software-OpenGL smoke proves the lifecycle only).
 
 ### BLOCK-004 — MT5-REAL-0001 MetaEditor compile + real terminal run
 

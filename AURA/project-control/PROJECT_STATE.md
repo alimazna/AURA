@@ -381,43 +381,49 @@ This is the human-readable snapshot of where the project currently stands.
   Actions artifacts (`aura-windows-x64-exe`, `AURA_Windows_x64_Release`). The package needs no DLLs, no
   data files and no config; it reads no developer absolute paths (only the user-supplied `--store` path).
 - Still deliberately NOT claimed: profitability, calibrated probability, broker validation,
-  production safety, or live trading. All of the above is shadow-only. The native Windows GUI runtime
-  is UNPROVEN (no GUI is in this package); MT5/MetaEditor is UNPROVEN.
+  production safety, or live trading. All of the above is shadow-only. Real-Windows-desktop interactive
+  GUI rendering is UNPROVEN (the Xvfb smoke is software-rendered on Linux); MT5/MetaEditor is UNPROVEN.
+  Phase 9 now also ships a real GUI (`aura_gui`, see the Current task section).
 
-## Explicit blockers (2026-10-02)
+## Explicit blockers (2026-10-03)
 
-- GUI-0001 (native Windows desktop application)  BLOCKED/UNPROVEN: no GUI toolkit is wired in and no
-  GUI runtime verification is possible in CI. (The Windows *toolchain* for the console host is now
-  proven by `windows-x64-release-package`; the GUI deliverable itself is still not built.)
-- MT5-REAL-0001 (MetaEditor compile + live terminal run)  BLOCKED (no MetaEditor/MT5 on Linux).
-- VAL-EVID-0001 (historical XAUUSD validation campaign)  BLOCKED on a licensed dataset.
+- GUI-0001 (real desktop control center) — RESOLVED 2026-10-03: a Dear ImGui + GLFW + OpenGL GUI now
+  builds and runs (`aura_gui`), with a headless integration smoke and a bounded Xvfb interactive smoke.
+  One remainder is UNPROVEN: interactive rendering on a real Windows desktop has not been human-verified.
+- MT5-REAL-0001 (MetaEditor compile + live terminal run) — BLOCKED (no MetaEditor/MT5 on Linux).
+- VAL-EVID-0001 (historical XAUUSD validation campaign) — BLOCKED on a licensed dataset.
 See `project-control/BLOCKED.md`.
 
 ## Current task
 
 - All canonical Phases 0-11 are COMPLETE and `APPROVED`. Phase 12 (Integration/Application), Phase 13
-  (durable persistence + crash recovery + packaging/CI) and Phase 14 (canonical Windows x64 Release
-  package) are implemented and `TESTED`. Phase 13 adds `FilePersistenceStore.h`,
-  `ApplicationRecovery.h`, `PersistenceTests.cpp`, the `aura` `--store`/`--self-test`/`--recover` modes,
-  CMake install rules, and a CI workflow. Phase 14 adds a self-contained `aura.exe` Release/x64 build,
-  `--dump-frames` and `--self-test --keep`, the `windows-x64-release-package` CI job, and the
-  `AURA_Windows_x64_Release.zip` artifact.
-- The manifest graph is now 194 file-level tasks (176 `APPROVED`, 4 `TESTED`, 1 `IMPLEMENTED`, 10
-  `DEFERRED`, 3 `BLOCKED`). The 10 deferred Master capabilities remain visible; the 3 blockers are
-  environment/data-only.
-- The remaining P0/P1 items are environment-blocked (native Windows GUI runtime, real MetaEditor/MT5
-  run, historical dataset campaign). No live trading is enabled; Phase 11 stays a gate/registry.
+  (durable persistence + crash recovery + packaging/CI) and the Windows x64 Release package are
+  implemented and `TESTED`.
+- Phase 9 Desktop Control Center now includes a **real GUI application** (GUI-0001, Dear ImGui + GLFW +
+  OpenGL 3.3; single entrypoint `tools/aura_gui.cpp`): read-only projections (`DesktopModel.h`), a
+  single runtime owner (`ControlCenterState.h`), section rendering (`GuiPanels.h`), safe control-plane
+  actions only, and **no live-order path**. It displays the nine timeframes by explicit identity and
+  shows unknown/absent state as `NOT AVAILABLE`. Reports the V2-36 recovery decision but never
+  auto-resumes corrupted/incompatible state. Build with `-DAURA_BUILD_GUI=ON`; executable `aura_gui`.
+- The manifest graph is now 196 file-level tasks (175 `APPROVED`, 7 `TESTED`, 2 `IMPLEMENTED`, 10
+  `DEFERRED`, 2 `BLOCKED`). The 10 deferred Master capabilities remain visible.
+- Remaining unproven items are environment/data-bound (real-Windows-desktop interactive GUI, real
+  MetaEditor/MT5 run, historical dataset campaign). No live trading is enabled; Phase 11 stays a
+  gate/registry.
 
 ## Next action
 
 1. When a MetaEditor/MT5 environment becomes available, run Phase 11 controlled validation
    (demo/shadow only) behind the readiness gate; record real results in `TEST_LOG.md`.
-2. If the native Windows GUI (GUI-0001) is pursued, pick and justify a GUI toolkit as a project
-   decision first; do not invent it. Its runtime can only be marked VERIFIED when actually exercised.
+2. Optionally have a human run `aura_gui --gui` on a real Windows desktop to promote the interactive
+   GUI from UNPROVEN to VERIFIED; do not claim it verified from the CI smoke alone.
 3. Optional hardening: a SIGKILL-during-write recovery test to prove the atomic temp+rename path
    leaves either the old or the complete new file, never a torn one.
-4. Keep the control plane and manifest updated per wave; preserve state in Git.
-5. Do not enable unattended live trading or make profitability/safety claims without evidence.
+4. Increase GUI data coverage: wire more of the V3-37 sections (Research/Knowledge/Candidates/
+   Validation/Approval/Evolution/Incidents/Schedule/Audit) to read-only adapters (currently `NOT
+   AVAILABLE`). Do not fabricate their values.
+5. Keep the control plane and manifest updated per wave; preserve state in Git.
+6. Do not enable unattended live trading or make profitability/safety claims without evidence.
 
 ## Update rule
 

@@ -31,11 +31,12 @@ authority_class_enum:
 path_status_note: Phase 0 filenames are from V3-42 (CANONICAL decomposition). Phase 0.5/1/2 filenames
   and src/ layout are PROPOSED implementation decomposition and are subject to integration review (V3-16,
   V3-46). They must not be treated as canonical architecture.
-current_task: 'Canonical Phases 0-13 COMPLETE and TESTED. Phase 13 (durable persistence + crash recovery
-  + packaging/CI) and Phase 14 (canonical Windows x64 Release package: self-contained aura.exe +
-  AURA_Windows_x64_Release.zip, published as CI artifacts) are done. Manifest graph 194 tasks. Remaining
-  are environment/data-blocked only (Windows GUI runtime UNPROVEN, real MT5/MetaEditor, licensed XAUUSD
-  datasets).'
+current_task: 'Canonical Phases 0-13 COMPLETE and TESTED, plus Phase 9 desktop productization.
+  Phase 13 (durable persistence + crash recovery + packaging/CI) and the Windows x64 Release package
+  are done; Phase 9 now includes a real desktop GUI (GUI-0001, Dear ImGui + GLFW + OpenGL) with a
+  headless integration smoke and a bounded Xvfb interactive-runtime smoke. Manifest graph 197 tasks.
+  Remaining are environment/data-unproven only (real-Windows-desktop interactive GUI, real
+  MT5/MetaEditor round-trip, licensed XAUUSD datasets).'
 tasks:
 - id: TASK-BOOTSTRAP-001
   phase: BOOTSTRAP
@@ -2644,13 +2645,17 @@ tasks:
   module: DESKTOP_CONTROL_CENTER
   layer: OPERATING_GOVERNANCE_PLANE
   authority: CANONICAL
-  status: APPROVED
-  output: (phase milestone - aggregates DESK-0001..DESK-0003)
+  status: TESTED
+  output: (phase milestone - aggregates DESK-0001..DESK-0003 + GUI-0001)
   dependencies:
   - DESK-0003
-  objective: Phase 9 Desktop Control Center milestone (headless view-models).
-  acceptance: All file-level tasks APPROVED; tests pass.
-  evidence: All 3 APPROVED; tests pass c++17/c++20.
+  - GUI-0001
+  objective: Phase 9 Desktop Control Center milestone (headless view-models + real GUI productization).
+  acceptance: All file-level tasks APPROVED/IMPLEMENTED; tests pass; GUI builds and its integration
+    and interactive-runtime smokes pass.
+  evidence: 'DESK-0001..0003 APPROVED (headless view-models). GUI-0001 IMPLEMENTED (Dear ImGui + GLFW
+    + OpenGL control center). DesktopTests + GuiSelfTest pass; GUI interactive smoke passes under Xvfb
+    software OpenGL. Real-Windows-desktop interactive verification remains UNPROVEN.'
 - id: TG-0001
   phase: '10'
   module: AUXILIARY_TELEGRAM
@@ -2988,18 +2993,73 @@ tasks:
   acceptance: cmake configure/build succeeds; ctest runs every suite; no GNU-only constructs in source.
   evidence: 'Configured and built with CMake 4.x/GNU; ctest: 17/17 passed. Linux verified only.'
 - id: GUI-0001
-  phase: DEFERRED
-  module: WINDOWS_GUI
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
   layer: APPLICATION_PLANE
-  authority: PROJECT DECISION
-  status: BLOCKED
-  output: '(no source yet: Windows desktop host)'
+  authority: CANONICAL
+  status: IMPLEMENTED
+  output: tools/aura_gui.cpp, src/desktop/DesktopModel.h, src/desktop/ControlCenterState.h,
+    src/desktop/GuiPanels.h, CMakeLists.txt (AURA_BUILD_GUI), .github/workflows/ci.yml
   dependencies:
   - DESK-0002
-  - GOAL-WIN
-  objective: Real native Windows desktop control-center application (windows, controls, live dashboard).
-  acceptance: A built Windows GUI executable consuming the Phase 9 view-models.
-  evidence: 'BLOCKED: no Windows toolchain in this environment. See BLOCKED.md.'
+  - DESK-0003
+  objective: Real desktop control-center GUI (Dear ImGui + GLFW + OpenGL 3.3) consuming the Phase 9
+    projections and the live ApplicationShell; read-only, shadow-only, safe control-plane actions only.
+  acceptance: A built GUI executable that presents the nine timeframes by explicit identity and the
+    V3-37 control-center areas, exposing no live-order path; unknown data shown NOT AVAILABLE not
+    fabricated; corrupted/incompatible state refused, never auto-resumed; recovery/persistence state
+    visible; single runtime owner (no duplicate process).
+  evidence: 'DONE 2026-10-03 (Phase 9 productization): implemented as a real GUI application with a
+    single entrypoint (tools/aura_gui.cpp) over the existing runtime. DesktopModel.h projects
+    ApplicationShell/ApplicationPipeline into read-only ControlCenterSnapshot (nine timeframe rows by
+    explicit identity; NOT AVAILABLE for absent data; shadow_only invariant derived from
+    RiskProposal::is_order). ControlCenterState.h owns exactly one ApplicationShell and exposes only
+    safe control-plane operations (pause/resume local transport, refresh, checkpoint, bounded stop,
+    read-only recovery report). GuiPanels.h renders the V3-37 sections; unwired sections show NOT
+    AVAILABLE. Verified: DesktopTests 3 new tests (nine rows, empty-state no-fabrication, fed-state 9/9
+    streams, checkpoint, CLEAN_SHUTDOWN cross-process recovery, CORRUPTED_STATE refused) PASS under
+    C++17 and C++20; GUI build PASS (Linux g++ 14 c++17 + c++20, MSVC x64 Release, GUI ON); headless
+    aura_gui --self-test PASS (fed 270 frames, 9/9 streams, shadow_only, checkpoint OK, recovery
+    CLEAN_SHUTDOWN resumable); INTERACTIVE runtime smoke PASS under Xvfb software OpenGL (window
+    created, 120 frames rendered, clean shutdown checkpoint OK). GUI interactive runtime on a real
+    Windows desktop (visual/human-verified) is UNPROVEN; MT5 EA round-trip is UNPROVEN. Shadow only.'
+- id: GUI-0002
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: OPERATING_GOVERNANCE_PLANE
+  authority: PROPOSED
+  status: TESTED
+  output: src/desktop/DesktopTests.cpp (extended)
+  dependencies:
+  - GUI-0001
+  - DESK-0003
+  objective: Behavioural tests proving the desktop integration path over the real runtime.
+  acceptance: Nine-timeframe projection; empty-state no-fabrication (NOT AVAILABLE); fed-state 9/9
+    streams; shadow-only invariant; checkpoint; cross-process CLEAN_SHUTDOWN recovery; corrupted state
+    refused; safe control-plane ops only.
+  evidence: 'DONE 2026-10-03: three new tests (test_desktop_model_empty_state,
+    test_desktop_model_nine_timeframes, test_control_center_state_smoke) added. DesktopTests ALL PASS
+    under g++ c++17 and c++20 strict; registered with CTest (DesktopTests).'
+- id: GUI-0003
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: APPLICATION_PLANE
+  authority: PROPOSED
+  status: TESTED
+  output: CMakeLists.txt (AURA_BUILD_GUI), .github/workflows/ci.yml (desktop-gui job;
+    windows-release GUI build/package), README.md
+  dependencies:
+  - GUI-0001
+  - BUILD-0003
+  objective: Reproducible GUI build + CI packaging of the GUI executable.
+  acceptance: Pinned reproducible imgui/glfw fetch; GUI target named aura_gui; GUI OFF by default so
+    the core matrix is unchanged; CI builds GUI, runs tests, verifies the exe, packages the ZIP.
+  evidence: 'DONE 2026-10-03: FetchContent pins glfw 3.4 + imgui v1.90.9; AURA_BUILD_GUI default OFF;
+    aura_gui target. CI: new desktop-gui (Linux Xvfb, bounded interactive smoke) job; windows-release
+    now builds GUI, runs aura_gui --self-test, packages AURA_Windows_x64_GUI_Release.zip containing
+    aura_gui.exe + aura.exe, extracts and re-runs both. Local: GUI build PASS c++17/c++20; default
+    (GUI OFF) build 18/18 tests PASS; GUI build 19/19 tests PASS. Remote CI result recorded in
+    TEST_LOG.md.'
 - id: MT5-REAL-0001
   phase: DEFERRED
   module: MT5_RUNTIME
@@ -3089,26 +3149,28 @@ tasks:
   layer: APPLICATION_PLANE
   authority: PROPOSED
   status: TESTED
-  output: .github/workflows/ci.yml (windows-release job), CMakeLists.txt (static CRT), tools/run_pipeline.cpp
-    (--dump-frames, --self-test --keep), AURA_Windows_x64_Release.zip (CI artifact)
+  output: '.github/workflows/ci.yml (windows-release job), CMakeLists.txt (static CRT),
+    tools/run_pipeline.cpp (--dump-frames, --self-test --keep), AURA_Windows_x64_GUI_Release.zip
+    (CI artifact with aura_gui.exe + aura.exe + README + RUNNING.txt)'
   dependencies:
   - BUILD-0001
   - BUILD-0002
   - PERSIST-0002
-  objective: Produce the canonical runnable Windows x64 Release package (self-contained aura.exe) and
-    publish it as a GitHub Actions artifact.
-  acceptance: aura.exe builds Release/x64 under MSVC; the package contains the exe plus every runtime file
-    it actually requires; no developer-machine absolute paths; no secrets; ZIP contents verified; bounded
-    runtime smoke passes (starts, initialises, single instance, shuts down cleanly, no immediate crash);
-    --store/--recover/replay paths exercised; exe and ZIP uploaded as artifacts.
-  evidence: 'DONE 2026-10-03: CI run 37115746002 windows-x64-release-package job GREEN. Built aura.exe
-    (Release, x64, MSVC, static CRT) = 440,320 bytes. Full suite 18/18. Bounded smoke on the runner:
-    --self-test PASS (persist + in-process recovery: 9 timeframes, 111 ledger entries); cross-process
-    --recover => CLEAN_SHUTDOWN/resumable; --dump-frames + --replay (270 frames) => HEALTHY, 111 ledger
-    entries; --serve started, stayed up, exactly 1 aura process (no duplicates), accepted a TCP
-    connection, stopped cleanly. Secret scan OK. AURA_Windows_x64_Release.zip = 220,103 bytes; ZIP
-    entries verified to contain aura.exe; packaged exe extracted and re-ran --self-test PASS. Artifacts
-    uploaded: aura-windows-x64-exe (aura.exe) and AURA_Windows_x64_Release (ZIP). No developer absolute
-    paths (self-contained console host; only the user-supplied --store path is read/written). No GUI is
-    included (GUI-0001 remains BLOCKED/UNPROVEN). Shadow only.'
+  objective: Produce the canonical runnable Windows x64 Release package (self-contained aura.exe and
+    aura_gui.exe) and publish it as a GitHub Actions artifact.
+  acceptance: aura.exe/aura_gui.exe build Release/x64 under MSVC; the package contains the exes plus every
+    runtime file they actually require; no developer-machine absolute paths; no secrets; ZIP contents
+    verified; bounded runtime smoke passes (starts, initialises, single instance, shuts down cleanly, no
+    immediate crash); --store/--recover/replay paths exercised; exe and ZIP uploaded as artifacts.
+  evidence: 'DONE 2026-10-03 (console package, CI run 37115746002 windows-x64-release-package GREEN):
+    aura.exe (Release, x64, MSVC, static CRT) = 440,320 bytes; full suite 18/18; bounded smoke on the
+    runner (--self-test PASS; cross-process --recover => CLEAN_SHUTDOWN/resumable; --dump-frames +
+    --replay 270 frames => HEALTHY, 111 ledger entries; --serve single instance, accepts TCP, clean
+    stop); secret scan OK; AURA_Windows_x64_Release.zip = 220,103 bytes, contains aura.exe, extracted
+    exe re-runs --self-test PASS; artifacts uploaded. EXTENDED 2026-10-03 for the Phase 9 GUI: the
+    windows-release job now builds with -DAURA_BUILD_GUI=ON, runs aura_gui --self-test, and packages
+    AURA_Windows_x64_GUI_Release.zip containing aura_gui.exe + aura.exe. Local verification of the GUI
+    package path: GUI build PASS (Linux g++ 14 C++17/C++20), headless self-test PASS, 19/19 ctest. The
+    updated Windows package run is recorded once its CI run completes. No developer absolute paths; no
+    secrets. Shadow only.'
 last_updated: '2026-10-03'

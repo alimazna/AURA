@@ -70,6 +70,77 @@ endif()
 
 enable_testing()
 
+# ---------------------------------------------------------------------------
+# Desktop GUI (Phase 9 / GUI-0001).
+#
+# Dear ImGui + GLFW + OpenGL presentation over the existing runtime. The GUI is
+# OPTIONAL (default OFF) so the core/console build and the Linux test matrix stay
+# dependency-free. When enabled, the dependencies are pinned and fetched
+# reproducibly (no system-installed copies, no developer paths).
+#
+#   aura_gui --gui       interactive control center
+#   aura_gui --self-test headless integration smoke (what CI proves)
+# ---------------------------------------------------------------------------
+option(AURA_BUILD_GUI "Build the AURA desktop control center (Dear ImGui + GLFW + OpenGL)" OFF)
+
+if(AURA_BUILD_GUI)
+  include(FetchContent)
+
+  set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+  set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+  set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+  set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
+  # Prefer X11 over Wayland on Linux (Wayland needs wayland-scanner, which is not
+  # guaranteed on CI runners). These hints are inert on Windows/macOS.
+  set(GLFW_BUILD_X11 ON CACHE BOOL "" FORCE)
+  set(GLFW_BUILD_WAYLAND OFF CACHE BOOL "" FORCE)
+
+  FetchContent_Declare(
+    glfw
+    GIT_REPOSITORY https://github.com/glfw/glfw.git
+    GIT_TAG        3.4
+    GIT_SHALLOW    TRUE
+  )
+  FetchContent_Declare(
+    imgui
+    GIT_REPOSITORY https://github.com/ocornut/imgui.git
+    GIT_TAG        v1.90.9
+    GIT_SHALLOW    TRUE
+  )
+  FetchContent_MakeAvailable(glfw imgui)
+
+  # ImGui has no upstream CMake build; compile the core + GLFW/OpenGL3 backends as
+  # a static library. The OpenGL3 backend uses ImGui's embedded GL loader, so no
+  # GLAD/GLEW dependency is required.
+  add_library(aura_imgui STATIC
+    ${imgui_SOURCE_DIR}/imgui.cpp
+    ${imgui_SOURCE_DIR}/imgui_draw.cpp
+    ${imgui_SOURCE_DIR}/imgui_tables.cpp
+    ${imgui_SOURCE_DIR}/imgui_widgets.cpp
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
+  )
+  target_include_directories(aura_imgui PUBLIC
+    ${imgui_SOURCE_DIR}
+    ${imgui_SOURCE_DIR}/backends
+  )
+  target_link_libraries(aura_imgui PUBLIC glfw)
+
+  find_package(OpenGL REQUIRED)
+  target_link_libraries(aura_imgui PUBLIC OpenGL::GL)
+
+  add_executable(aura_gui ${CMAKE_CURRENT_SOURCE_DIR}/tools/aura_gui.cpp)
+  target_link_libraries(aura_gui PRIVATE aura_foundation aura_imgui ${AURA_PLATFORM_LIBS})
+
+  # Headless GUI integration smoke, registered with CTest. It exercises the same
+  # runtime ownership, recovery evaluation and snapshot projection the window
+  # uses (nine-timeframe mapping, shadow-only invariant, checkpoint, recovery
+  # report) without a rendering surface. Interactive runtime is NOT verified here.
+  add_test(NAME GuiSelfTest COMMAND aura_gui --self-test)
+
+  install(TARGETS aura_gui RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+endif()
+
 # Real host executable (console host; the shadow-only operational entrypoint).
 add_executable(aura ${CMAKE_CURRENT_SOURCE_DIR}/tools/run_pipeline.cpp)
 target_link_libraries(aura PRIVATE aura_foundation ${AURA_PLATFORM_LIBS})

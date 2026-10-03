@@ -54,6 +54,44 @@ jobs:
         working-directory: AURA
         run: cmake --install build --config Release --prefix "${{ runner.temp }}/aura-install"
 
+  # Desktop GUI build + genuine interactive-runtime smoke on a headless runner.
+  #
+  # A Linux runner has software OpenGL + Xvfb, so this proves the render/window
+  # lifecycle actually starts, draws frames and shuts down cleanly (not just that
+  # it links). This is a bounded, software-rendered smoke: it does not prove a
+  # human-verified Windows visual experience.
+  desktop-gui:
+    name: desktop-gui-linux (Dear ImGui + Xvfb)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install GUI build/test dependencies
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq libgl1-mesa-dev xorg-dev xvfb
+
+      - name: Configure (GUI enabled)
+        working-directory: AURA
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=17 -DAURA_BUILD_GUI=ON
+
+      - name: Build (all targets, incl. aura_gui)
+        working-directory: AURA
+        run: cmake --build build -j 4
+
+      - name: Full test suite (incl. GuiSelfTest)
+        working-directory: AURA
+        run: ctest --test-dir build --output-on-failure
+
+      - name: GUI headless integration smoke
+        working-directory: AURA
+        run: ./build/aura_gui --self-test --store "$RUNNER_TEMP/gui_smoke.aura"
+
+      - name: GUI interactive-runtime smoke (bounded, Xvfb software OpenGL)
+        working-directory: AURA
+        run: |
+          xvfb-run -a -s "-screen 0 1360x860x24" \
+            timeout 60 ./build/aura_gui --gui --frames 120 --store "$RUNNER_TEMP/gui_live.aura"
+          echo "GUI interactive smoke OK: window created, frames rendered, clean shutdown"
+
   # Canonical Windows x64 Release package (self-contained aura.exe).
   windows-release:
     name: windows-x64-release-package
@@ -61,11 +99,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Configure (Release, x64)
+      - name: Configure (Release, x64, GUI enabled)
         working-directory: AURA
-        run: cmake -S . -B build -A x64 -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=17
+        run: cmake -S . -B build -A x64 -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=17 -DAURA_BUILD_GUI=ON
 
-      - name: Build (Release, all targets incl. aura.exe)
+      - name: Build (Release, all targets incl. aura.exe + aura_gui.exe)
         working-directory: AURA
         run: cmake --build build --config Release -j 4
 
@@ -73,13 +111,32 @@ jobs:
         working-directory: AURA
         run: ctest --test-dir build -C Release --output-on-failure
 
-      - name: Locate and show the executable
+      - name: Locate and show the executables
         working-directory: AURA
         shell: pwsh
         run: |
           $exe = "build\Release\aura.exe"
           if (!(Test-Path $exe)) { throw "aura.exe not found at $exe" }
           Get-Item $exe | Format-List FullName, Length, LastWriteTime
+          $gui = "build\Release\aura_gui.exe"
+          if (!(Test-Path $gui)) { throw "aura_gui.exe not found at $gui" }
+          Get-Item $gui | Format-List FullName, Length, LastWriteTime
+
+      - name: GUI build smoke (headless integration path; no window in CI)
+        working-directory: AURA
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $gui = (Resolve-Path "build\Release\aura_gui.exe").Path
+          New-Item -ItemType Directory -Force -Path gui-smoke | Out-Null
+          $store = Join-Path (Resolve-Path gui-smoke).Path "gui.aura"
+          # Exercises the same runtime ownership, nine-timeframe projection,
+          # shadow-only invariant, checkpoint and cross-process recovery report the
+          # window uses. It does NOT open a window: interactive runtime is UNPROVEN
+          # in this headless CI runner (see TEST_LOG.md).
+          & $gui --self-test --store $store --keep
+          if ($LASTEXITCODE -ne 0) { throw "aura_gui self-test failed ($LASTEXITCODE)" }
+          Write-Host "GUI headless integration smoke OK"
 
       - name: EXE runtime smoke (startup / init / no duplicate copies)
         working-directory: AURA
@@ -120,41 +177,50 @@ jobs:
           Stop-Process -Id $serve.Id -Force
           Write-Host "smoke OK: started, initialised, single instance, accepted a connection"
 
-      - name: Stage package (exe + runtime/configuration files actually required)
+      - name: Stage package (GUI + console host + runtime files actually required)
         working-directory: AURA
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
-          $dist = "dist\AURA_Windows_x64_Release"
+          $dist = "dist\AURA_Windows_x64_GUI_Release"
           Remove-Item -Recurse -Force dist -ErrorAction SilentlyContinue
           New-Item -ItemType Directory -Force -Path $dist | Out-Null
+          Copy-Item "build\Release\aura_gui.exe" (Join-Path $dist "aura_gui.exe")
           Copy-Item "build\Release\aura.exe" (Join-Path $dist "aura.exe")
           Copy-Item "README.md" (Join-Path $dist "README.md")
-          # The console host is self-contained: no DLLs, no data files, no config
-          # are required. The only file it reads at run time is the store passed
-          # via --store (created on first run). Record that in the package notes.
+          # Both executables are self-contained (static CRT). The GUI additionally
+          # uses the OS-provided opengl32.dll; no third-party DLL, data file or
+          # config is required. The only file read/written at run time is the store
+          # passed via --store. Record that in the package notes.
           @"
-          AURA (shadow-only console host) - Windows x64 Release
-          =====================================================
+          AURA (shadow-only) - Windows x64 Release
+          ========================================
 
           Contents:
-            aura.exe    self-contained executable (static CRT, no redistributable)
+            aura_gui.exe   desktop control center (Dear ImGui + GLFW + OpenGL 3.3)
+            aura.exe       headless console host / diagnostics / CI smoke
+            README.md      build + usage notes
 
-          Required runtime files: none. aura.exe needs no DLLs, no data files and
-          no configuration file. It reads no absolute developer paths. The only
-          file it reads or writes is the persistence store you pass with --store
-          (a relative or absolute path of your choosing); it is created on first use.
+          Required runtime files: none. Both executables link the CRT statically and
+          need no third-party DLLs, data files or configuration. aura_gui.exe uses
+          the OS-provided opengl32.dll. Neither reads an absolute developer path; the
+          only file read/written is the persistence store you pass with --store
+          (created on first use).
 
           Usage:
-            aura.exe --self-test [--store <path>] [--keep]
-            aura.exe --replay <frames-file> [--store <path>]
-            aura.exe --serve <port> [--store <path>]
-            aura.exe --dump-frames <file>
-            aura.exe --recover <store-path>
+            aura_gui.exe --gui [--store <path>] [--serve <port>] [--replay <frames>]
+            aura_gui.exe --self-test [--store <path>] [--keep]
+            aura.exe     --self-test [--store <path>] [--keep]
+            aura.exe     --replay <frames-file> [--store <path>]
+            aura.exe     --serve <port> [--store <path>]
+            aura.exe     --dump-frames <file>
+            aura.exe     --recover <store-path>
 
-          Execution mode: SHADOW ONLY. No live order path. No GUI is included in
-          this package (the native Windows desktop GUI is a separate, not-yet-built
-          deliverable). No profitability, calibration or production-safety claim.
+          Execution mode: SHADOW ONLY. No live order path, no buy/sell controls.
+          Interactive GUI runtime is verified only when actually exercised (see
+          project-control/TEST_LOG.md); a headless CI runner proves the build and the
+          integration path, not interactive rendering. No profitability, calibration
+          or production-safety claim.
           "@ | Set-Content -Encoding UTF8 (Join-Path $dist "RUNNING.txt")
           Get-ChildItem $dist | Format-Table Name, Length
 
@@ -179,48 +245,57 @@ jobs:
           if ($hit) { throw "secret scan failed: credential-shaped content in package" }
           Write-Host "secret scan OK: no credential-shaped content in the package"
 
-      - name: Create AURA_Windows_x64_Release.zip
+      - name: Create AURA_Windows_x64_GUI_Release.zip
         working-directory: AURA
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
-          Compress-Archive -Path "dist\AURA_Windows_x64_Release\*" `
-            -DestinationPath "AURA_Windows_x64_Release.zip" -Force
+          Compress-Archive -Path "dist\AURA_Windows_x64_GUI_Release\*" `
+            -DestinationPath "AURA_Windows_x64_GUI_Release.zip" -Force
 
       - name: Verify ZIP contents and executable presence
         working-directory: AURA
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
-          $zip = "AURA_Windows_x64_Release.zip"
+          $zip = "AURA_Windows_x64_GUI_Release.zip"
           if (!(Test-Path $zip)) { throw "ZIP not created" }
           Add-Type -AssemblyName System.IO.Compression.FileSystem
           $z = [System.IO.Compression.ZipFile]::OpenRead((Resolve-Path $zip).Path)
           try { $names = $z.Entries | ForEach-Object { $_.FullName } } finally { $z.Dispose() }
           Write-Host "ZIP entries:"; $names | ForEach-Object { Write-Host "  $_" }
+          if (-not ($names -contains "aura_gui.exe")) { throw "aura_gui.exe missing from ZIP" }
           if (-not ($names -contains "aura.exe")) { throw "aura.exe missing from ZIP" }
-          # Extract and run the packaged exe to prove the artifact itself works.
+          # Extract and run the packaged executables to prove the artifacts work.
           $verify = "verify"
           Remove-Item -Recurse -Force $verify -ErrorAction SilentlyContinue
           Expand-Archive -Path $zip -DestinationPath $verify
           $packaged = Join-Path $verify "aura.exe"
           if (!(Test-Path $packaged)) { throw "extracted aura.exe missing" }
           & $packaged --self-test --store (Join-Path (Resolve-Path $verify).Path "pkg.aura")
-          if ($LASTEXITCODE -ne 0) { throw "packaged exe smoke failed ($LASTEXITCODE)" }
+          if ($LASTEXITCODE -ne 0) { throw "packaged aura.exe smoke failed ($LASTEXITCODE)" }
+          $packagedGui = Join-Path $verify "aura_gui.exe"
+          if (!(Test-Path $packagedGui)) { throw "extracted aura_gui.exe missing" }
+          & $packagedGui --self-test --store (Join-Path (Resolve-Path $verify).Path "pkggui.aura")
+          if ($LASTEXITCODE -ne 0) { throw "packaged aura_gui.exe smoke failed ($LASTEXITCODE)" }
           $item = Get-Item $zip
           Write-Host ("ZIP: {0} ({1:N0} bytes)" -f $item.Name, $item.Length)
           $exeItem = Get-Item "build\Release\aura.exe"
           Write-Host ("EXE: {0} ({1:N0} bytes)" -f $exeItem.Name, $exeItem.Length)
+          $guiItem = Get-Item "build\Release\aura_gui.exe"
+          Write-Host ("GUI: {0} ({1:N0} bytes)" -f $guiItem.Name, $guiItem.Length)
 
-      - name: Upload aura.exe artifact
+      - name: Upload aura.exe + aura_gui.exe artifacts
         uses: actions/upload-artifact@v4
         with:
           name: aura-windows-x64-exe
-          path: AURA/build/Release/aura.exe
+          path: |
+            AURA/build/Release/aura.exe
+            AURA/build/Release/aura_gui.exe
 
-      - name: Upload AURA_Windows_x64_Release.zip artifact
+      - name: Upload AURA_Windows_x64_GUI_Release.zip artifact
         uses: actions/upload-artifact@v4
         with:
-          name: AURA_Windows_x64_Release
-          path: AURA/AURA_Windows_x64_Release.zip
+          name: AURA_Windows_x64_GUI_Release
+          path: AURA/AURA_Windows_x64_GUI_Release.zip
 

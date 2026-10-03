@@ -273,6 +273,41 @@ Only explicit human decisions belong here.
 - **Scope-change flag:** Yes (Phase 13 promoted). Execution authority is unchanged.
 - **Master V3 status:** Preserved unchanged.
 
+## 2026-10-03 — Phase 9 desktop productization: real GUI over the existing runtime
+
+- **Date:** 2026-10-03
+- **Decision:**
+  1. The Phase 9 Desktop Control Center gains a **real GUI application** built with **Dear ImGui +
+     GLFW + OpenGL 3.3**, as a single canonical entrypoint (`tools/aura_gui.cpp`) that owns exactly
+     one `ApplicationShell` (no second runtime, no duplicate process). This supersedes the earlier
+     headless-view-models-only interpretation (2026-10-02 decision) as the *deliverable form* of
+     Phase 9 while keeping the DESK-0001..0003 projection layer unchanged and authoritative for
+     read-only data projection.
+  2. The GUI is a **human control surface, not a source of truth**: it only presents read-only
+     projections (`DesktopModel`) and exposes only safe control-plane operations (pause/resume of the
+     local transport loop, refresh, checkpoint, bounded stop, read-only recovery report). No GUI path
+     places a live order or bypasses any governance/safety contract.
+  3. **Unknown stays unknown:** absent/undefined state is presented as `NOT AVAILABLE` / `UNKNOWN`,
+     never fabricated as `HEALTHY`. The nine logical timeframes are shown individually by explicit
+     identity, never merged into one anonymous status.
+  4. **Recovery is report-only:** the GUI reports the V2-36 lifecycle decision and never auto-resumes
+     corrupted or version-incompatible state merely because the window is open.
+  5. The GUI is the repository's approved GUI approach. It is enabled by the CMake option
+     `AURA_BUILD_GUI` (default OFF) so the core/console build and Linux test matrix remain
+     dependency-free; dependencies are pinned and fetched reproducibly.
+- **Rationale:** The Master V3 states the Desktop Application is the primary human control center
+  (V3-37 / Phase 9) and the repository now has a proven Windows toolchain (the Windows x64 Release
+  job). Building the GUI is a Phase 9 productization of already-promoted scope, not a new phase and
+  not an architectural change. It uses the project's approved GUI stack rather than inventing one.
+- **Affected tasks:** `GUI-0001` (BLOCKED → IMPLEMENTED), new `GUI-0002` (tests), new `GUI-0003`
+  (CMake/CI/packaging); `PHASE-9-MILESTONE` (APPROVED → TESTED); `DESK-0001..0003` unchanged.
+- **Scope-change flag:** No new phase. Phase 9 was already promoted on 2026-10-02; this records the
+  GUI-toolkit decision and the productization of that already-authorized phase.
+- **Master V3 status:** Preserved unchanged. Shadow-only upheld; live trading not enabled; no
+  profitability/calibration/broker/production-safety claim.
+
+
+
 ## Decision format
 
 For each future material decision record:
