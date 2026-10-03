@@ -3170,7 +3170,8 @@ tasks:
     -> renderer=LEGACY_GL21, 40 frames, clean shutdown; --renderer modern with Mesa capped -> exit 3
     with the actionable no-renderer error. CI desktop-gui job extended with modern-pin, legacy, and
     forced-auto-fallback smokes. The specific Intel HD 3000 hardware is not available in CI and remains
-    UNPROVEN (BLOCK-006). Shadow only.'
+    UNPROVEN (BLOCK-006). Remote CI run 37125095527 (commit f3e1886) ALL GREEN across 6/6 jobs. Shadow
+    only.'
 - id: GUI-0008
   phase: '9'
   module: DESKTOP_CONTROL_CENTER

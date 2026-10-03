@@ -55,7 +55,10 @@ Test result: PASS.
 Files changed: `src/desktop/RendererPolicy.h` (new), `tools/aura_gui.cpp`, `CMakeLists.txt`,
 `src/desktop/DesktopTests.cpp`, `.github/workflows/ci.yml`, and the control-plane files.
 
-Known failures: none locally. Remote CI result is recorded after push.
+Known failures: none locally. Remote CI (run `37125095527`, commit `f3e1886`) is ALL GREEN across 6/6
+jobs: ubuntu gcc c++17/c++20, windows msvc c++17/c++20, `desktop-gui-linux` (now including the
+modern-pin, legacy, and forced-auto-fallback smokes), and `windows-x64-release-package` (builds and
+packages the GUI with the fallback).
 
 Interpretation: the GUI no longer terminates merely because OpenGL 3.3 is unavailable; it falls back to
 OpenGL 2.1 compatibility, names the renderer actually in use, and only fails when no context can be
