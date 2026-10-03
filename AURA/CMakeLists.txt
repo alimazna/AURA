@@ -23,6 +23,9 @@ endif()
 
 if(MSVC)
   add_compile_options(/W4 /permissive-)
+  # Link the CRT statically so the shipped aura.exe is self-contained and does
+  # not require the Visual C++ redistributable on a clean target machine.
+  set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 else()
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()

@@ -53,3 +53,174 @@ jobs:
       - name: Install (packaging check)
         working-directory: AURA
         run: cmake --install build --config Release --prefix "${{ runner.temp }}/aura-install"
+
+  # Canonical Windows x64 Release package (self-contained aura.exe).
+  windows-release:
+    name: windows-x64-release-package
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure (Release, x64)
+        working-directory: AURA
+        run: cmake -S . -B build -A x64 -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=17
+
+      - name: Build aura (Release)
+        working-directory: AURA
+        run: cmake --build build --config Release --target aura -j 4
+
+      - name: Full test suite
+        working-directory: AURA
+        run: ctest --test-dir build -C Release --output-on-failure
+
+      - name: Locate and show the executable
+        working-directory: AURA
+        shell: pwsh
+        run: |
+          $exe = "build\Release\aura.exe"
+          if (!(Test-Path $exe)) { throw "aura.exe not found at $exe" }
+          Get-Item $exe | Format-List FullName, Length, LastWriteTime
+
+      - name: EXE runtime smoke (startup / init / no duplicate copies)
+        working-directory: AURA
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $exe = (Resolve-Path "build\Release\aura.exe").Path
+          New-Item -ItemType Directory -Force -Path smoke | Out-Null
+          $store = Join-Path (Resolve-Path smoke).Path "smoke.aura"
+
+          Write-Host "== self-test (persist + in-process recovery) =="
+          & $exe --self-test --store $store --keep
+          if ($LASTEXITCODE -ne 0) { throw "self-test failed ($LASTEXITCODE)" }
+
+          Write-Host "== recover (cross-process, from the kept store) =="
+          & $exe --recover $store
+          if ($LASTEXITCODE -ne 0) { throw "recover failed ($LASTEXITCODE)" }
+
+          Write-Host "== dump + replay (real pipeline over canonical frames) =="
+          $frames = Join-Path (Resolve-Path smoke).Path "frames.txt"
+          & $exe --dump-frames $frames
+          if ($LASTEXITCODE -ne 0) { throw "dump-frames failed ($LASTEXITCODE)" }
+          & $exe --replay $frames --store (Join-Path (Resolve-Path smoke).Path "replay.aura")
+          if ($LASTEXITCODE -ne 0) { throw "replay failed ($LASTEXITCODE)" }
+
+          Write-Host "== bounded serve smoke: single instance, listens, accepts, stays up =="
+          $serve = Start-Process -FilePath $exe -ArgumentList "--serve","12345","--store",$store -PassThru
+          Start-Sleep -Seconds 2
+          if ($serve.HasExited) { throw "serve exited immediately (code $($serve.ExitCode))" }
+          $copies = @(Get-Process -Name aura -ErrorAction SilentlyContinue)
+          Write-Host "aura processes running: $($copies.Count)"
+          if ($copies.Count -ne 1) { throw "expected exactly 1 aura process, saw $($copies.Count)" }
+          $client = New-Object System.Net.Sockets.TcpClient
+          $client.Connect("127.0.0.1", 12345)
+          $client.Close()
+          Start-Sleep -Seconds 1
+          if ($serve.HasExited) { throw "serve exited after client disconnect" }
+          Stop-Process -Id $serve.Id -Force
+          Write-Host "smoke OK: started, initialised, single instance, accepted a connection"
+
+      - name: Stage package (exe + runtime/configuration files actually required)
+        working-directory: AURA
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $dist = "dist\AURA_Windows_x64_Release"
+          Remove-Item -Recurse -Force dist -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Force -Path $dist | Out-Null
+          Copy-Item "build\Release\aura.exe" (Join-Path $dist "aura.exe")
+          Copy-Item "README.md" (Join-Path $dist "README.md")
+          # The console host is self-contained: no DLLs, no data files, no config
+          # are required. The only file it reads at run time is the store passed
+          # via --store (created on first run). Record that in the package notes.
+          @"
+          AURA (shadow-only console host) - Windows x64 Release
+          =====================================================
+
+          Contents:
+            aura.exe    self-contained executable (static CRT, no redistributable)
+
+          Required runtime files: none. aura.exe needs no DLLs, no data files and
+          no configuration file. It reads no absolute developer paths. The only
+          file it reads or writes is the persistence store you pass with --store
+          (a relative or absolute path of your choosing); it is created on first use.
+
+          Usage:
+            aura.exe --self-test [--store <path>] [--keep]
+            aura.exe --replay <frames-file> [--store <path>]
+            aura.exe --serve <port> [--store <path>]
+            aura.exe --dump-frames <file>
+            aura.exe --recover <store-path>
+
+          Execution mode: SHADOW ONLY. No live order path. No GUI is included in
+          this package (the native Windows desktop GUI is a separate, not-yet-built
+          deliverable). No profitability, calibration or production-safety claim.
+          "@ | Set-Content -Encoding UTF8 (Join-Path $dist "RUNNING.txt")
+          Get-ChildItem $dist | Format-Table Name, Length
+
+      - name: Secret scan (fail if anything credential-shaped is staged)
+        working-directory: AURA
+        shell: pwsh
+        run: |
+          $patterns = @(
+            'ghp_[A-Za-z0-9]{20,}', 'github_pat_[A-Za-z0-9_]{20,}',
+            'sk-[A-Za-z0-9]{20,}', 'AKIA[0-9A-Z]{16}',
+            'BEGIN (RSA|OPENSSH|EC|PRIVATE) PRIVATE KEY',
+            'xox[baprs]-[A-Za-z0-9-]{10,}', '-----BEGIN [A-Z ]*PRIVATE KEY-----'
+          )
+          $hit = $false
+          foreach ($f in Get-ChildItem -Recurse -File dist) {
+            foreach ($p in $patterns) {
+              if (Select-String -Path $f.FullName -Pattern $p -Quiet) {
+                Write-Host "SECRET-LIKE MATCH in $($f.Name): $p"; $hit = $true
+              }
+            }
+          }
+          if ($hit) { throw "secret scan failed: credential-shaped content in package" }
+          Write-Host "secret scan OK: no credential-shaped content in the package"
+
+      - name: Create AURA_Windows_x64_Release.zip
+        working-directory: AURA
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          Compress-Archive -Path "dist\AURA_Windows_x64_Release\*" `
+            -DestinationPath "AURA_Windows_x64_Release.zip" -Force
+
+      - name: Verify ZIP contents and executable presence
+        working-directory: AURA
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $zip = "AURA_Windows_x64_Release.zip"
+          if (!(Test-Path $zip)) { throw "ZIP not created" }
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          $z = [System.IO.Compression.ZipFile]::OpenRead((Resolve-Path $zip).Path)
+          try { $names = $z.Entries | ForEach-Object { $_.FullName } } finally { $z.Dispose() }
+          Write-Host "ZIP entries:"; $names | ForEach-Object { Write-Host "  $_" }
+          if (-not ($names -contains "aura.exe")) { throw "aura.exe missing from ZIP" }
+          # Extract and run the packaged exe to prove the artifact itself works.
+          $verify = "verify"
+          Remove-Item -Recurse -Force $verify -ErrorAction SilentlyContinue
+          Expand-Archive -Path $zip -DestinationPath $verify
+          $packaged = Join-Path $verify "aura.exe"
+          if (!(Test-Path $packaged)) { throw "extracted aura.exe missing" }
+          & $packaged --self-test --store (Join-Path (Resolve-Path $verify).Path "pkg.aura")
+          if ($LASTEXITCODE -ne 0) { throw "packaged exe smoke failed ($LASTEXITCODE)" }
+          $item = Get-Item $zip
+          Write-Host ("ZIP: {0} ({1:N0} bytes)" -f $item.Name, $item.Length)
+          $exeItem = Get-Item "build\Release\aura.exe"
+          Write-Host ("EXE: {0} ({1:N0} bytes)" -f $exeItem.Name, $exeItem.Length)
+
+      - name: Upload aura.exe artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: aura-windows-x64-exe
+          path: AURA/build/Release/aura.exe
+
+      - name: Upload AURA_Windows_x64_Release.zip artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AURA_Windows_x64_Release
+          path: AURA/AURA_Windows_x64_Release.zip
+

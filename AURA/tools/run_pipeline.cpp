@@ -9,9 +9,16 @@
 //                                           derived state, print a summary, exit.
 //   aura --serve  <port> [--store <path>]   serve the single MT5 transport until
 //                                           interrupted, then persist and exit.
-//   aura --self-test [--store <path>]       bounded offline smoke: feed a built-in
+//   aura --self-test [--store <path>] [--keep]
+//                                           bounded offline smoke: feed a built-in
 //                                           deterministic frame set, persist, verify
-//                                           recovery, print, exit. Used by CI.
+//                                           recovery, print, exit. --keep retains
+//                                           the store so a separate --recover run
+//                                           can verify cross-process restoration.
+//   aura --dump-frames <file>               write the built-in deterministic frame
+//                                           set as canonical newline frames, so a
+//                                           separate --replay run can be exercised
+//                                           (used by CI packaging smoke).
 //   aura --recover <path>                   load + verify a persisted store and
 //                                           report the V2-36 boot decision only.
 //
@@ -42,9 +49,18 @@ int usage() {
                  "usage:\n"
                  "  aura --replay <frames-file> [--store <path>]\n"
                  "  aura --serve  <port>        [--store <path>]\n"
-                 "  aura --self-test            [--store <path>]\n"
+                 "  aura --self-test            [--store <path>] [--keep]\n"
+                 "  aura --dump-frames <file>\n"
                  "  aura --recover <store-path>\n");
     return 2;
+}
+
+// True when the flag appears anywhere in argv (position-independent).
+bool has_flag(int argc, char** argv, const char* flag) {
+    for (int i = 1; i < argc; ++i) {
+        if (std::string(argv[i]) == flag) return true;
+    }
+    return false;
 }
 
 // Extracts "--store <path>" (or the empty string when absent) from argv.
@@ -137,7 +153,7 @@ int replay(const std::string& path, const std::string& store_path) {
     return 0;
 }
 
-int run_self_test(const std::string& store_path) {
+int run_self_test(const std::string& store_path, bool keep) {
     const std::string path = store_path.empty() ? std::string("aura_selftest.aura") : store_path;
     std::printf("aura: self-test starting (store=%s)\n", path.c_str());
 
@@ -182,7 +198,19 @@ int run_self_test(const std::string& store_path) {
     }
 
     std::printf("aura: SELF-TEST PASS\n");
-    std::remove(path.c_str());
+    if (!keep) std::remove(path.c_str());
+    else std::printf("aura: self-test kept store at %s\n", path.c_str());
+    return 0;
+}
+
+int dump_frames(const std::string& path) {
+    std::ofstream out(path, std::ios::binary | std::ios::trunc);
+    if (!out) {
+        std::fprintf(stderr, "aura: cannot write %s\n", path.c_str());
+        return 1;
+    }
+    for (const std::string& f : builtin_frames(30)) out << f << "\n";
+    std::printf("aura: wrote built-in frames to %s\n", path.c_str());
     return 0;
 }
 
@@ -239,7 +267,11 @@ int main(int argc, char** argv) {
         if (argc < 3) return usage();
         return serve(static_cast<std::uint16_t>(std::atoi(argv[2])), store_arg(argc, argv));
     }
-    if (mode == "--self-test") return run_self_test(store_arg(argc, argv));
+    if (mode == "--self-test") return run_self_test(store_arg(argc, argv), has_flag(argc, argv, "--keep"));
+    if (mode == "--dump-frames") {
+        if (argc < 3) return usage();
+        return dump_frames(argv[2]);
+    }
     if (mode == "--recover") {
         if (argc < 3) return usage();
         return run_recover(argv[2]);
