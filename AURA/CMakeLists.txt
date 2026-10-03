@@ -59,18 +59,24 @@ set(AURA_TEST_TARGETS
 
 find_package(Threads REQUIRED)
 
+# Winsock is required by the Windows build of the socket transport.
+set(AURA_PLATFORM_LIBS Threads::Threads)
+if(WIN32)
+  list(APPEND AURA_PLATFORM_LIBS ws2_32)
+endif()
+
 enable_testing()
 
 # Real host executable (console host; the shadow-only operational entrypoint).
 add_executable(aura ${CMAKE_CURRENT_SOURCE_DIR}/tools/run_pipeline.cpp)
-target_link_libraries(aura PRIVATE aura_foundation Threads::Threads)
+target_link_libraries(aura PRIVATE aura_foundation ${AURA_PLATFORM_LIBS})
 
 foreach(entry IN LISTS AURA_TEST_TARGETS)
   string(REPLACE ":" ";" parts "${entry}")
   list(GET parts 0 target)
   list(GET parts 1 source)
   add_executable(${target} ${CMAKE_CURRENT_SOURCE_DIR}/${source})
-  target_link_libraries(${target} PRIVATE aura_foundation Threads::Threads)
+  target_link_libraries(${target} PRIVATE aura_foundation ${AURA_PLATFORM_LIBS})
   add_test(NAME ${target} COMMAND ${target})
 endforeach()
 

@@ -651,9 +651,13 @@ Files changed: `src/foundation/FilePersistenceStore.h` (new), `src/runtime/Appli
 `src/runtime/ApplicationShell.h`, `tools/run_pipeline.cpp`, `CMakeLists.txt`,
 `.github/workflows/ci.yml` (new), `README.md`, and the control-plane files.
 
-Known failures: none in the local matrix. The remote GitHub Actions run has NOT yet been observed
-(will be recorded when available). The Windows/MSVC CI job is intentionally non-blocking because the
-Windows toolchain is unproven (see BLOCKED.md).
+Known failures: none in the local Linux matrix (18/18 under C++17 and C++20). Remote CI on PR #1 ran:
+Linux gcc C++17 and C++20 jobs PASSED (build + ctest + smoke + install); the Windows/MSVC jobs FAILED at
+the link step with `LNK2019: unresolved external symbol __imp_socket/...` — i.e. `ws2_32` (Winsock) was
+not linked. This was a real portability defect, now fixed in `CMakeLists.txt` by adding `ws2_32` to the
+platform link libraries on `WIN32`. Re-verified locally that the Linux build/ctest is unaffected (18/18).
+The MSVC job is intentionally non-blocking because the Windows toolchain remains unproven (see BLOCKED.md);
+the CI fix will be re-observed on the next push.
 
 Interpretation: durable persistence and the V2-36 crash-recovery decision now exist in the running
 application and are verified by unit tests and a real socket run. A corrupted or version-incompatible
