@@ -31,9 +31,32 @@ authority_class_enum:
 path_status_note: Phase 0 filenames are from V3-42 (CANONICAL decomposition). Phase 0.5/1/2 filenames
   and src/ layout are PROPOSED implementation decomposition and are subject to integration review (V3-16,
   V3-46). They must not be treated as canonical architecture.
-current_task: 'Canonical Phases 0-11 complete. Phase 12 integration/application started: end-to-end pipeline
-  + socket transport + real host executable + CMake build done. Remaining are environment-blocked (Windows
-  GUI, real MT5, datasets) and app persistence wiring.'
+current_task: 'Canonical Phases 0-13 COMPLETE and TESTED, plus Phase 9 desktop productization, the
+  V3-37 control-center section integration, the renderer-compatibility fallback, and the GUI visual
+  redesign. Phase 13 (durable persistence + crash recovery + packaging/CI) and the Windows x64 Release
+  package are done; Phase 9 includes a real desktop GUI (GUI-0001, Dear ImGui + GLFW + OpenGL) with a
+  headless integration smoke, a bounded Xvfb interactive-runtime smoke, read-only projections for every
+  V3-37 section (GUI-0004..GUI-0006: wired sections bound to live runtime data; unsourced sections
+  explicit NOT AVAILABLE), an OpenGL 3.3 -> OpenGL 2.1 renderer fallback for legacy GPUs
+  (GUI-0007..GUI-0008, TESTED on software GL; the specific Intel HD 3000 hardware is UNPROVEN,
+  BLOCK-006), a professional visual redesign (GUI-0009..GUI-0013: design system, grouped navigation,
+  rebuilt panels, window shell, real per-stream sequence + deterministic relative freshness), an XAUUSD
+  candlestick chart with a horizontal timeframe selector (GUI-0015..GUI-0020: a pure, ImGui-free chart
+  model CandleChart.h projected from the closed bars the runtime actually retained, rendered
+  above-chart by a fixed-function widget CandleChartWidget.h, M15 default, all nine timeframes selectable
+  by explicit identity, no fabrication), and a PREMIUM GUI OVERHAUL (GUI-0021..GUI-0024, 2026-10-03):
+  refined design system + chart-first Dashboard recomposition + real deterministic SCORE (RT-0011) /
+  CONFIDENCE (RT-0012) / realized shadow success-rate surfaced in the GUI (GUI-0023) - explicitly NOT a
+  calibrated probability - with a GUI-free deterministic projection test (GUI-0024). A TERMINAL UI
+  RECONSTRUCTION (GUI-0025..GUI-0030, 2026-10-03) then redesigned the composition: a pure GUI-free
+  layout contract (TerminalLayout.h), a cohesive terminal composition (AuraTerminal.h: top bar, icon
+  sidebar, instrument header, timeframe tabs, chart-first workspace, compact metric strip, slim status
+  bar), a refined design system + vector icon set (AuraTheme/AuraWidgets/AuraIcons), a structured
+  financial candlestick renderer (grid + integrated price gutter/time axis + last-price marker + NO
+  CANDLE DATA empty state), shell/Dashboard integration with staged terminal fonts, and a GUI-free
+  layout-contract test. Manifest graph 223 tasks. Remaining are environment/data-unproven only
+  (real-Windows-desktop interactive GUI on legacy GPU, real MT5/MetaEditor round-trip, licensed XAUUSD
+  datasets).'
 tasks:
 - id: TASK-BOOTSTRAP-001
   phase: BOOTSTRAP
@@ -2642,13 +2665,28 @@ tasks:
   module: DESKTOP_CONTROL_CENTER
   layer: OPERATING_GOVERNANCE_PLANE
   authority: CANONICAL
-  status: APPROVED
-  output: (phase milestone - aggregates DESK-0001..DESK-0003)
+  status: TESTED
+  output: (phase milestone - aggregates DESK-0001..DESK-0003 + GUI-0001..GUI-0008)
   dependencies:
   - DESK-0003
-  objective: Phase 9 Desktop Control Center milestone (headless view-models).
-  acceptance: All file-level tasks APPROVED; tests pass.
-  evidence: All 3 APPROVED; tests pass c++17/c++20.
+  - GUI-0001
+  - GUI-0008
+  objective: Phase 9 Desktop Control Center milestone (headless view-models + real GUI productization
+    + the full V3-37 read-only section integration + legacy-GPU renderer fallback).
+  acceptance: All file-level tasks APPROVED/IMPLEMENTED; tests pass; GUI builds and its integration
+    and interactive-runtime smokes pass; every V3-37 section is either wired to real data or explicitly
+    NOT AVAILABLE (never fabricated); the GUI prefers OpenGL 3.3 and falls back to OpenGL 2.1 on legacy
+    hardware without fabricating capability.
+  evidence: 'DESK-0001..0003 APPROVED (headless view-models). GUI-0001 IMPLEMENTED (Dear ImGui + GLFW
+    + OpenGL control center). GUI-0004..0006 IMPLEMENTED (read-only projections for all remaining V3-37
+    sections; wired sections bound to live runtime data; unsourced sections NOT AVAILABLE). GUI-0007..0008
+    TESTED (OpenGL 3.3 -> 2.1 renderer fallback for legacy GPUs; forced-auto-fallback smoke proves the
+    fallback path; specific Intel HD 3000 hardware UNPROVEN, BLOCK-006). Local: DesktopTests PASS
+    c++17/c++20 strict; default build 18/18, GUI build 19/19; aura_gui --self-test PASS; Xvfb interactive
+    smoke cycles all 19 sections and shuts down cleanly; AUTO/legacy/forced-fallback renderer smokes PASS.
+    Remote CI for these new commits (run 37118241974, commit e4bde97) is ALL GREEN across 6/6 jobs and
+    recorded in TEST_LOG.md. Real-Windows-desktop interactive verification (incl. legacy GPU) remains
+    UNPROVEN; MT5 EA round-trip UNPROVEN. Shadow only.'
 - id: TG-0001
   phase: '10'
   module: AUXILIARY_TELEGRAM
@@ -2986,18 +3024,651 @@ tasks:
   acceptance: cmake configure/build succeeds; ctest runs every suite; no GNU-only constructs in source.
   evidence: 'Configured and built with CMake 4.x/GNU; ctest: 17/17 passed. Linux verified only.'
 - id: GUI-0001
-  phase: DEFERRED
-  module: WINDOWS_GUI
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
   layer: APPLICATION_PLANE
-  authority: PROJECT DECISION
-  status: BLOCKED
-  output: '(no source yet: Windows desktop host)'
+  authority: CANONICAL
+  status: IMPLEMENTED
+  output: tools/aura_gui.cpp, src/desktop/DesktopModel.h, src/desktop/ControlCenterState.h,
+    src/desktop/GuiPanels.h, CMakeLists.txt (AURA_BUILD_GUI), .github/workflows/ci.yml
   dependencies:
   - DESK-0002
-  - GOAL-WIN
-  objective: Real native Windows desktop control-center application (windows, controls, live dashboard).
-  acceptance: A built Windows GUI executable consuming the Phase 9 view-models.
-  evidence: 'BLOCKED: no Windows toolchain in this environment. See BLOCKED.md.'
+  - DESK-0003
+  objective: Real desktop control-center GUI (Dear ImGui + GLFW + OpenGL 3.3) consuming the Phase 9
+    projections and the live ApplicationShell; read-only, shadow-only, safe control-plane actions only.
+  acceptance: A built GUI executable that presents the nine timeframes by explicit identity and the
+    V3-37 control-center areas, exposing no live-order path; unknown data shown NOT AVAILABLE not
+    fabricated; corrupted/incompatible state refused, never auto-resumed; recovery/persistence state
+    visible; single runtime owner (no duplicate process).
+  evidence: 'DONE 2026-10-03 (Phase 9 productization): implemented as a real GUI application with a
+    single entrypoint (tools/aura_gui.cpp) over the existing runtime. DesktopModel.h projects
+    ApplicationShell/ApplicationPipeline into read-only ControlCenterSnapshot (nine timeframe rows by
+    explicit identity; NOT AVAILABLE for absent data; shadow_only invariant derived from
+    RiskProposal::is_order). ControlCenterState.h owns exactly one ApplicationShell and exposes only
+    safe control-plane operations (pause/resume local transport, refresh, checkpoint, bounded stop,
+    read-only recovery report). GuiPanels.h renders the V3-37 sections; unwired sections show NOT
+    AVAILABLE. Verified: DesktopTests 3 new tests (nine rows, empty-state no-fabrication, fed-state 9/9
+    streams, checkpoint, CLEAN_SHUTDOWN cross-process recovery, CORRUPTED_STATE refused) PASS under
+    C++17 and C++20; GUI build PASS (Linux g++ 14 c++17 + c++20, MSVC x64 Release, GUI ON); headless
+    aura_gui --self-test PASS (fed 270 frames, 9/9 streams, shadow_only, checkpoint OK, recovery
+    CLEAN_SHUTDOWN resumable); INTERACTIVE runtime smoke PASS under Xvfb software OpenGL (window
+    created, 120 frames rendered, clean shutdown checkpoint OK). GUI interactive runtime on a real
+    Windows desktop (visual/human-verified) is UNPROVEN; MT5 EA round-trip is UNPROVEN. Shadow only.'
+- id: GUI-0002
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: OPERATING_GOVERNANCE_PLANE
+  authority: PROPOSED
+  status: TESTED
+  output: src/desktop/DesktopTests.cpp (extended)
+  dependencies:
+  - GUI-0001
+  - DESK-0003
+  objective: Behavioural tests proving the desktop integration path over the real runtime.
+  acceptance: Nine-timeframe projection; empty-state no-fabrication (NOT AVAILABLE); fed-state 9/9
+    streams; shadow-only invariant; checkpoint; cross-process CLEAN_SHUTDOWN recovery; corrupted state
+    refused; safe control-plane ops only.
+  evidence: 'DONE 2026-10-03: three new tests (test_desktop_model_empty_state,
+    test_desktop_model_nine_timeframes, test_control_center_state_smoke) added. DesktopTests ALL PASS
+    under g++ c++17 and c++20 strict; registered with CTest (DesktopTests).'
+- id: GUI-0003
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: APPLICATION_PLANE
+  authority: PROPOSED
+  status: TESTED
+  output: CMakeLists.txt (AURA_BUILD_GUI), .github/workflows/ci.yml (desktop-gui job;
+    windows-release GUI build/package), README.md
+  dependencies:
+  - GUI-0001
+  - BUILD-0003
+  objective: Reproducible GUI build + CI packaging of the GUI executable.
+  acceptance: Pinned reproducible imgui/glfw fetch; GUI target named aura_gui; GUI OFF by default so
+    the core matrix is unchanged; CI builds GUI, runs tests, verifies the exe, packages the ZIP.
+  evidence: 'DONE 2026-10-03: FetchContent pins glfw 3.4 + imgui v1.90.9; AURA_BUILD_GUI default OFF;
+    aura_gui target. CI: new desktop-gui (Linux Xvfb, bounded interactive smoke) job; windows-release
+    now builds GUI, runs aura_gui --self-test, packages AURA_Windows_x64_GUI_Release.zip containing
+    aura_gui.exe + aura.exe, extracts and re-runs both. Local: GUI build PASS c++17/c++20; default
+    (GUI OFF) build 18/18 tests PASS; GUI build 19/19 tests PASS. Remote CI result recorded in
+    TEST_LOG.md.'
+- id: GUI-0004
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: APPLICATION_PLANE
+  authority: PROPOSED
+  status: APPROVED
+  output: src/desktop/ControlCenterPanels.h
+  dependencies:
+  - DESK-0002
+  - OB-0001
+  - VALID-0001
+  - GOV-0004
+  objective: Read-only desktop projectors for the additional V3-37 control-center sections (prediction,
+    shadow ledger, incidents, knowledge, research, candidates, validation, approvals, evolution,
+    schedule, checkpoints, audit, configuration/version).
+  acceptance: Pure read-only projections over supplied records; a section is `available` only when a
+    real source is wired; unsourced sections are NOT AVAILABLE and are never fabricated; no GUI toolkit,
+    no network, no clock, no input mutation.
+  evidence: 'DONE 2026-10-03: added PanelSources + ControlCenterPanels (pure, deterministic). Verified
+    by DesktopTests test_section_panel_availability (unsourced -> NOT AVAILABLE; wired -> available;
+    deterministic) under g++ c++17/c++20 strict; remote CI run 37118241974 all 6 jobs green.'
+- id: GUI-0005
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: APPLICATION_PLANE
+  authority: PROPOSED
+  status: APPROVED
+  output: src/desktop/ControlCenterState.h, src/desktop/GuiPanels.h, tools/aura_gui.cpp
+  dependencies:
+  - GUI-0001
+  - GUI-0004
+  objective: Integrate the additional sections into the single-runtime-owner control center - a
+    ControlCenterReport combining the core snapshot with the new projections; real incident detection
+    over the live adapter streams; real shadow-ledger and version-context sourcing; panels rendered in
+    the GUI (wired sections bound to live data, unsourced sections explicit NOT AVAILABLE).
+  acceptance: One runtime owner; version context and shadow ledger sourced from the live pipeline;
+    incidents detected from real stream health; unsourced planes NOT AVAILABLE; no live-order path;
+    section cycling renders every panel; read-only.
+  evidence: 'DONE 2026-10-03: refresh_report() builds the report; incidents via FailureDetectionEngine
+    over live adapters; ledger snapshot cached by size (re-copied only when it grows). Verified by
+    DesktopTests test_incident_propagation_and_corruption + test_single_runtime_owner; GuiSelfTest now
+    asserts version/ledger/incident sourcing and NOT-AVAILABLE for unsourced planes; Xvfb interactive
+    smoke cycles all 19 sections and shuts down cleanly. Remote CI run 37118241974 all 6 jobs green.
+    Shadow only.'
+- id: GUI-0006
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: OPERATING_GOVERNANCE_PLANE
+  authority: PROPOSED
+  status: APPROVED
+  output: src/desktop/DesktopTests.cpp (extended)
+  dependencies:
+  - GUI-0004
+  - GUI-0005
+  objective: Behavioural tests proving the additional desktop section integration.
+  acceptance: Unsourced sections NOT AVAILABLE; wired sections available and deterministic; real
+    incident propagation (only the failing stream is reported); corrupted persisted state surfaced as
+    CORRUPTED_STATE and refused; single runtime owner.
+  evidence: 'DONE 2026-10-03: added test_section_panel_availability, test_incident_propagation_and_corruption,
+    test_single_runtime_owner. DesktopTests ALL PASS under g++ c++17 and c++20 strict (real code paths,
+    no mocks); registered with CTest (DesktopTests); remote CI run 37118241974 all 6 jobs green.'
+- id: GUI-0007
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: APPLICATION_PLANE
+  authority: PROPOSED
+  status: TESTED
+  output: src/desktop/RendererPolicy.h (new), tools/aura_gui.cpp, CMakeLists.txt
+  dependencies:
+  - GUI-0001
+  objective: Renderer-compatibility fallback for the desktop control center. Prefer an OpenGL 3.3 core
+    context; if the driver cannot provide one (e.g. legacy Intel HD Graphics 3000 on Windows, whose
+    driver rejects the core-profile request with WGL_ARB_create_context_profile unavailable), fall back
+    to an OpenGL 2.1 compatibility context driven by the ImGui OpenGL2 backend. Never fabricate
+    capability; report the renderer actually in use; fail with an actionable error only when no context
+    can be created.
+  acceptance: Modern-first with a legacy fallback; the legacy profile never requests a core profile and
+    uses GLSL version 120 via ImGui_ImplOpenGL2; the startup diagnostic and status bar name the ACTUAL
+    renderer (MODERN_GL33 or LEGACY_GL21) and never claim OpenGL 3.3 when it was unavailable; when no
+    context exists, exit non-zero with a message naming the attempts and pointing at the headless
+    console host; --self-test behavior unchanged; GUI remains read-only/shadow-only with no live-order
+    path; a --renderer auto|modern|legacy selector allows pinning a path for diagnostics and CI.
+  evidence: 'DONE 2026-10-03 (UNVERIFIED on the specific Intel HD 3000 hardware): added
+    src/desktop/RendererPolicy.h (pure, deterministic selection policy: hints_for, RendererSelector,
+    RendererChoice, renderer_diagnostic, no_renderer_error; no GLFW/GL, unit-testable). tools/aura_gui.cpp
+    now sets hints only from the policy, creates the modern context first and the legacy context on
+    failure, drives ImGui_ImplOpenGL2 (legacy) or ImGui_ImplOpenGL3 (modern), prints the active renderer,
+    and parses --renderer auto|modern|legacy. CMakeLists.txt compiles backends/imgui_impl_opengl2.cpp
+    into aura_imgui. Local verification (Linux, Mesa software GL): GUI OFF build 18/18 ctest PASS; GUI
+    build c++17 19/19 ctest PASS and c++20 19/19 ctest PASS; --self-test PASS; AUTO interactive smoke
+    -> renderer=MODERN_GL33, 40 frames, clean shutdown; --renderer legacy -> renderer=LEGACY_GL21,
+    40 frames, clean shutdown; AUTO with MESA_GL_VERSION_OVERRIDE=2.1 (forces modern failure)
+    -> renderer=LEGACY_GL21, 40 frames, clean shutdown; --renderer modern with Mesa capped -> exit 3
+    with the actionable no-renderer error. CI desktop-gui job extended with modern-pin, legacy, and
+    forced-auto-fallback smokes. The specific Intel HD 3000 hardware is not available in CI and remains
+    UNPROVEN (BLOCK-006). Remote CI run 37125095527 (commit f3e1886) ALL GREEN across 6/6 jobs. Shadow
+    only.'
+- id: GUI-0008
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: OPERATING_GOVERNANCE_PLANE
+  authority: PROPOSED
+  status: TESTED
+  output: src/desktop/DesktopTests.cpp (extended)
+  dependencies:
+  - GUI-0007
+  objective: Deterministic unit tests for the renderer-selection policy and fallback state machine.
+  acceptance: Modern hints keep the 3.3 core request and GLSL 330; legacy hints request 2.1
+    compatibility (no core profile) and GLSL 120; the selector prefers modern, falls back to legacy
+    on failure, is terminal-fail only when both fail, and pinned selectors attempt exactly one profile;
+    the diagnostic names the actual renderer and reports 3.3 unavailable only when it truly was; the
+    no-renderer error names the attempts actually made and points at aura.exe.
+  evidence: 'DONE 2026-10-03: added test_renderer_policy_hints, test_renderer_selector_modern_success,
+    test_renderer_selector_legacy_fallback, test_renderer_selector_both_fail, test_renderer_selector_pinned
+    (real code paths, no mocks; deterministic, no GL/GLFW). DesktopTests ALL PASS under g++ c++17 and
+    c++20 strict with -Wall -Wextra -Werror -pedantic, and via CTest in the GUI build (19/19).'
+- id: GUI-0009
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: APPLICATION_PLANE
+  authority: PROPOSED
+  status: TESTED
+  output: src/desktop/StateVisuals.h (new), src/desktop/AuraTheme.h (new)
+  dependencies:
+  - GUI-0001
+  objective: Establish an original, deterministic visual design system for the control center so the
+    desktop app reads as a professional operator surface rather than a prototype. A single deep-navy
+    palette with one cyan accent and a state colour map that keeps HEALTHY, DEGRADED, CRITICAL, PAUSED,
+    UNKNOWN and NOT AVAILABLE visually distinct; UNKNOWN and NOT AVAILABLE never render as healthy.
+    All presentation is flat rectangles/text (fixed-function draw list) so the same theme renders on the
+    OpenGL 2.1 legacy backend and the OpenGL 3.3 backend.
+  acceptance: A pure, ImGui-free state-classification unit (StateVisuals.h) with a documented invariant
+    that unrecognised/empty states map to UNKNOWN (never Healthy); a theme token module (AuraTheme.h)
+    providing colours, spacing, state->colour mapping and apply_aura_style(); style uses only
+    fixed-function-friendly properties (no gradients, no textures, no GPU effects); no fabricated or
+    decorative data.
+  evidence: 'DONE 2026-10-03: added src/desktop/StateVisuals.h (StateCategory, state_category,
+    category_label, is_unknown_like — pure, no ImGui) and src/desktop/AuraTheme.h (palette, spacing
+    scale, category_color, status_color, apply_aura_style). DesktopTests ALL PASS (g++ c++17 + c++20
+    strict). GUI builds (modern + legacy). Shadow only.'
+- id: GUI-0010
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: APPLICATION_PLANE
+  authority: PROPOSED
+  status: TESTED
+  output: src/desktop/NavigationModel.h (new), tools/aura_gui.cpp
+  dependencies:
+  - GUI-0001
+  - GUI-0009
+  objective: Replace the flat 19-item sidebar with a grouped, professional navigation catalog
+    (Monitoring / Intelligence / Governance / System) with human-readable labels, while preserving the
+    canonical V3-37 section identity and order exactly.
+  acceptance: The catalog covers every canonical section exactly once, in canonical order, with each
+    item's index and declared section title matching DesktopModel::sections(); no section is added,
+    removed, reordered or renamed; navigation is presentation only and cannot drift from the panels.
+  evidence: 'DONE 2026-10-03: added src/desktop/NavigationModel.h (canonical_sections, navigation_groups,
+    navigation_count, section_title_for). tools/aura_gui.cpp renders the grouped sidebar and cycles
+    navigation_count() sections in the bounded smoke. test_navigation_catalog verifies full, unique,
+    in-order coverage. Shadow only.'
+- id: GUI-0011
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: APPLICATION_PLANE
+  authority: PROPOSED
+  status: TESTED
+  output: src/desktop/AuraWidgets.h (new), src/desktop/GuiPanels.h (rewritten)
+  dependencies:
+  - GUI-0009
+  - GUI-0010
+  objective: Rebuild the control-center presentation layer on the design system — reusable, legacy-safe
+    widgets (bordered cards, state badges, aligned key/value rows, metric blocks, explicit empty states,
+    uniform tables) and a polished Dashboard plus all 19 section panels. Every absent value is shown as
+    NOT AVAILABLE / UNKNOWN with a reason; nothing is fabricated; the shadow-only identity is always
+    visible.
+  acceptance: Widgets use only the ImGui draw list (no shaders); a present-but-empty source is shown as
+    a real empty state distinct from NOT AVAILABLE; the Dashboard shows system health, execution mode
+    (SHADOW ONLY), persistence, recovery, the nine-timeframe summary, signal/ledger summaries, recent
+    incidents and version context; all 19 sections render through the same widgets; no live-order
+    control exists anywhere.
+  evidence: 'DONE 2026-10-03: added src/desktop/AuraWidgets.h; rewrote src/desktop/GuiPanels.h
+    (dashboard, market, timeframes, signals, risk, shadow positions, observation, research, knowledge,
+    candidates, validation, governance, evolution, incidents, schedule, recovery, health, audit,
+    configuration). Verified by Debug (assert-enabled) ImGui smokes cycling all 19 sections under both
+    MODERN_GL33 and LEGACY_GL21, 80 frames each, clean shutdown. Shadow only.'
+- id: GUI-0012
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: APPLICATION_PLANE
+  authority: PROPOSED
+  status: TESTED
+  output: tools/aura_gui.cpp
+  dependencies:
+  - GUI-0011
+  objective: Give the window a coherent shell — a top bar (brand, version, SHADOW ONLY, health, actual
+    renderer), a grouped sidebar, a bordered content area, and a persistent status bar; keep the
+    control plane safe and separate from data.
+  acceptance: The top bar and status bar name the ACTUAL renderer (never claim 3.3 after a fallback) and
+    always surface SHADOW ONLY; only safe control-plane shortcuts exist (pause/resume transport,
+    persist checkpoint, bounded stop) and no order/buy/sell action is reachable from the UI; the window
+    opens maximised to the viewport; bounded smoke still cycles every section and shuts down cleanly.
+  evidence: 'DONE 2026-10-03: rebuilt the frame in tools/aura_gui.cpp (viewport-sized root window, top
+    bar, sidebar/content body, status bar) and added Ctrl+P / Ctrl+S / Esc safe shortcuts. Verified with
+    MODERN_GL33 + LEGACY_GL21 bounded smokes (60 frames) and Debug 80-frame section-cycling smokes;
+    forced-fallback (Mesa 2.1) and forced-modern-unavailable (exit 3) still behave. Shadow only.'
+- id: GUI-0013
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: OPERATING_GOVERNANCE_PLANE
+  authority: PROPOSED
+  status: TESTED
+  output: src/desktop/DesktopModel.h (extended), src/desktop/DesktopTests.cpp (extended)
+  dependencies:
+  - GUI-0011
+  objective: Make the Timeframes view informative without inventing data — expose the real processed
+    closed-bar sequence per stream and a deterministic relative freshness derived from the newest close
+    time in the snapshot (no wall clock, no lookahead).
+  acceptance: sequence is the runtime's real TimeframeProgress sequence (absent when the stream has not
+    reported); freshness is FRESH for the newest present stream, LAGGING for older present streams,
+    UNKNOWN for a present stream with no close time, and NOT AVAILABLE for an absent stream; the
+    projection is deterministic across repeated captures; the visual state map never classifies UNKNOWN
+    or NOT AVAILABLE as healthy.
+  evidence: 'DONE 2026-10-03: extended src/desktop/DesktopModel.h (TimeframeRow.sequence, .freshness;
+    assign_freshness computed from snapshot close times). Added test_state_category_mapping,
+    test_navigation_catalog, test_freshness_projection (real runtime frames, no mocks). DesktopTests
+    ALL PASS g++ c++17 + c++20 strict -Wall -Wextra -Werror -pedantic; CTest 18/18 (GUI off) and
+    19/19 (GUI on). Shadow only.'
+- id: GUI-0014
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: OPERATING_GOVERNANCE_PLANE
+  authority: PROPOSED
+  status: DEFERRED
+  output: tools/aura_gui.cpp (menu-based control plane)
+  dependencies:
+  - GUI-0012
+  objective: Optional in-window control-plane menu (checkpoint now, pause/resume, about, keyboard
+    shortcuts help) as a discoverable alternative to keyboard shortcuts.
+  acceptance: Control-plane actions only (no order path); actions are the same safe operations already
+    exposed; documented in the operator guide.
+  evidence: 'DEFERRED 2026-10-03: the redesign replaced the top menu with a chrome-free operator layout
+    and exposes the same safe actions via keyboard shortcuts. A visible menu/help surface is a polish
+    item, not required for the current scope, and is not implemented yet.'
+- id: GUI-0015
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: APPLICATION_PLANE
+  authority: PROPOSED
+  status: TESTED
+  output: src/runtime/ApplicationPipeline.h (read-only per-timeframe bar accessor)
+  dependencies:
+  - APP-0001
+  objective: Expose the runtime's real retained closed bars for a single explicit timeframe to a
+    read-only presentation projection, without adding any mutation, merge or ordering path.
+  acceptance: A const accessor returns the retained closed bars for a given Timeframe by explicit
+    identity (never a row index); the returned series is empty when the stream has reported nothing; no
+    lookahead, no repaint, no mutation; the accessor does not expose engine internals for writing.
+  evidence: 'DONE 2026-10-03: added ApplicationPipeline::last_bar(Timeframe) (const, non-owning, returns
+    nullptr when absent) and ApplicationPipeline::bar_series(Timeframe) (const reference to the retained
+    closed-bar vector). Both are read-only projections over the existing bars_ map; no new state, no
+    mutation path. Verified by DesktopTests + aura_gui --self-test.'
+- id: GUI-0016
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: APPLICATION_PLANE
+  authority: PROPOSED
+  status: TESTED
+  output: src/desktop/CandleChart.h (new)
+  dependencies:
+  - GUI-0015
+  - GUI-0009
+  objective: A pure, ImGui-free chart model that projects the runtime's real retained CLOSED bars for a
+    selected timeframe into deterministic OHLC candles and plot geometry, so the chart is unit-testable
+    without a windowing system and never fabricates data.
+  acceptance: make_candle_series keeps only bars whose explicit timeframe matches and whose closed flag
+    is set and whose OHLC are finite (non-finite/forming/foreign bars are dropped, never drawn); a
+    timeframe with no real bars yields an unavailable, empty series; build_chart_geometry produces
+    deterministic normalized wick/body coordinates and a price grid with no wall clock and no lookahead;
+    TimeframeSelection defaults to M15 and holds an explicit Timeframe (never an index), refusing
+    UNKNOWN; format_utc_minute labels a real close time deterministically; no ImGui, no I/O, no clock.
+  evidence: 'DONE 2026-10-03: added src/desktop/CandleChart.h (Candle, CandleSeries, make_candle_series,
+    CandleLayout, ChartGeometry, build_chart_geometry, chart_y_fraction, format_utc_minute,
+    TimeframeSelection, chart_timeframes). Verified by standalone compile + new DesktopTests
+    (test_timeframe_selection_default_and_switch, test_candle_series_closed_bar_identity,
+    test_candle_series_rejects_non_finite, test_chart_geometry_bullish_bearish, test_chart_utc_formatter).'
+- id: GUI-0017
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: APPLICATION_PLANE
+  authority: PROPOSED
+  status: TESTED
+  output: src/desktop/ControlCenterState.h (extended)
+  dependencies:
+  - GUI-0016
+  objective: Carry the selected timeframe's real candle series in the read-only control-center report and
+    hold the presentation-only timeframe selection in the single runtime owner, so the GUI chart is bound
+    to the same data the runtime actually retained.
+  acceptance: ControlCenterReport gains a chart CandleSeries; ControlCenterState exposes
+    timeframe_selection() (default M15) and chart_series(Timeframe) which reads the pipeline's retained
+    bars by explicit identity; the report's chart follows the current selection; no new runtime state and
+    no order path.
+  evidence: 'DONE 2026-10-03: ControlCenterReport.chart (CandleSeries); ControlCenterState::chart_series()
+    and timeframe_selection(); report_.chart populated in refresh_report(). Verified by
+    test_chart_series_from_real_runtime and test_chart_empty_state_no_fake_candles (real runtime frames,
+    no mocks).'
+- id: GUI-0018
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: APPLICATION_PLANE
+  authority: PROPOSED
+  status: TESTED
+  output: src/desktop/CandleChartWidget.h (new), src/desktop/GuiPanels.h (Dashboard)
+  dependencies:
+  - GUI-0016
+  - GUI-0017
+  objective: Render the XAUUSD candlestick chart as the primary Dashboard element, with an above-chart
+    horizontal timeframe selector ([M1][M5][M15]...) whose active timeframe is visually distinct, closed
+    bars only, and an explicit NO CANDLE DATA state.
+  acceptance: The selector shows all nine timeframes in order with the active one highlighted and switches
+    the displayed stream on click; the chart draws real OHLC wicks+bodies with a price scale, time axis
+    and subtle grid using only fixed-function draw-list primitives (renders on OpenGL 2.1 and 3.3); an
+    empty stream shows NO CANDLE DATA / STATUS NOT AVAILABLE / TIMEFRAME, never placeholder candles; no
+    fabrication and no order path.
+  evidence: 'DONE 2026-10-03: added src/desktop/CandleChartWidget.h (chart::timeframe_selector,
+    chart::no_candle_data, chart::candlestick_chart) and wired draw_market_chart/draw_dashboard in
+    GuiPanels.h. Verified by Xvfb captures under MODERN_GL33 and LEGACY_GL21: the chart renders real
+    candles (all-bullish builtin set: ~5.4k green candle px; an alternating series: ~12k green + ~13k red
+    candle px), identical on both backends. Shadow only.'
+- id: GUI-0019
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: APPLICATION_PLANE
+  authority: PROPOSED
+  status: TESTED
+  output: tools/aura_gui.cpp (chart self-test + GUI replay feed)
+  dependencies:
+  - GUI-0018
+  objective: Prove the chart/timeframe selector in the headless self-test and let the GUI open on real
+    closed bars when a canonical frames file is supplied, without introducing a synthetic chart path.
+  acceptance: The self-test asserts the default is M15, all nine timeframes are exposed, each selects its
+    own explicit stream, every fed stream yields real non-empty candles, and UNKNOWN is refused; --gui
+    --replay <file> feeds the trusted pipeline frames once before rendering.
+  evidence: 'DONE 2026-10-03: aura_gui --self-test prints "chart nine timeframes OK, default M15, each
+    stream has real candles" and still PASSes end-to-end; run_gui feeds --replay frames through
+    state.feed_replay() before the render loop. Verified locally (self-test PASS; GUI opened on the replay
+    set and rendered real candles).'
+- id: GUI-0020
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: OPERATING_GOVERNANCE_PLANE
+  authority: PROPOSED
+  status: TESTED
+  output: src/desktop/DesktopTests.cpp (extended)
+  dependencies:
+  - GUI-0016
+  - GUI-0017
+  objective: Add deterministic, GUI-free tests proving the chart model and its runtime binding behave per
+    contract, so correctness is not inferred from compilation or a screenshot alone.
+  acceptance: Tests cover the M15 default and identity-based switching (including UNKNOWN refusal),
+    closed-bar/foreign-timeframe/non-closed filtering, non-finite rejection, bullish/bearish geometry and
+    grid determinism, the real-runtime series binding, the empty NO CANDLE DATA state, and the UTC
+    formatter; all deterministic, no mocks, no wall clock.
+  evidence: 'DONE 2026-10-03: added seven chart tests; DesktopTests ALL PASS (g++ c++17 strict); full
+    CTest 19/19 under the GUI build. See TEST_LOG.md.'
+- id: GUI-0021
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: APPLICATION_PLANE
+  authority: PROPOSED
+  status: TESTED
+  output: src/desktop/AuraTheme.h, src/desktop/AuraWidgets.h, tools/aura_gui.cpp
+  dependencies:
+  - GUI-0013
+  - GUI-0018
+  objective: Premium terminal visual overhaul of the shared design system and window shell - refined
+    typography, spacing, radii and a chart-first hierarchy - while keeping the deep-navy/cyan identity,
+    the single-runtime owner and the shadow-only invariant unchanged.
+  acceptance: The theme applies an elevated, consistent style (comfortable type scale, hairline borders,
+    measured region spacing, deeper panel separation) built only from fixed-function ImGui/OpenGL
+    primitives so it renders identically on OpenGL 2.1 and 3.3; the header presents brand/instrument on
+    the left and real status (TF, shadow-only, market health, renderer) measured and right-aligned rather
+    than offset by a hard-coded pixel count; the sidebar uses custom nav rows with an accent selection
+    bar driven by the real page index; the status bar is a slim strip of real values. No new data source
+    and no order path.
+  evidence: 'DONE 2026-10-03: apply_aura_style refined (ChildRounding 8, FrameRounding 5, FrameBorderSize
+    0, WindowPadding 16/12, CellPadding 12/6, ItemSpacing 12/10, ScrollbarSize 10); io.FontGlobalScale
+    1.10; kSidebarWidth 232->200, kStatusBarHeight 30->24; added widgets::nav_item, status_item,
+    metric_block, success_meter; aura_gui top bar and status bar rebuilt with measured right-alignment.
+    Verified by Xvfb captures at 1600x900 and 1280x720 under MODERN_GL33 and LEGACY_GL21; OCR confirms the
+    header renders AURA | XAUUSD | MARKET INTELLIGENCE ... TF M15 SHADOW ONLY MARKET HEALTHY RENDERER
+    MODERN_GL33 on a single line on both backends. Build clean; CTest unaffected.'
+- id: GUI-0022
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: APPLICATION_PLANE
+  authority: PROPOSED
+  status: TESTED
+  output: src/desktop/GuiPanels.h (draw_dashboard, draw_market_strip, draw_main_chart)
+  dependencies:
+  - GUI-0021
+  objective: Recompose the Dashboard from card-heavy blocks into a premium, chart-first terminal layout -
+    a market information strip, the large candlestick chart as the dominant workspace element, a compact
+    real-value status strip, and supporting analytics - without fabricating any value.
+  acceptance: The Dashboard leads with a market strip (symbol, selected timeframe, real last closed price
+    and close time, stream state, data quality, bar count) and a chart whose height adapts to the viewport
+    (min 320, max 660 px) so it dominates at 1600x900 and still renders at 1280x720; the six-value status
+    strip is a single aligned row (SYSTEM / DATA STREAMS / SCORE / SIGNAL / RISK / MODE); the timeframe
+    selector remains above the chart; absent values show N/A / NOT AVAILABLE. Presentation only; no runtime
+    reach-through and no order path.
+  evidence: 'DONE 2026-10-03: replaced the four oversized status cards and the nine-timeframe summary card
+    in the Dashboard with draw_market_strip + a full-width draw_main_chart + a six-column 116px status
+    strip (later a borderless table to fix column alignment) + a three-card success-metrics row. Verified
+    by Xvfb captures at 1600x900 and 1280x720 under MODERN and LEGACY: chart spans the workspace; OCR of
+    the strip reads SYSTEM HEALTHY | DATA STREAMS 9/9 | SCORE 0.97 | SIGNAL LONG | RISK PROPOSED | MODE
+    SHADOW with no vertical cascade and no overlap.'
+- id: GUI-0023
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: APPLICATION_PLANE
+  authority: PROPOSED
+  status: TESTED
+  output: src/runtime/ApplicationPipeline.h, src/desktop/DesktopModel.h, src/desktop/GuiPanels.h
+  dependencies:
+  - GUI-0022
+  objective: Surface AURA real deterministic score (RT-0011) and confidence (RT-0012), plus realized
+    shadow outcomes, in the GUI - without inventing a calibrated success probability that AURA does not
+    compute.
+  acceptance: The pipeline exposes last_score()/last_confidence() and cumulative realized outcome counts
+    (positions_closed, wins) derived incrementally from the shadow simulator; DesktopModel projects them;
+    the GUI shows score and confidence bounded to [0,1] and a realized shadow success rate (wins/closed)
+    only once a position has closed, each labelled as NOT a probability / NOT calibrated. When no signal
+    or no close exists the fields are marked NOT AVAILABLE / N/A, never a fabricated 0%; wins can never
+    exceed closed positions.
+  evidence: 'DONE 2026-10-03: ApplicationPipeline gained last_score_/last_confidence_ members and accessors
+    and EngineStatus.positions_closed/wins (win = net realised P&L > 0 on a full close, deterministic, no
+    clock); DesktopModel SignalPanel gained score/confidence/outcome fields copied verbatim from the
+    pipeline; Dashboard shows SCORE/CONFIDENCE/REALIZED SHADOW RATE meters and the Signals panel shows
+    real score/confidence. Verified: DesktopTests test_real_metrics_projection PASS (empty -> unavailable;
+    fed -> score/confidence present, bounded, equal to pipeline values; wins <= closed; deterministic).
+    Live capture shows SCORE 0.97, CONFIDENCE 97%, success rate from 37 closed / 8 up. No probability
+    claimed.'
+- id: GUI-0024
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: OPERATING_GOVERNANCE_PLANE
+  authority: PROPOSED
+  status: TESTED
+  output: src/desktop/DesktopTests.cpp (extended)
+  dependencies:
+  - GUI-0023
+  objective: Prove the new real-metric projection and the no-fabrication contract deterministically and
+    GUI-free, so correctness is not inferred from compilation or a screenshot alone.
+  acceptance: Tests assert score/confidence are absent with no signal and present, bounded and equal to the
+    pipeline values after a real run; realized outcomes are consistent (wins <= closed) and marked
+    unavailable until a close; a second capture is identical; the shadow-only invariant holds. All
+    deterministic, no mocks, no wall clock.
+  evidence: 'DONE 2026-10-03: added test_real_metrics_projection; DesktopTests ALL PASS; full CTest 19/19
+    (GUI build) and 18/18 (GUI off). See TEST_LOG.md.'
+- id: GUI-0025
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: APPLICATION_PLANE
+  authority: PROPOSED
+  status: TESTED
+  output: src/desktop/TerminalLayout.h
+  dependencies:
+  - GUI-0018
+  objective: Extract the terminal composition geometry (chrome heights, chart/panel
+    sizing, ordered nine-timeframe tab layout) into a pure, GUI-free contract so the
+    renderer and the deterministic tests consume exactly the same numbers.
+  acceptance: No ImGui/runtime/clock dependency; chart height is clamped to a floor and a
+    ceiling and the panels keep a usable minimum at every viewport; the tab layout is
+    exactly the nine canonical timeframes in V3-29 order, one per explicit identity,
+    non-overlapping and deterministic.
+  evidence: 'DONE 2026-10-03: TerminalLayout.h created (Chrome constants, chart_height,
+    panel_height, timeframe_rows); standalone strict compile clean (g++ -std=c++17
+    -Wall -Wextra -Werror -pedantic); proven by DesktopTests.test_terminal_layout_contract.'
+- id: GUI-0026
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: APPLICATION_PLANE
+  authority: PROPOSED
+  status: TESTED
+  output: src/desktop/AuraTerminal.h
+  dependencies:
+  - GUI-0018
+  - GUI-0025
+  objective: Build a cohesive professional terminal composition - top terminal bar,
+    navigation sidebar with a section icon system, instrument/market header, horizontal
+    timeframe tab strip, chart-first workspace, compact single-row metric strip and a
+    slim real-value status bar - replacing the previous ad-hoc header/status blocks.
+  acceptance: All values read from the pre-built ControlCenterReport; absent data renders
+    as explicit N/A / NOT AVAILABLE, never a fabricated zero; the SHADOW ONLY identity is
+    stated in the top bar and status bar; only fixed-function ImGui draw-list primitives
+    (renders identically on OpenGL 2.1 and 3.3); no runtime reach-through and no order path.
+  evidence: 'DONE 2026-10-03: AuraTerminal.h created (top_bar, sidebar, timeframe_tabs,
+    market_header, metric_strip, lower_panels, status_bar); wired into the window shell
+    (GUI-0029); verified by Xvfb capture + OCR at 1280x720/1366x768/1600x900/1920x1080 on
+    both MODERN_GL33 and LEGACY_GL21; the SHADOW ONLY pill was colour-confirmed in the top
+    bar; empty dataset renders NO CANDLE DATA and N/A for every absent metric.'
+- id: GUI-0027
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: APPLICATION_PLANE
+  authority: PROPOSED
+  status: TESTED
+  output: src/desktop/AuraTheme.h, src/desktop/AuraWidgets.h, src/desktop/AuraIcons.h
+  dependencies:
+  - GUI-0021
+  objective: Refine the shared design system for genuine terminal density and hierarchy -
+    a real font-role hierarchy (hero/title/body/small/mono), measured spacing rather than
+    oversized blocks, hairline borders and a vector icon system - keeping the
+    deep-navy/cyan identity and the shadow-only invariant unchanged.
+  acceptance: Font roles load from the staged AURA_FONT_DIR with a safe built-in fallback;
+    widgets expose nav_item/panel_begin/panel_end/badge/kv_row/state_cell/empty_state and a
+    section icon set; only fixed-function primitives; no data source and no order path.
+  evidence: 'DONE 2026-10-03: AuraTheme.h recreated with load_fonts/text_* role helpers and
+    denser style; AuraWidgets.h refreshed (badge/kv_row/empty_state, scrollable panels);
+    AuraIcons.h created as a legacy-safe draw-list vector icon set; standalone strict
+    compiles clean. Rendered on both GL backends.'
+- id: GUI-0028
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: APPLICATION_PLANE
+  authority: PROPOSED
+  status: TESTED
+  output: src/desktop/CandleChartWidget.h
+  dependencies:
+  - GUI-0016
+  - GUI-0027
+  objective: Render the candle workspace as a structured financial chart - inset canvas,
+    subtle grid, integrated right-hand price gutter, integrated bottom time axis and a
+    last-price marker - and give a timeframe with no real bars a finished NO CANDLE DATA
+    state instead of a bare rectangle.
+  acceptance: Draws only real closed bars projected by the pure CandleChart model; never
+    synthesizes a candle or a price; fixed-function primitives only; the empty state names
+    the instrument/timeframe and states MARKET STREAM NOT AVAILABLE.
+  evidence: 'DONE 2026-10-03: CandleChartWidget.h rewritten; Xvfb captures show real green
+    (~2.0k) and red candle pixels in the chart region on both MODERN_GL33 and LEGACY_GL21;
+    empty dataset capture reads NO CANDLE DATA / MARKET STREAM NOT AVAILABLE.'
+- id: GUI-0029
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: APPLICATION_PLANE
+  authority: PROPOSED
+  status: TESTED
+  output: src/desktop/GuiPanels.h, tools/aura_gui.cpp, CMakeLists.txt
+  dependencies:
+  - GUI-0026
+  - GUI-0028
+  objective: Integrate the terminal composition into the window shell and Dashboard -
+    chart-first draw_dashboard (instrument header, tabs, dominant chart, metric strip,
+    responsive secondary panels) and a shell that calls the new top bar / sidebar /
+    status bar - while keeping the single runtime owner and shadow-only invariant.
+  acceptance: Shell uses only safe control-plane shortcuts (pause/checkpoint/stop; no
+    order path); fonts are staged next to the binary and referenced via AURA_FONT_DIR;
+    sidebar navigation drives the real page index; panels stay on-screen at 1280x720 and
+    the chart dominates at 1920x1080; build clean under C++17 and C++20.
+  evidence: 'DONE 2026-10-03: GuiPanels draw_dashboard recomposed; aura_gui shell spliced to
+    terminal::top_bar/sidebar/status_bar and load_fonts(AURA_FONT_DIR); CMake POST_BUILD
+    stages Roboto-Medium/Cousine-Regular; GUI build 19/19 CTest, GUI-off build 18/18; OCR
+    of 1280/1366/1600/1920 captures shows the full hierarchy with no clipping.'
+- id: GUI-0030
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: OPERATING_GOVERNANCE_PLANE
+  authority: PROPOSED
+  status: TESTED
+  output: src/desktop/DesktopTests.cpp (extended)
+  dependencies:
+  - GUI-0025
+  objective: Prove the terminal layout contract deterministically and GUI-free so a layout
+    regression fails in a plain unit test, not in a screenshot.
+  acceptance: Asserts nine ordered non-overlapping timeframe tabs with distinct identities,
+    chart-height clamping to floor and ceiling, a usable panel minimum at short viewports,
+    and determinism across repeated calls; no mocks, no wall clock, no GUI.
+  evidence: 'DONE 2026-10-03: added test_terminal_layout_contract; DesktopTests ALL PASS
+    (g++ c++17 strict); full CTest 19/19 (GUI build) and 18/18 (GUI off). See TEST_LOG.md.'
 - id: MT5-REAL-0001
   phase: DEFERRED
   module: MT5_RUNTIME
@@ -3028,14 +3699,87 @@ tasks:
   module: INTEGRATION
   layer: APPLICATION_PLANE
   authority: PROJECT DECISION
-  status: READY
-  output: (wire IPersistenceStore backing into the application)
+  status: TESTED
+  output: src/foundation/FilePersistenceStore.h, src/runtime/ApplicationRecovery.h, app wiring
+    (src/runtime/ApplicationPipeline.h, src/runtime/ApplicationShell.h, tools/run_pipeline.cpp)
+    + src/runtime/PersistenceTests.cpp
   dependencies:
   - APP-0001
   - PER-0003
   objective: Durable persistence across restarts for timeframe state + ledgers in the running application.
   acceptance: A file-backed IPersistenceStore persists and restores TimeframeStateStore/ShadowLedger;
     restart resumes without reprocessing or repainting.
-  evidence: 'PLANNED: interfaces exist and are tested; the concrete file-backed store and app wiring are
-    the remaining work.'
-last_updated: '2026-10-02'
+  evidence: 'DONE 2026-10-03: FilePersistenceStore implements IPersistenceStore append-only with atomic
+    (temp+fsync+rename) flush, a whole-file SHA-256 checksum, and empty-digest/conflict/duplicate
+    rejection; ApplicationRecovery implements the V2-36 lifecycle taxonomy (CLEAN_SHUTDOWN / EXPECTED_PAUSE
+    / INTERRUPTED_WORK / CORRUPTED_STATE / UNKNOWN_STATE) and refuses corrupted or version-incompatible
+    state (never silently resumes). ApplicationShell.persist_state / recover / apply_resume wire it in;
+    aura --serve persists on clean stop. Verified: PersistenceTests ALL PASS (idempotency, round-trip,
+    determinism, tamper+truncation -> CORRUPT, all lifecycle decisions, incompatible -> refused, corrupted
+    -> refused, application restart restores 9 timeframes + ledger then accepts strictly-newer bars);
+    CTest 18/18 under C++17 and C++20; aura --serve received 360 real socket frames -> 9/9 streams, 360
+    accepted, 38 signals/proposals/fills, 151 ledger entries, HEALTHY, persisted 161 records; aura
+    --recover on the good store => CLEAN_SHUTDOWN/resumable, on a tampered store => CORRUPTED_STATE/refused
+    (exit 1); aura --self-test PASS. See TEST_LOG.md.'
+- id: PERSIST-0002
+  phase: '13'
+  module: INTEGRATION
+  layer: APPLICATION_PLANE
+  authority: PROPOSED
+  status: TESTED
+  output: tools/run_pipeline.cpp (--self-test), CMakeLists.txt
+  dependencies:
+  - PERSIST-0001
+  objective: A bounded, socket-free CI smoke that exercises the full pipeline, persistence and recovery.
+  acceptance: aura --self-test feeds a deterministic frame set, persists, then reloads and verifies recovery.
+  evidence: 'DONE 2026-10-03: aura --self-test PASS — 30 deterministic steps x 9 streams -> 270 accepted,
+    28 signals/proposals/fills, 111 ledger entries; persist OK (121 records); recovery CLEAN_SHUTDOWN
+    resumable; restores 9 timeframes + 111 ledger entries. Used by CI.'
+- id: BUILD-0002
+  phase: '13'
+  module: INTEGRATION
+  layer: APPLICATION_PLANE
+  authority: PROPOSED
+  status: TESTED
+  output: .github/workflows/ci.yml, CMakeLists.txt (install rules)
+  dependencies:
+  - BUILD-0001
+  objective: Continuous integration and installable packaging for the console host.
+  acceptance: CI builds and runs the full CTest suite under C++17 and C++20 and runs the smoke; CMake
+    exposes install rules for the host + headers.
+  evidence: 'DONE 2026-10-03: CMake install rules added and verified locally (cmake --install installs
+    bin/aura + include/aura/**.h + doc). CI workflow added: Linux gcc C++17/C++20 build+ctest+smoke+install
+    and Windows MSVC C++17/C++20 (build + 18/18 ctest); all four jobs observed GREEN on PR #1. The MSVC
+    job remains non-blocking by policy but currently passes. CI surfaced and we fixed two real Windows
+    portability defects (missing ws2_32/Winsock linkage; std::rename not overwriting an existing file).'
+- id: BUILD-0003
+  phase: '14'
+  module: PACKAGING
+  layer: APPLICATION_PLANE
+  authority: PROPOSED
+  status: TESTED
+  output: '.github/workflows/ci.yml (windows-release job), CMakeLists.txt (static CRT),
+    tools/run_pipeline.cpp (--dump-frames, --self-test --keep), AURA_Windows_x64_GUI_Release.zip
+    (CI artifact with aura_gui.exe + aura.exe + README + RUNNING.txt)'
+  dependencies:
+  - BUILD-0001
+  - BUILD-0002
+  - PERSIST-0002
+  objective: Produce the canonical runnable Windows x64 Release package (self-contained aura.exe and
+    aura_gui.exe) and publish it as a GitHub Actions artifact.
+  acceptance: aura.exe/aura_gui.exe build Release/x64 under MSVC; the package contains the exes plus every
+    runtime file they actually require; no developer-machine absolute paths; no secrets; ZIP contents
+    verified; bounded runtime smoke passes (starts, initialises, single instance, shuts down cleanly, no
+    immediate crash); --store/--recover/replay paths exercised; exe and ZIP uploaded as artifacts.
+  evidence: 'DONE 2026-10-03 (console package, CI run 37115746002 windows-x64-release-package GREEN):
+    aura.exe (Release, x64, MSVC, static CRT) = 440,320 bytes; full suite 18/18; bounded smoke on the
+    runner (--self-test PASS; cross-process --recover => CLEAN_SHUTDOWN/resumable; --dump-frames +
+    --replay 270 frames => HEALTHY, 111 ledger entries; --serve single instance, accepts TCP, clean
+    stop); secret scan OK; AURA_Windows_x64_Release.zip = 220,103 bytes, contains aura.exe, extracted
+    exe re-runs --self-test PASS; artifacts uploaded. EXTENDED 2026-10-03 for the Phase 9 GUI: the
+    windows-release job now builds with -DAURA_BUILD_GUI=ON, runs aura_gui --self-test, and packages
+    AURA_Windows_x64_GUI_Release.zip containing aura_gui.exe + aura.exe. Local verification of the GUI
+    package path: GUI build PASS (Linux g++ 14 C++17/C++20), headless self-test PASS, 19/19 ctest. The
+    updated Windows package run is recorded once its CI run completes. No developer absolute paths; no
+    secrets. Shadow only.'
+last_updated: '2026-10-03'

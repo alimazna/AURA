@@ -58,6 +58,11 @@ struct EngineStatus {
     std::uint64_t proposals{0};
     std::uint64_t fills{0};
     std::uint64_t positions{0};
+    // Realized shadow-position outcomes (never a prediction, never a probability).
+    // A close with net realised P&L > 0 is a win. Derived incrementally from the
+    // shadow simulator; no wall clock and no lookahead.
+    std::uint64_t positions_closed{0};
+    std::uint64_t wins{0};
     bool healthy{false};
     foundation::ServiceState aggregate{foundation::ServiceState::STARTING};
     bool has_open_position{false};
@@ -91,6 +96,7 @@ public:
         ExecutionCostModel cost_model{0.1, 1.0, 0.0};
         double partial_fill_threshold{2.0};
         std::size_t bar_window{32};
+        std::string schema_version{"1.0.0"};
         std::string strategy_version{"1.0.0"};
         std::string configuration_version{"1.0.0"};
     };
@@ -158,9 +164,20 @@ public:
     }
 
     const ShadowLedger& ledger() const noexcept { return ledger_; }
+    // Mutable ledger accessor, used only to restore the append-only ledger after a
+    // verified recovery. Append semantics are unchanged (idempotent, no rewrite).
+    ShadowLedger& mutable_ledger() noexcept { return ledger_; }
     const TimeframeStateStore& state_store() const noexcept { return stream_manager_.store(); }
     const AdapterManager& adapters() const noexcept { return adapters_; }
     const Config& config() const noexcept { return config_; }
+
+    // Mutable receiver accessor, used only to restore persisted progress after a
+    // verified recovery. Exposes no live path.
+    mt5::Mt5StreamManager& receiver() noexcept { return stream_manager_; }
+
+    // Deterministic timestamp of the most recent accepted frame (no wall clock).
+    // Used as the persisted checkpoint time so persistence stays reproducible.
+    foundation::Timestamp last_observation() const noexcept { return last_observation_; }
 
     // The most recent accepted closed bar for a timeframe, or nullptr.
     const MarketBar* last_bar(Timeframe timeframe) const {
@@ -169,10 +186,29 @@ public:
         return &it->second.back();
     }
 
+    // Read-only view of the retained closed-bar series for one timeframe, in
+    // arrival (chronological) order. Identity is the explicit timeframe, never a
+    // row position. Every element is an authoritative accepted closed bar, so the
+    // series contains no forming bar and cannot repaint. Empty when the stream has
+    // reported nothing.
+    const std::vector<MarketBar>& bar_series(Timeframe timeframe) const {
+        static const std::vector<MarketBar> kEmpty{};
+        const auto it = bars_.find(timeframe);
+        return it == bars_.end() ? kEmpty : it->second;
+    }
+
     // Most recent generated signal (invalid when none).
     const Signal& last_signal() const noexcept { return last_signal_; }
     // Most recent risk proposal (invalid when none).
     const RiskProposal& last_proposal() const noexcept { return last_proposal_; }
+
+    // Deterministic score of the most recent signal (RT-0011). A bounded ranking
+    // value in [0,1]; explicitly NOT a probability. valid=false when no signal has
+    // been scored yet.
+    const SignalScore& last_score() const noexcept { return last_score_; }
+    // Deterministic confidence derived from the score and data quality (RT-0012).
+    // Explicitly NOT a calibrated probability. valid=false when unavailable.
+    const ConfidenceValue& last_confidence() const noexcept { return last_confidence_; }
 
 private:
     void retain_bar(const MarketBar& bar) {
@@ -191,6 +227,10 @@ private:
             if (closed.valid) ledger_.record_position(closed, m15_bar.close_time);
             open_position_ = closed;
             status_.has_open_position = open_position_.state != PositionState::CLOSED;
+            if (closed.valid && closed.state == PositionState::CLOSED) {
+                ++status_.positions_closed;
+                if (PositionSimulator::net_pnl(closed) > 0.0) ++status_.wins;
+            }
         }
 
         // H4 structural authority -> regime.
@@ -219,7 +259,9 @@ private:
         ledger_.record_signal(signal, m15_bar.close_time);
 
         const SignalScore score = scorer_.score_with_direction(signal, regime, m15_features);
+        last_score_ = score;
         const ConfidenceValue confidence = confidence_.evaluate(score, quality);
+        last_confidence_ = confidence;
         const MarketQualityVerdict market_quality = market_quality_.evaluate(adapters_);
 
         const RiskProposal proposal = risk_engine_.propose(signal, confidence, market_quality,
@@ -271,6 +313,8 @@ private:
     SimulatedPosition open_position_{};
     Signal last_signal_{};
     RiskProposal last_proposal_{};
+    SignalScore last_score_{};
+    ConfidenceValue last_confidence_{};
     foundation::Timestamp last_observation_{};
     EngineStatus status_{};
 };

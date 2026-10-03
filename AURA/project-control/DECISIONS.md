@@ -249,6 +249,132 @@ Only explicit human decisions belong here.
 - **Scope-change flag:** Yes (Phase 12 promoted). Execution authority is unchanged.
 - **Master V3 status:** Preserved unchanged.
 
+## 2026-10-03 — Phase 13: durable persistence, crash recovery, packaging/CI
+
+- **Date:** 2026-10-03
+- **Decision:**
+  1. `PERSIST-0001` is implemented as `FilePersistenceStore` + `ApplicationRecovery` and wired into
+     `ApplicationShell`. The concrete store keeps the existing `IPersistenceStore` contract
+     (PER-0003) and adds a payload-retaining record, an atomic (temp + fsync + rename) flush, and a
+     whole-file SHA-256 checksum. No new persistence interface was invented.
+  2. Crash recovery follows the Master V2-36/V3-21 taxonomy exactly (CLEAN_SHUTDOWN, EXPECTED_PAUSE,
+     INTERRUPTED_WORK, CORRUPTED_STATE, UNKNOWN_STATE). The system REFUSES to resume corrupted,
+     version-incompatible, or uncheckpointed-interruption state rather than continue on unverified
+     state; a known-good fallback is used only when explicitly available.
+  3. `PERSIST-0002` (`aura --self-test`) and `BUILD-0002` (CMake install rules + CI) are in scope.
+     CI's Linux jobs are blocking; the MSVC Windows job is marked experimental/non-blocking because the
+     Windows toolchain is not yet proven (BLOCKED.md), so a failure is visible rather than hidden.
+  4. Shadow mode remains the sole execution path; no live order path is added. No profitability,
+     calibration, broker-validation, or production-safety claim is made.
+- **Rationale:** Persistence and recovery are required for long-running operation and are
+  environment-independent; they can be implemented and proven here without inventing toolchains or
+  datasets. The Master already fixes the recovery taxonomy, so this implements an existing decision.
+- **Affected tasks:** `PERSIST-0001`, `PERSIST-0002`, `BUILD-0002`.
+- **Scope-change flag:** Yes (Phase 13 promoted). Execution authority is unchanged.
+- **Master V3 status:** Preserved unchanged.
+
+## 2026-10-03 — Phase 9 desktop productization: real GUI over the existing runtime
+
+- **Date:** 2026-10-03
+- **Decision:**
+  1. The Phase 9 Desktop Control Center gains a **real GUI application** built with **Dear ImGui +
+     GLFW + OpenGL 3.3**, as a single canonical entrypoint (`tools/aura_gui.cpp`) that owns exactly
+     one `ApplicationShell` (no second runtime, no duplicate process). This supersedes the earlier
+     headless-view-models-only interpretation (2026-10-02 decision) as the *deliverable form* of
+     Phase 9 while keeping the DESK-0001..0003 projection layer unchanged and authoritative for
+     read-only data projection.
+  2. The GUI is a **human control surface, not a source of truth**: it only presents read-only
+     projections (`DesktopModel`) and exposes only safe control-plane operations (pause/resume of the
+     local transport loop, refresh, checkpoint, bounded stop, read-only recovery report). No GUI path
+     places a live order or bypasses any governance/safety contract.
+  3. **Unknown stays unknown:** absent/undefined state is presented as `NOT AVAILABLE` / `UNKNOWN`,
+     never fabricated as `HEALTHY`. The nine logical timeframes are shown individually by explicit
+     identity, never merged into one anonymous status.
+  4. **Recovery is report-only:** the GUI reports the V2-36 lifecycle decision and never auto-resumes
+     corrupted or version-incompatible state merely because the window is open.
+  5. The GUI is the repository's approved GUI approach. It is enabled by the CMake option
+     `AURA_BUILD_GUI` (default OFF) so the core/console build and Linux test matrix remain
+     dependency-free; dependencies are pinned and fetched reproducibly.
+- **Rationale:** The Master V3 states the Desktop Application is the primary human control center
+  (V3-37 / Phase 9) and the repository now has a proven Windows toolchain (the Windows x64 Release
+  job). Building the GUI is a Phase 9 productization of already-promoted scope, not a new phase and
+  not an architectural change. It uses the project's approved GUI stack rather than inventing one.
+- **Affected tasks:** `GUI-0001` (BLOCKED → IMPLEMENTED), new `GUI-0002` (tests), new `GUI-0003`
+  (CMake/CI/packaging); `PHASE-9-MILESTONE` (APPROVED → TESTED); `DESK-0001..0003` unchanged.
+- **Scope-change flag:** No new phase. Phase 9 was already promoted on 2026-10-02; this records the
+  GUI-toolkit decision and the productization of that already-authorized phase.
+- **Master V3 status:** Preserved unchanged. Shadow-only upheld; live trading not enabled; no
+  profitability/calibration/broker/production-safety claim.
+
+## 2026-10-03 — GUI renderer compatibility: OpenGL 3.3 preferred, OpenGL 2.1 fallback
+
+- **Date:** 2026-10-03
+- **Decision:**
+  1. The desktop control center prefers an **OpenGL 3.3 core** context but MUST NOT terminate merely
+     because one is unavailable. When the driver cannot provide it (observed on Intel HD Graphics 3000 /
+     driver 9.17.10.4459, where the core-profile request fails with `WGL_ARB_create_context_profile`
+     unavailable, GLFW error 65543), the GUI falls back to an **OpenGL 2.1 compatibility** context driven
+     by the ImGui OpenGL2 backend (GLSL 120). The legacy profile never requests a core profile.
+  2. Renderer selection is a **pure, deterministic policy** (`src/desktop/RendererPolicy.h`) with no
+     GLFW/GL calls, so it is unit-testable without a GPU. The window/context creation stays in
+     `tools/aura_gui.cpp` and applies only the policy's hints.
+  3. **No fabricated capability:** the renderer actually in use is printed at startup and shown in the
+     status bar (`MODERN_GL33` or `LEGACY_GL21`); OpenGL 3.3 is reported unavailable only when that
+     attempt truly failed. If no context can be created, the process exits non-zero with an actionable
+     message and points at the headless console host `aura.exe`.
+  4. A `--renderer auto|modern|legacy` selector pins a path for diagnostics/CI (default `auto`). This
+     does not change the GUI's read-only, shadow-only behavior or the `--self-test` path.
+- **Rationale:** A GUI that refuses to start on a large class of existing Windows machines is not a
+  usable control surface. A compatibility fallback is the minimal, standard fix and does not alter the
+  architecture or the safety posture. It is recorded here so a future AI does not "simplify" it back to
+  an unconditional OpenGL 3.3 request.
+- **Affected tasks:** new `GUI-0007` (fallback, TESTED), new `GUI-0008` (tests, TESTED);
+  `PHASE-9-MILESTONE` evidence updated.
+- **Scope-change flag:** No new phase; a compatibility refinement of the already-authorized Phase 9 GUI.
+- **Master V3 status:** Preserved unchanged. Shadow-only upheld; live trading not enabled; no
+  profitability/calibration/broker/production-safety claim. The specific legacy-GPU hardware remains
+  UNPROVEN (`BLOCK-006`).
+
+
+
+## 2026-10-03 — GUI visual design: original AURA design system, honesty invariants preserved
+
+- **Decision:** Rebuild the control-center presentation layer on an original AURA design system rather
+  than keep the default ImGui look. Specifically:
+  1. A single visual language in `src/desktop/AuraTheme.h` — a deep-navy palette with one cyan accent,
+     a state colour map, a spacing scale, and `apply_aura_style()`. It uses only fixed-function-friendly
+     style properties (flat colours, thin borders, no gradients/textures/shaders) so the same design
+     renders on both the OpenGL 3.3 and OpenGL 2.1 backends.
+  2. A pure, ImGui-free state classifier in `src/desktop/StateVisuals.h` (`StateCategory`,
+     `state_category`, `category_label`, `is_unknown_like`) that is the single source of truth for the
+     visual language. Hard invariant: an unrecognised or empty state maps to `UNKNOWN` and is NEVER
+     rendered as `HEALTHY`; `NOT AVAILABLE` is its own category distinct from `UNKNOWN`.
+  3. Navigation becomes a grouped catalog (`src/desktop/NavigationModel.h`:
+     Monitoring / Intelligence / Governance / System) that preserves the canonical V3-37 section
+     identity, count and order exactly. Navigation is presentation only and cannot drift from the panels.
+  4. Reusable, legacy-safe widgets (`src/desktop/AuraWidgets.h`) and a rewritten `GuiPanels.h`:
+     every section is rendered through the same primitives, absent values remain explicit `NOT
+     AVAILABLE`, and a wired-but-empty source is a distinct real empty state (never a fabricated row).
+  5. `tools/aura_gui.cpp` gains a coherent shell (top bar with `SHADOW ONLY` + actual renderer, grouped
+     sidebar, bordered content, persistent status bar) and exposes only safe control-plane shortcuts
+     (`Ctrl+P` pause/resume, `Ctrl+S` checkpoint, `Esc` bounded stop). No order path is reachable.
+- **Rationale:** The GUI worked and was safe but looked prototype-like, which undermines trust in an
+  operator surface. The redesign is presentation-only and deliberately keeps every honesty invariant:
+  it must not make unknown/absent data look healthy, and it must not add any control path. Making the
+  state classifier pure and ImGui-free is what lets the invariant be unit-tested in the default
+  (GUI-off) build.
+- **Affected tasks:** new `GUI-0009` (design system), `GUI-0010` (navigation), `GUI-0011` (widgets +
+  panels), `GUI-0012` (window shell), `GUI-0013` (real sequence + deterministic freshness) — all
+  `TESTED`; new `GUI-0014` (optional in-window menu/help) recorded as `DEFERRED`.
+- **Scope-change flag:** No new phase; a presentation/quality refinement of the already-authorized
+  Phase 9 GUI. `DesktopModel` gained two read-only derived fields (`sequence`, `freshness`), which add
+  no new data source and no lookahead.
+- **Master V3 status:** Preserved unchanged. Shadow-only upheld; live trading not enabled; no
+  profitability/calibration/broker/production-safety claim. Visual verification on the specific
+  Windows/Intel HD Graphics 3000 target remains UNPROVEN (`BLOCK-006`).
+
+
+
 ## Decision format
 
 For each future material decision record:
