@@ -666,6 +666,34 @@ store is refused, never silently resumed; shadow-only behaviour is preserved (no
 order). This does NOT establish profitability, calibrated probability, broker validation, production
 safety, or live-trading readiness.
 
+## Phase 14 - canonical Windows x64 Release package (2026-10-03)
+
+- Date: 2026-10-03
+- Commit: 64ce035 (merged into the branch; CI run 37115746002)
+- Task/Phase: BUILD-0003 / Phase 14
+- Build command (CI, windows-latest): `cmake -S AURA -B AURA/build -A x64 -DCMAKE_BUILD_TYPE=Release
+  -DCMAKE_CXX_STANDARD=17` then `cmake --build AURA/build --config Release -j 4`
+- Build result: PASS. `aura.exe` produced (Release, x64, MSVC, static CRT) = 440,320 bytes.
+- Test command: `ctest --test-dir AURA/build -C Release --output-on-failure` plus a PowerShell smoke:
+  `aura.exe --self-test --store <p> --keep`; `aura.exe --recover <p>`; `aura.exe --dump-frames <f>`;
+  `aura.exe --replay <f> --store <p>`; a bounded `--serve 12345` process check (single instance + TCP
+  connect + forced stop); package + secret scan + ZIP verification (extract and re-run the packaged exe).
+- Test result: PASS. Full suite 18/18; self-test PASS (9 timeframes, 111 ledger entries restored);
+  cross-process recover => CLEAN_SHUTDOWN/resumable; replay 270 frames => HEALTHY, 111 ledger entries,
+  last proposal is not an order; serve: started, stayed up, exactly 1 aura process, accepted a TCP
+  connection, stopped cleanly (no immediate crash); secret scan OK; ZIP contains aura.exe and the
+  extracted exe re-runs self-test PASS.
+- Names/sizes: `aura.exe` = 440,320 bytes; `AURA_Windows_x64_Release.zip` = 220,103 bytes. Artifacts:
+  `aura-windows-x64-exe` (217,039 bytes as uploaded) and `AURA_Windows_x64_Release` (220,131 bytes).
+- Files changed: `tools/run_pipeline.cpp`, `CMakeLists.txt`, `.github/workflows/ci.yml`, and the
+  control-plane files.
+- Known failures: none.
+- Interpretation: the canonical AURA executable now exists as a real, self-contained Windows x64
+  Release `.exe` and is packaged and published as a CI artifact. Its startup/init/single-instance/
+  clean-stop and its persistence/recovery/replay paths are verified on a real Windows runner by a
+  bounded smoke. The native Windows GUI is NOT included and its runtime is UNPROVEN. MT5/MetaEditor is
+  NOT exercised. No live order path; shadow only. No profitability/calibration/production-safety claim.
+
 ## Future test entry format
 
 - Date

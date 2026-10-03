@@ -10,44 +10,47 @@ Do not rely on any prior conversation memory.
 
 - Repository: `alimazna/AURA`, project nested under `AURA/`. Authority: the Master V3 is the
   architecture reference; `IMPLEMENTATION_SCOPE.md` defines the active scope.
-- All canonical Phases 011 are COMPLETE and `APPROVED`. Phase 12 (integration/application) and
-  Phase 13 (durable persistence + crash recovery + packaging/CI) are implemented and `TESTED`.
+- All canonical Phases 0-11 are COMPLETE and `APPROVED`. Phase 12 (integration/application), Phase 13
+  (durable persistence + crash recovery + packaging/CI) and Phase 14 (canonical Windows x64 Release
+  package) are implemented and `TESTED`.
 - Authoritative build: `AURA/CMakeLists.txt` (header-only C++17/20 + the `aura_foundation` SHA-256 TU).
   It builds the `aura` console host, 18 behavioural test executables, and installs `bin/aura` +
-  headers + docs. `ctest` is 18/18 green under C++17 AND C++20.
+  headers + docs. `ctest` is 18/18 green under C++17 AND C++20. On Windows/MSVC the CRT is linked
+  statically so `aura.exe` is self-contained.
 - Real host path (shadow-only): `aura --replay`, `aura --serve <port>` (interruptible accept),
-  `aura --self-test` (bounded offline smoke), `aura --recover <store>` (report the V2-36 decision).
-  `--store <path>` enables file-backed persistence of per-timeframe progress + the shadow ledger.
-- Manifest graph: 193 tasks -- 176 `APPROVED`, 3 `TESTED` (PERSIST-0001, PERSIST-0002, BUILD-0002),
-  1 `IMPLEMENTED` (TASK-MANIFEST-001), 10 `DEFERRED`, 3 `BLOCKED`.
+  `aura --self-test [--keep]` (bounded offline smoke), `aura --dump-frames <file>`, `aura --recover
+  <store>` (report the V2-36 decision). `--store <path>` enables file-backed persistence of
+  per-timeframe progress + the shadow ledger.
+- Manifest graph: 194 tasks -- 176 `APPROVED`, 4 `TESTED` (PERSIST-0001, PERSIST-0002, BUILD-0002,
+  BUILD-0003), 1 `IMPLEMENTED` (TASK-MANIFEST-001), 10 `DEFERRED`, 3 `BLOCKED`.
 - CI: `.github/workflows/ci.yml` builds/tests Linux C++17+C++20 (blocking) with the smoke test and an
-  install check, plus MSVC Windows C++17/C++20 (non-blocking by policy, but currently passing). Remote
-  CI on PR #1 is ALL GREEN across four jobs. CI caught and we fixed two real Windows portability defects
-  (missing `ws2_32` linkage; `std::rename` not overwriting)  see TEST_LOG.md.
+  install check, plus MSVC Windows C++17/C++20, plus a `windows-x64-release-package` job that builds
+  `aura.exe`, runs the full suite, smokes the exe, packs `AURA_Windows_x64_Release.zip`, verifies it and
+  uploads both the exe and the ZIP as artifacts. Remote CI on PR #1 is ALL GREEN across five jobs. CI
+  caught and we fixed two real Windows portability defects (missing `ws2_32` linkage; `std::rename` not
+  overwriting) -- see TEST_LOG.md.
 - Verified but still NOT claimed: profitability, calibrated probability, broker validation,
-  production safety, or live trading. Shadow mode remains the only execution path.
+  production safety, or live trading. Shadow mode remains the only execution path. The native Windows
+  GUI runtime is UNPROVEN (no GUI is in the package); MT5/MetaEditor is UNPROVEN.
 
-### Phase 13 deliverables (this session)
+### Phase 14 deliverables (this session)
 
-- `src/foundation/FilePersistenceStore.h` -- concrete file-backed `IPersistenceStore`: append-only,
-  idempotent on identity, atomic `flush()` (temp + fsync + rename), whole-file SHA-256 checksum,
-  `CORRUPT`/`UNAVAILABLE` on tamper/truncation, payload retained for restoration.
-- `src/runtime/ApplicationRecovery.h` -- V2-36 lifecycle taxonomy + boot decision; refuses
-  corrupted/version-incompatible/uncheckpointed state; persists and restores timeframe progress +
-  ledger (control-char-separated codecs).
-- `src/runtime/ApplicationShell.h` -- `persist_state` / `persist_pause` / `recover` / `apply_resume`.
-- `src/mt5/Mt5StreamManager.h` -- `restore_progress` (monotonic, no history reprocess).
-- `tools/run_pipeline.cpp` -- `--store`, `--self-test`, `--recover`.
-- `src/runtime/PersistenceTests.cpp` -- PERSIST-0001 tests (all pass).
-- `CMakeLists.txt` -- install rules; `README.md` -- usage; `TEST_LOG.md`/`PROJECT_STATE.md` updated.
+- `tools/run_pipeline.cpp` -- added `--dump-frames <file>` and `--self-test --keep` so a separate
+  process can exercise cross-process `--recover` and `--replay` in CI.
+- `CMakeLists.txt` -- `CMAKE_MSVC_RUNTIME_LIBRARY` static CRT for a self-contained `aura.exe`.
+- `.github/workflows/ci.yml` -- `windows-x64-release-package` job: Release/x64 build, full CTest,
+  bounded serve smoke (startup/init/single-instance/clean-stop), packaging, secret scan, ZIP creation
+  and verification, and artifact upload (`aura-windows-x64-exe`, `AURA_Windows_x64_Release`).
+- Artifacts: `aura.exe` (440,320 bytes), `AURA_Windows_x64_Release.zip` (220,103 bytes).
 
 ### Next actions
 
-1. Add a SIGKILL-during-write recovery test to prove the atomic rename leaves old-or-complete, never torn.
-2. Observe the remote CI run once pushed and record the real result in `TEST_LOG.md`.
-3. Remaining work is environment-blocked only: native Windows GUI (`GUI-0001`), real MetaEditor/MT5
-   round-trip (`MT5-REAL-0001`), and the historical XAUUSD validation campaign (`VAL-EVID-0001`).
-   See `BLOCKED.md`. Do not invent datasets/toolchains.
+1. Remaining work is environment/data-blocked only: native Windows GUI runtime (`GUI-0001`, UNPROVEN),
+   real MetaEditor/MT5 round-trip (`MT5-REAL-0001`), and the historical XAUUSD validation campaign
+   (`VAL-EVID-0001`). See `BLOCKED.md`. Do not invent datasets/toolchains.
+2. Optional hardening: a SIGKILL-during-write recovery test to prove the atomic rename leaves
+   old-or-complete, never torn.
+3. If GUI work starts, choose and justify a GUI toolkit as a project decision first.
 
 ### Do not
 

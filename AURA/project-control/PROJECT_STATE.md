@@ -1,4 +1,4 @@
-# AURA — Project State
+# AURA  Project State
 
 This is the human-readable snapshot of where the project currently stands.
 
@@ -49,7 +49,7 @@ This is the human-readable snapshot of where the project currently stands.
 - Phase 0 (36 tasks) uses the V3-42 canonical filenames; the `src/foundation/` layout is PROPOSED.
 - Phase 0.5 (20 tasks), Phase 1 (21 tasks), and Phase 2 (4 tasks) file names are PROPOSED
   decomposition (V3-16, V3-46) and are subject to integration review.
-- Phases 3–11 were later promoted into active scope and implemented (see the Phase 5–11 sections);
+- Phases 311 were later promoted into active scope and implemented (see the Phase 511 sections);
   deferred Master capabilities (research gaps, live trading, multi-asset expansion, real MT5 validation)
   remain visible in the manifest as `DEFERRED`.
 - The two Phase 0 contracts that were blocked on human architectural decisions
@@ -58,7 +58,7 @@ This is the human-readable snapshot of where the project currently stands.
 
 ## Phase 0 implementation (2026-10-02)
 
-- `src/foundation/EntityId.h` was created — the first application source file in the repository.
+- `src/foundation/EntityId.h` was created  the first application source file in the repository.
 - `FND-0001` is implemented and verified structurally; status recorded as `TESTED` in the manifest.
 - The remainder of Phase 0's foundation, configuration, audit, integrity, persistence and guardian
   contract files were then created under `src/foundation/` (34 source tasks total, including FND-0001):
@@ -105,9 +105,9 @@ This is the human-readable snapshot of where the project currently stands.
   to `APPROVED` at the Phase 0 integration gate (see below). Compilation alone was never treated as
   proof of correctness.
 - No Phase 0.5 work was started. (At that time `FND-0015` was OPEN DECISION and `FND-0016` BLOCKED;
-  both were subsequently resolved — see below.)
+  both were subsequently resolved  see below.)
 
-## Phase 0 error contracts — FND-0015 / FND-0016 (2026-10-02)
+## Phase 0 error contracts  FND-0015 / FND-0016 (2026-10-02)
 
 - The V3-45 OPEN DECISION for `ErrorCode` was resolved by an explicit human decision recorded in
   `DECISIONS.md` (2026-10-02): a closed, strongly typed `enum class` over the 13 V3 section 113 ERROR
@@ -115,7 +115,7 @@ This is the human-readable snapshot of where the project currently stands.
   `UNKNOWN`/`OTHER`, and severity kept as an independent record-level field.
 - `src/foundation/ErrorCode.h` (FND-0015) and `src/foundation/ErrorRecord.h` (FND-0016) were
   implemented. `ErrorRecord` carries exactly the eight V3-27 fields and is a value/contract type only.
-- Verification: both headers are self-contained (70 standalone TUs across 35 headers × c++17/c++20,
+- Verification: both headers are self-contained (70 standalone TUs across 35 headers  c++17/c++20,
   strict warnings); the full Phase 0 runtime harness passes including SHA-256 known-answer tests; the
   include graph is acyclic and lower-layer only. Details in `TEST_LOG.md`.
 - Status: `FND-0015` and `FND-0016` were implemented and reviewed here; they are now `APPROVED` at
@@ -142,13 +142,13 @@ This is the human-readable snapshot of where the project currently stands.
 - The next READY task is `RS-0001` (Phase 0.5) but it was NOT started; Phase 0.5 awaits explicit
   authorization.
 
-## Phase 0.5 implementation — RS-0001 (2026-10-02)
+## Phase 0.5 implementation  RS-0001 (2026-10-02)
 
 - Phase 0.5 (Resilience & Graceful Degradation) was explicitly authorized. Exactly one task was
-  executed: `RS-0001` → `src/resilience/ServiceDescriptor.h`.
+  executed: `RS-0001`  `src/resilience/ServiceDescriptor.h`.
 - `RS-0001` defines an immutable `ServiceDescriptor` value type in `aura::resilience`: a stable
   non-empty service name (empty name yields the invalid default) plus a `foundation::ServiceState`
-  declared default state. It is a descriptive contract only — no supervision, monitoring,
+  declared default state. It is a descriptive contract only  no supervision, monitoring,
   transition, recovery, isolation, scheduling, or I/O.
 - It depends only on `FND-0004 ServiceState.h`; it deliberately does not carry an `EntityId` (RS-0002
   owns capability identity) and introduces no higher-layer dependency.
@@ -227,13 +227,13 @@ This is the human-readable snapshot of where the project currently stands.
   `DECISIONS.md` and `PHASE_RECONCILIATION.md`; the Master was not modified and no deferred manifest
   phase was promoted.
 - Conceptual Phase 3 (timeframe state) verification: `src/runtime/TimeframeStateTests.cpp`
-  (`PH3-0001`) — nine explicit streams, per-stream independence, closed-bar-only processing,
+  (`PH3-0001`)  nine explicit streams, per-stream independence, closed-bar-only processing,
   duplicate/repaint rejection, no-lookahead, provenance. `APPROVED`.
 - Conceptual Phase 4 (feature/structure/regime) verification:
-  `src/runtime/AnalysisPipelineTests.cpp` (`PH4-0001`) — deterministic bounded features, no future
+  `src/runtime/AnalysisPipelineTests.cpp` (`PH4-0001`)  deterministic bounded features, no future
   input, H4 structural authority, deterministic regime, degraded-input gating, macro context from
   D1/W1/MN1 only. `APPROVED`.
-- Conceptual Phase 5 (signal) verification: `src/runtime/SignalPipelineTests.cpp` (`PH5-0001`) —
+- Conceptual Phase 5 (signal) verification: `src/runtime/SignalPipelineTests.cpp` (`PH5-0001`) 
   deterministic V3-23 identity, eligibility gating, M15-under-H4 authority, score/confidence as
   ranking values, risk gate, shadow-only execution with a live-execution-blocked negative test,
   append-only ledger provenance. `APPROVED`.
@@ -246,13 +246,13 @@ This is the human-readable snapshot of where the project currently stands.
   explicit per-stream timeframe identity; shadow-only.
 - Verification: 80 headers self-contained + combined TU under c++17/c++20 strict; all seven
   behavioural test artifacts PASS under both standards; MQL5 static audit PASS; repository static
-  audit clean. MetaEditor/MT5 NOT available — real terminal connectivity is UNPROVEN. Details in
+  audit clean. MetaEditor/MT5 NOT available  real terminal connectivity is UNPROVEN. Details in
   `TEST_LOG.md` and `FINAL_VERIFICATION_REPORT.md`.
 
-## Canonical Phase 3/4 — Self-Learning and Research Plane (2026-10-02)
+## Canonical Phase 3/4  Self-Learning and Research Plane (2026-10-02)
 
-- Canonical Phases 3–11 were promoted into active scope by an explicit `DECISIONS.md` entry ("Session
-  authorization: promote canonical Phases 3–11"), per the `IMPLEMENTATION_SCOPE.md` scope-change rule.
+- Canonical Phases 311 were promoted into active scope by an explicit `DECISIONS.md` entry ("Session
+  authorization: promote canonical Phases 311"), per the `IMPLEMENTATION_SCOPE.md` scope-change rule.
   Master V3-40 is authoritative; the older section-109 phase names are legacy.
 - Phase 3 (Self-Learning) is COMPLETE and `APPROVED` (`src/learning/`): `KnowledgeObject` (scoped,
   versioned, point-in-time), `KnowledgeStore` (append-only, versioned, no silent overwrite),
@@ -269,34 +269,34 @@ This is the human-readable snapshot of where the project currently stands.
   `LearningTests.cpp` and `ResearchTests.cpp` PASS under both standards.
 - No live path, no profitability/calibration claim, and research cannot mutate runtime behaviour.
 
-## Canonical Phases 5–11 — Evolution through Controlled Real-World Validation (2026-10-02)
+## Canonical Phases 511  Evolution through Controlled Real-World Validation (2026-10-02)
 
-- Phase 5 (Evolution) COMPLETE and `APPROVED`: `src/evolution/` — `Candidate.h`,
+- Phase 5 (Evolution) COMPLETE and `APPROVED`: `src/evolution/`  `Candidate.h`,
   `CandidateRegistry.h`, `EvolutionGraph.h`, `CandidateComparison.h`, `EvolutionTests.cpp`
   (`EVOL-0001`..`EVOL-0005`). Explicit candidate lifecycle, no auto-promotion, acyclic graph,
   constraints treated as vetoes.
-- Phase 6 (Validation) COMPLETE and `APPROVED`: `src/validation/` — `ValidationFirewall.h`,
+- Phase 6 (Validation) COMPLETE and `APPROVED`: `src/validation/`  `ValidationFirewall.h`,
   `EvidenceFirewall.h`, `EvaluatorFirewall.h`, `RewardHackingDefense.h`, `StatisticalControls.h`,
   `ValidationTests.cpp` (`VALID-0001`..`VALID-0006`). Missing check is NOT_RUN not PASS; monotone
   contamination; evaluator firewall; holdout budget; no profitability claim.
-- Phase 7 (Governance) COMPLETE and `APPROVED`: `src/governance/` — `PolicyEngine.h`,
+- Phase 7 (Governance) COMPLETE and `APPROVED`: `src/governance/`  `PolicyEngine.h`,
   `ForbiddenBehavior.h`, `PromotionGate.h`, `HumanDecision.h`, `AuditLedger.h`,
   `GovernanceTests.cpp` (`GOV-0001`..`GOV-0006`). Policy-by-change-type; hard-forbidden boundary;
   promotion requires every gate incl. human approval and shadow state; append-only audit; no
   self-promotion.
-- Phase 8 (Operating Window & Recovery) COMPLETE and `APPROVED`: `src/operatingwindow/` —
+- Phase 8 (Operating Window & Recovery) COMPLETE and `APPROVED`: `src/operatingwindow/` 
   `OperatingWindow.h`, `Checkpoint.h`, `ResourceBudget.h`, `WindowOrchestrator.h`,
-  `OperatingWindowTests.cpp` (`WIN-0001`..`WIN-0005`). Human-bounded 3–8h window with no
+  `OperatingWindowTests.cpp` (`WIN-0001`..`WIN-0005`). Human-bounded 38h window with no
   self-extension; recovery prefers valid checkpoint/known-good and never guesses; controlled drain.
 - Phase 9 (Desktop Control Center) COMPLETE and `APPROVED` as headless deterministic view-models:
-  `src/desktop/` — `ControlCenterViewModels.h`, `DashboardProjector.h`, `DesktopTests.cpp`
+  `src/desktop/`  `ControlCenterViewModels.h`, `DashboardProjector.h`, `DesktopTests.cpp`
   (`DESK-0001`..`DESK-0003`). No GUI toolkit; read-only projections; unknown never fabricated.
-- Phase 10 (Auxiliary Telegram) COMPLETE and `APPROVED`, secret-free: `src/telegram/` —
+- Phase 10 (Auxiliary Telegram) COMPLETE and `APPROVED`, secret-free: `src/telegram/` 
   `TelegramConfig.h`, `TelegramMessage.h`, `ApprovalRequest.h`, `TelegramGateway.h`,
   `NotificationPolicy.h`, `TelegramTests.cpp` (`TG-0001`..`TG-0006`). No embedded token; disabled
   gateway is a safe no-op; bounded approval pipeline; failure notifications never suppressed.
 - Phase 11 (Controlled Real-World Validation) COMPLETE and `APPROVED` as a gate/registry, NOT a
-  live path: `src/realworld/` — `RealWorldValidation.h`, `ValidationRegistry.h`,
+  live path: `src/realworld/`  `RealWorldValidation.h`, `ValidationRegistry.h`,
   `RealWorldTests.cpp` (`RW-0001`..`RW-0003`). All readiness gates required; never automatic; no
   profitability/safety claim; execution remains a separate human action.
 
@@ -304,7 +304,7 @@ This is the human-readable snapshot of where the project currently stands.
   suites PASS under both standards (`LearningTests`, `ResearchTests`, `EvolutionTests`,
   `ValidationTests`, `GovernanceTests`, `OperatingWindowTests`, `DesktopTests`, `TelegramTests`,
   `RealWorldTests`, plus the pre-existing suites).
-- Manifest now 172 tasks; Phases 0–11 are all decomposed into file-level tasks with acceptance
+- Manifest now 172 tasks; Phases 0-11 are all decomposed into file-level tasks with acceptance
   criteria and evidence.
 
 ## Gap audit and Phase 12 integration (2026-10-02)
@@ -343,7 +343,7 @@ This is the human-readable snapshot of where the project currently stands.
     (PER-0003). It is append-only, idempotent on record identity (a conflicting payload is a
     `CONFLICT`), and crash-safe: `flush()` writes a temp file, fsyncs, and atomically renames. The
     whole file carries a SHA-256 checksum verified on load, so a torn or tampered file is reported
-    `CORRUPT` and a truncated/decodable-error file is `UNAVAILABLE` — never silently accepted. Each
+    `CORRUPT` and a truncated/decodable-error file is `UNAVAILABLE`  never silently accepted. Each
     record stores its payload digest and (for restoration) the payload text; a payload containing a
     tab/newline is refused.
   - `src/runtime/ApplicationRecovery.h` implements the V2-36/V3-21 crash-recovery path: it persists
@@ -357,7 +357,7 @@ This is the human-readable snapshot of where the project currently stands.
     (`persist_state`, `persist_pause`, `recover`, `apply_resume`); `Mt5StreamManager::restore_progress`
     repopulates per-stream state from a verified store without reprocessing history.
     `tools/run_pipeline.cpp` gains `--store`, `--self-test` and `--recover`.
-- Verification: `src/runtime/PersistenceTests.cpp` (PERSIST-0001) PASSES — idempotency, atomic
+- Verification: `src/runtime/PersistenceTests.cpp` (PERSIST-0001) PASSES  idempotency, atomic
   round-trip, byte-determinism, tamper + truncation -> CORRUPT, every lifecycle decision,
   incompatible/corrupted -> refused, and an application restart restoring 9 timeframe states + the
   ledger then accepting strictly-newer bars (no repaint). CTest is now 18/18 green under C++17 and
@@ -370,35 +370,52 @@ This is the human-readable snapshot of where the project currently stands.
   job (non-blocking by policy, but currently passing). Remote CI on PR #1 is ALL GREEN across four jobs
   (Linux gcc C++17/C++20 and Windows MSVC C++17/C++20). CI found and we fixed two real portability
   defects: missing `ws2_32` (Winsock) linkage on Windows, and `std::rename` not overwriting on Windows.
+- BUILD-0003 produces the canonical runnable Windows x64 Release package. CI job
+  `windows-x64-release-package` (run 37115746002, GREEN) builds a self-contained `aura.exe` (Release,
+  x64, MSVC, static CRT; 440,320 bytes), runs the full 18/18 suite, and passes a bounded runtime smoke
+  on the real Windows runner: `--self-test` PASS; cross-process `--recover` => CLEAN_SHUTDOWN/resumable;
+  `--dump-frames` + `--replay` (270 frames) => HEALTHY, 111 ledger entries; `--serve` starts, stays up,
+  is a single process (no duplicate copies), accepts a TCP connection and stops cleanly. A secret scan
+  is clean. `AURA_Windows_x64_Release.zip` (220,103 bytes) is created and verified to contain `aura.exe`;
+  the packaged exe is extracted and re-runs `--self-test` PASS. Both the exe and the ZIP are uploaded as
+  Actions artifacts (`aura-windows-x64-exe`, `AURA_Windows_x64_Release`). The package needs no DLLs, no
+  data files and no config; it reads no developer absolute paths (only the user-supplied `--store` path).
 - Still deliberately NOT claimed: profitability, calibrated probability, broker validation,
-  production safety, or live trading. All of the above is shadow-only.
+  production safety, or live trading. All of the above is shadow-only. The native Windows GUI runtime
+  is UNPROVEN (no GUI is in this package); MT5/MetaEditor is UNPROVEN.
 
 ## Explicit blockers (2026-10-02)
 
-- GUI-0001 (native Windows desktop application) — BLOCKED on a Windows toolchain (no MSVC/Win).
-- MT5-REAL-0001 (MetaEditor compile + live terminal run) — BLOCKED (no MetaEditor/MT5 on Linux).
-- VAL-EVID-0001 (historical XAUUSD validation campaign) — BLOCKED on a licensed dataset.
+- GUI-0001 (native Windows desktop application)  BLOCKED/UNPROVEN: no GUI toolkit is wired in and no
+  GUI runtime verification is possible in CI. (The Windows *toolchain* for the console host is now
+  proven by `windows-x64-release-package`; the GUI deliverable itself is still not built.)
+- MT5-REAL-0001 (MetaEditor compile + live terminal run)  BLOCKED (no MetaEditor/MT5 on Linux).
+- VAL-EVID-0001 (historical XAUUSD validation campaign)  BLOCKED on a licensed dataset.
 See `project-control/BLOCKED.md`.
 
 ## Current task
 
-- All canonical Phases 0–11 are COMPLETE and `APPROVED`. Phase 12 (Integration/Application) and Phase
-  13 (durable persistence + crash recovery + packaging/CI) are implemented and `TESTED`. Phase 13 adds
-  `FilePersistenceStore.h`, `ApplicationRecovery.h`, `PersistenceTests.cpp`, the `aura`
-  `--store`/`--self-test`/`--recover` modes, CMake install rules, and a CI workflow.
-- The manifest graph is now 193 file-level tasks (176 `APPROVED`, 3 `TESTED`, 1 `IMPLEMENTED`, 10
+- All canonical Phases 0-11 are COMPLETE and `APPROVED`. Phase 12 (Integration/Application), Phase 13
+  (durable persistence + crash recovery + packaging/CI) and Phase 14 (canonical Windows x64 Release
+  package) are implemented and `TESTED`. Phase 13 adds `FilePersistenceStore.h`,
+  `ApplicationRecovery.h`, `PersistenceTests.cpp`, the `aura` `--store`/`--self-test`/`--recover` modes,
+  CMake install rules, and a CI workflow. Phase 14 adds a self-contained `aura.exe` Release/x64 build,
+  `--dump-frames` and `--self-test --keep`, the `windows-x64-release-package` CI job, and the
+  `AURA_Windows_x64_Release.zip` artifact.
+- The manifest graph is now 194 file-level tasks (176 `APPROVED`, 4 `TESTED`, 1 `IMPLEMENTED`, 10
   `DEFERRED`, 3 `BLOCKED`). The 10 deferred Master capabilities remain visible; the 3 blockers are
-  environment-only.
-- The remaining P0/P1 items are environment-blocked (native Windows GUI, real MetaEditor/MT5 run,
-  historical dataset campaign). No live trading is enabled; Phase 11 stays a gate/registry.
+  environment/data-only.
+- The remaining P0/P1 items are environment-blocked (native Windows GUI runtime, real MetaEditor/MT5
+  run, historical dataset campaign). No live trading is enabled; Phase 11 stays a gate/registry.
 
 ## Next action
 
-1. Add a Phase 13 recovery test that kills the process mid-write (SIGKILL) to prove the atomic
-   temp+rename path leaves either the old or the complete new file, never a torn one.
-2. Observe the remote CI run for `.github/workflows/ci.yml` once pushed; record real results.
-3. When a MetaEditor/MT5 environment becomes available, run Phase 11 controlled validation
+1. When a MetaEditor/MT5 environment becomes available, run Phase 11 controlled validation
    (demo/shadow only) behind the readiness gate; record real results in `TEST_LOG.md`.
+2. If the native Windows GUI (GUI-0001) is pursued, pick and justify a GUI toolkit as a project
+   decision first; do not invent it. Its runtime can only be marked VERIFIED when actually exercised.
+3. Optional hardening: a SIGKILL-during-write recovery test to prove the atomic temp+rename path
+   leaves either the old or the complete new file, never a torn one.
 4. Keep the control plane and manifest updated per wave; preserve state in Git.
 5. Do not enable unattended live trading or make profitability/safety claims without evidence.
 
