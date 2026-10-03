@@ -6,36 +6,29 @@ Date: 2026-10-02
 
 ### Where we are
 
-- Repository layout is confirmed and normalized: the project lives under the nested
-  `AURA/` directory inside `alimazna/AURA`; the repository root contains only `AURA/`.
-- Phase 0 immutable foundations, configuration, audit, integrity, persistence and guardian
-  contracts now exist under `AURA/src/foundation/` (36 source files, including `ErrorCode.h` and
-  `ErrorRecord.h`). They are recorded as `REVIEW_PENDING`.
-- There is still NO application build system, no test framework, and no MQL5 adapters.
-- The earlier baseline build/test audit is not reproducible from the current repository and is
-  treated as unverified historical material (see `TEST_LOG.md`).
+- Repository layout: the project lives under the nested `AURA/` directory inside `alimazna/AURA`;
+  the repository root contains only `AURA/`.
+- Phases 0, 0.5, 1 and 2 are COMPLETE and `APPROVED`, plus the conceptual Phase 3/4/5 verification
+  gates and the MT5 one-EA/nine-stream boundary (`PHASE-MT5`).
+- Source layers under `AURA/src/`: `foundation/` (35 headers), `resilience/` (19), `runtime/` (20),
+  `observation/` (4), and the new `mt5/` boundary (3 C++ headers + 7 MQL5 sources).
+- There is still NO application build system and no test framework; verification is ad-hoc via the
+  existing harness convention. No CMake/application build exists.
+- The earlier baseline build/test audit remains non-reproducible historical material
+  (see `TEST_LOG.md`).
 - `TASK-MANIFEST-001` produced the detailed file-level task graph
-  (`project-control/TASK_MANIFEST.yaml`, `manifest_version: 2`, 96 tasks) for the active scope.
+  (`project-control/TASK_MANIFEST.yaml`, `manifest_version: 2`, now 113 tasks).
 
 ### Task graph summary
 
-- Active now: Phase 0 (36 tasks), Phase 0.5 (20), Phase 1 (21), Phase 2 (4), plus 4 phase milestones.
-- Deferred and still visible: Phases 3–11 (`DEFERRED`).
-- `FND-0001` (`src/foundation/EntityId.h`) is `APPROVED` (was `TESTED`; advanced at the Phase 0
-  integration gate).
-- Phase 0 source tasks `FND-0002..FND-0017` (excluding the pair noted below),
-  `CFG-0001..0005`, `AUD-0001..0003`, `INT-0001..0003`, `PER-0001..0004`, `GDN-0001..0004`
-  have been REVIEWED and are now `APPROVED` (advanced from `REVIEW_PENDING` at the Phase 0
-  integration gate). `GDN-0002` and `PER-0004` required rework (unused includes) and were fixed.
-- `FND-0015 ErrorCode.h` and `FND-0016 ErrorRecord.h` are implemented, reviewed and `APPROVED`
-  (previously OPEN DECISION / BLOCKED). The V3-45 OPEN DECISION was resolved by the human decision
-  recorded in `DECISIONS.md` (2026-10-02); `BLOCK-002` is RESOLVED.
-- Phase 0 is complete; the `PHASE-0` milestone is `APPROVED`.
-- Phase 0.5 was explicitly authorized and ONE task was executed: `RS-0001 ServiceDescriptor.h`
-  (`src/resilience/`), now `APPROVED`. `RS-0002` is the next READY task but was NOT started.
+- COMPLETE/APPROVED: Phase 0 (36 tasks), Phase 0.5 (20), Phase 1 (21), Phase 2 (4), conceptual
+  Phase 3/4/5 verification (6), MT5 boundary (11), plus phase milestones.
+- Deferred and still visible: canonical manifest Phases 3–11 (`DEFERRED`).
+- New this continuation: `PH3-0001`, `PHASE-3-TS`, `PH4-0001`, `PHASE-4-FSR`, `PH5-0001`,
+  `PHASE-5-SIG`, `MT5-0001`..`MT5-0010`, `PHASE-MT5` — all `APPROVED`.
 - Authority note: Phase 0 filenames come from V3-42. The `src/` layout, the `EntityId`
-  representation, the `Version` grammar, and the Phase 0.5/1/2 filenames are PROPOSED
-  decomposition and require integration review; they are not canonical architecture.
+  representation, the `Version` grammar, and the Phase 0.5/1/2/MT5 filenames are PROPOSED
+  decomposition requiring integration review; they are not canonical architecture.
 
 ### Reconciliation note (2026-10-02)
 
@@ -55,6 +48,9 @@ Date: 2026-10-02
 - Blocked state
 - Test log
 - AI handoff
+- Phase reconciliation (`project-control/PHASE_RECONCILIATION.md`)
+- MT5 one-EA / nine-stream control (`project-control/MT5_ONE_EA_NINE_STREAM_CONTROL.md`)
+- Final verification report (`project-control/FINAL_VERIFICATION_REPORT.md`)
 
 ### Next AI action
 
@@ -62,12 +58,12 @@ Date: 2026-10-02
 2. Read `project-control/IMPLEMENTATION_SCOPE.md`.
 3. Read `project-control/PROJECT_STATE.md`.
 4. Read `project-control/TASK_MANIFEST.yaml` and pick the next actionable task.
-5. Inspect the repository; Phase 0 `src/foundation/` headers and the Phase 0.5
-   `src/resilience/ServiceDescriptor.h` now exist.
-6. Phase 0 is complete and `APPROVED` (all 36 file-level tasks + the `PHASE-0` milestone). Phase 0.5
-   is in progress: `RS-0001 ServiceDescriptor.h` is `APPROVED`. The next READY task is `RS-0002`
-   (`src/resilience/CapabilityId.h`, depends on `FND-0001`); do not begin it without explicit
-   authorization.
+5. Phases 0, 0.5, 1, 2 are COMPLETE and `APPROVED`; conceptual Phase 3/4/5 are VERIFIED and the MT5
+   one-EA/nine-stream boundary is IMPLEMENTED (MQL5 static + C++ tests). There is no READY task in the
+   active scope.
+6. To continue: either promote the next canonical deferred phase (3/4/5/6..11) with an explicit
+   `DECISIONS.md` entry, or compile `src/mt5/mql5/AURA_MT5_EA.mq5` in MetaEditor on a Windows host
+   and test real terminal connectivity.
 7. Run appropriate deterministic checks; record real results in `TEST_LOG.md`.
 8. Preserve implementation + state in Git before ending the session.
 
@@ -94,6 +90,34 @@ Date: 2026-10-02
 - Remaining phases (3..11) are `DEFERRED` with no file-level decomposition. Promotion requires an
   explicit `DECISIONS.md` entry.
 - Pushed to `origin/main`; remote URL is token-free and no credential is persisted anywhere.
+
+### Session end state (2026-10-02, conceptual Phase 3/4/5 + MT5 one-EA/nine-stream)
+
+- Continuation request's conceptual "Phase 3/4/5" (Timeframe State / Feature-Structure-Regime /
+  Signal) was reconciled against the canonical Master order (V3-40): that content belongs to the
+  approved manifest Phase 1, so it was delivered as verification artifacts over Phase 1 rather than
+  as new architecture. Mapping recorded in `PHASE_RECONCILIATION.md` and `DECISIONS.md`; the Master
+  was NOT modified and no deferred manifest phase was promoted.
+- New verification artifacts (`APPROVED`): `src/runtime/TimeframeStateTests.cpp` (`PH3-0001`),
+  `src/runtime/AnalysisPipelineTests.cpp` (`PH4-0001`), `src/runtime/SignalPipelineTests.cpp`
+  (`PH5-0001`), plus milestones `PHASE-3-TS`/`PHASE-4-FSR`/`PHASE-5-SIG`.
+- MT5 one-physical-EA / nine-logical-stream boundary implemented (`APPROVED`):
+  `src/mt5/mql5/{Common,Protocol,SocketClient,TimeframeStream,StreamManager,ShadowOrderGateway}.mqh`
+  and `src/mt5/mql5/AURA_MT5_EA.mq5` (`MT5-0001`..`MT5-0007`); C++ counterpart
+  `src/mt5/{ProtocolCodec.h,Mt5StreamManager.h,Mt5ReceiverTests.cpp}` (`MT5-0008`..`MT5-0010`);
+  milestone `PHASE-MT5`.
+- Physical EA count = 1; logical stream count = 9; transport count = 1; explicit per-stream
+  timeframe identity (never positional); shadow-only (no live order path).
+- One additive Phase 1 edit: `src/runtime/ShadowExecutionEngine.h` (`RT-0016`) gained an explicit
+  `request_live_execution()` guard returning `LiveExecutionBlockReason::SHADOW_ONLY`; no live path.
+- Verification: 80 headers self-contained + combined TU under c++17/c++20 strict; all seven
+  behavioural test artifacts PASS under both standards; MQL5 static audit PASS; repository static
+  audit clean. Details in `TEST_LOG.md` and `FINAL_VERIFICATION_REPORT.md`.
+- MetaEditor/MT5 are NOT available: MQL5 compilation and real terminal connectivity are UNPROVEN.
+  Live trading is NOT enabled. No profitability/calibration/broker-validation/production-safety
+  claim is made.
+- Next READY: none in the active scope. Canonical manifest Phases 3–11 remain `DEFERRED`; promotion
+  requires a `DECISIONS.md` entry. Alternatively, compile the MQL5 EA on a Windows/MetaEditor host.
 
 ### Session end state (2026-10-02, Phase 1 complete)
 

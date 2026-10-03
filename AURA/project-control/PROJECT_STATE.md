@@ -217,16 +217,49 @@ This is the human-readable snapshot of where the project currently stands.
   `-Wall -Wextra -Werror -pedantic`; `ObservationTests.cpp` passes under both standards. Details in
   `TEST_LOG.md`.
 
+## Conceptual Phase 3/4/5 and MT5 one-EA/nine-stream (2026-10-02)
+
+- The continuation request's conceptual "Phase 3 = Timeframe State, Phase 4 = Feature/Structure/
+  Regime, Phase 5 = Signal" was reconciled with the canonical Master phase order (V3-40) and mapped
+  onto the already-approved manifest Phase 1. The mapping and rationale are recorded in
+  `DECISIONS.md` and `PHASE_RECONCILIATION.md`; the Master was not modified and no deferred manifest
+  phase was promoted.
+- Conceptual Phase 3 (timeframe state) verification: `src/runtime/TimeframeStateTests.cpp`
+  (`PH3-0001`) — nine explicit streams, per-stream independence, closed-bar-only processing,
+  duplicate/repaint rejection, no-lookahead, provenance. `APPROVED`.
+- Conceptual Phase 4 (feature/structure/regime) verification:
+  `src/runtime/AnalysisPipelineTests.cpp` (`PH4-0001`) — deterministic bounded features, no future
+  input, H4 structural authority, deterministic regime, degraded-input gating, macro context from
+  D1/W1/MN1 only. `APPROVED`.
+- Conceptual Phase 5 (signal) verification: `src/runtime/SignalPipelineTests.cpp` (`PH5-0001`) —
+  deterministic V3-23 identity, eligibility gating, M15-under-H4 authority, score/confidence as
+  ranking values, risk gate, shadow-only execution with a live-execution-blocked negative test,
+  append-only ledger provenance. `APPROVED`.
+- One additive change to the owning Phase 1 file `ShadowExecutionEngine.h` (`RT-0016`): an explicit
+  `request_live_execution()` guard returning `SHADOW_ONLY`. No live path added.
+- MT5 one-physical-EA / nine-logical-stream boundary implemented under `src/mt5/`:
+  MQL5 (`Common`, `Protocol`, `SocketClient`, `TimeframeStream`, `StreamManager`,
+  `ShadowOrderGateway`, `AURA_MT5_EA`) and C++ (`ProtocolCodec`, `Mt5StreamManager`,
+  `Mt5ReceiverTests`). Physical EA count = 1; logical stream count = 9; transport count = 1;
+  explicit per-stream timeframe identity; shadow-only.
+- Verification: 80 headers self-contained + combined TU under c++17/c++20 strict; all seven
+  behavioural test artifacts PASS under both standards; MQL5 static audit PASS; repository static
+  audit clean. MetaEditor/MT5 NOT available — real terminal connectivity is UNPROVEN. Details in
+  `TEST_LOG.md` and `FINAL_VERIFICATION_REPORT.md`.
+
 ## Current task
 
-- Phases 0, 0.5, 1 and 2 are COMPLETE and `APPROVED`.
-- Remaining phases (3..11) are `DEFERRED` and have no file-level decomposition. Promotion of a deferred
-  phase requires an explicit `DECISIONS.md` entry (per `IMPLEMENTATION_SCOPE.md`).
+- Phases 0, 0.5, 1 and 2 are COMPLETE and `APPROVED`. Conceptual Phase 3/4/5 are VERIFIED and the
+  MT5 one-EA/nine-stream boundary is IMPLEMENTED (MQL5 static + C++ tests).
+- Canonical manifest Phases 3–11 (Self-Learning, Research Plane, Evolution, …) remain `DEFERRED` and
+  have no file-level decomposition. Promotion of a deferred phase requires an explicit `DECISIONS.md`
+  entry (per `IMPLEMENTATION_SCOPE.md`). Real MT5 terminal validation is also deferred.
 
 ## Next action
 
-1. Promote the next phase (Phase 3) with a `DECISIONS.md` entry before implementing it.
-2. Then execute it in dependency order, preserving implementation + state in Git after each wave.
+1. To continue, either promote the next canonical deferred phase via a `DECISIONS.md` entry, or
+   compile the MQL5 EA in MetaEditor on a Windows host and test real terminal connectivity.
+2. Preserve implementation + state in Git after each wave.
 
 ## Update rule
 

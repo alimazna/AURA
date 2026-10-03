@@ -27,7 +27,7 @@ authority_class_enum:
 - PROPOSED
 - OPEN DECISION
 path_status_note: Phase 0 filenames are from V3-42 (CANONICAL decomposition). Phase 0.5/1/2 filenames and src/ layout are PROPOSED implementation decomposition and are subject to integration review (V3-16, V3-46). They must not be treated as canonical architecture.
-current_task: "PHASE-2 APPROVED (all 4 tasks). Next READY: PHASE-3 milestone and remaining phases (currently DEFERRED - promotion requires a DECISIONS.md entry)."
+current_task: "Conceptual Phase 3/4/5 VERIFIED and MT5 one-EA/nine-stream boundary IMPLEMENTED (MQL5 static + C++ tests). Next: canonical manifest Phases 3-11 remain DEFERRED; promotion requires a DECISIONS.md entry."
 tasks:
 - id: TASK-BOOTSTRAP-001
   phase: BOOTSTRAP
@@ -1241,4 +1241,265 @@ tasks:
   objective: Complete Phase 2 observation and outcomes.
   acceptance: Prediction ledger and outcome engine deterministic and auditable; failures structured.
   evidence: 'Phase 2 review/integration gate (2026-10-02): all 4 file-level tasks APPROVED. src/observation/ObservationTests.cpp passes under c++17/c++20 strict (real code paths, no mocks) and proves: prediction ledger identity is deterministic, append-only, auditable and idempotent (duplicate no-op, conflict rejected); outcome resolution is deterministic with no lookahead (a bar at/before decision time cannot resolve) and no repaint, resolves conservatively to STOP_HIT on an ambiguous bar, and reports OPEN/EXPIRED rather than fabricating a win or a loss; failures are structured foundation::ErrorRecord objects with explicit ErrorCode/ErrorSeverity/RecoveryAction (never plain strings); system health aggregates deterministically as the worst stream state and never fabricates a healthy state (unassessed -> STARTING, not healthy; one offline stream -> unhealthy). All 4 observation headers self-contained and combined all-headers TU (78 headers) compiles under both standards; include graph acyclic; observation depends only on foundation/resilience/runtime/observation. Phase gate PASSED. No profitability, calibration, broker-validation or production-safety claim.'
+- id: PH3-0001
+  phase: '3-conceptual'
+  module: TIMEFRAME_STATE
+  layer: VERIFICATION
+  authority: PROPOSED
+  status: APPROVED
+  output: src/runtime/TimeframeStateTests.cpp
+  dependencies:
+  - RT-0001
+  - RT-0003
+  - RT-0004
+  - RT-0005
+  objective: 'Prove the timeframe-state model over the nine logical streams as the conceptual Phase 3 (timeframe state) hardening of manifest Phase 1.'
+  acceptance: 'Nine explicit stream identities; per-stream independence of state/sequence/quality/health; closed-bar-only processing; deterministic closed-bar identity; duplicate/non-advancing bar rejection; no-lookahead; failure and recovery isolation; deterministic updates; provenance retained.'
+  evidence: 'Implemented and reviewed 2026-10-02. src/runtime/TimeframeStateTests.cpp passes under c++17/c++20 strict (real code paths, no mocks) proving: nine canonical timeframe identities; M1 failure leaves M15 unchanged and M15 recovery does not reset M1/H4; W1 outage does not alter H1; per-stream sequence is independent; duplicate finalized bar and same-close_time repaint are rejected; future-dated and forming bars are rejected (no lookahead/no repaint); per-stream data quality propagates; identical input yields identical per-stream progress; closed-bar provenance (symbol+timeframe+close_time) is retained. Classified APPROVED. No behaviour file changed. Compilation alone does not prove correctness.'
+  verification: 'self-contained standalone TU + combined all-headers TU under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic'
+
+- id: PHASE-3-TS
+  phase: '3-conceptual'
+  module: TIMEFRAME_STATE
+  layer: PHASE_MILESTONE
+  authority: PROPOSED
+  status: APPROVED
+  output: (phase milestone - aggregates PH3-0001)
+  dependencies:
+  - PHASE-1
+  - PH3-0001
+  objective: 'Complete the conceptual Phase 3 (timeframe state) for the nine logical streams.'
+  acceptance: 'All nine logical streams exist with independent state; closed-bar processing, duplicate prevention, per-stream sequence/health/quality and provenance verified; no lookahead; no regression in Phases 0-2.'
+  evidence: 'Conceptual Phase 3 gate PASSED 2026-10-02 (verified against manifest Phase 1). PH3-0001 APPROVED; TimeframeStateTests.cpp passes under both standards; all 80 headers self-contained and combined TU under both standards; Phases 0/0.5/1/2 test artifacts re-run PASS (no regression). See project-control/PHASE_RECONCILIATION.md.'
+
+- id: PH4-0001
+  phase: '4-conceptual'
+  module: FEATURE_STRUCTURE_REGIME
+  layer: VERIFICATION
+  authority: PROPOSED
+  status: APPROVED
+  output: src/runtime/AnalysisPipelineTests.cpp
+  dependencies:
+  - RT-0006
+  - RT-0007
+  - RT-0008
+  - RT-0009
+  - RT-0013
+  - RT-0014
+  objective: 'Prove the feature/structure/regime analysis pipeline as the conceptual Phase 4 hardening of manifest Phase 1.'
+  acceptance: 'Deterministic reproducible features; bounded window; no future inputs; explicit missing-data state; H4 structural authority over lower timeframes; regime determinism and explainability; degraded/missing input handling; macro context only from D1/W1/MN1.'
+  evidence: 'Implemented and reviewed 2026-10-02. src/runtime/AnalysisPipelineTests.cpp passes under c++17/c++20 strict (real code paths, no mocks) proving: feature values and based_on provenance are deterministic; the rolling window is bounded (older out-of-window bars do not change the result); a forming bar refuses feature computation (no lookahead); empty/unknown input yields an explicit invalid set (no fabrication); H4 structure derives only from H4 and M15/M1 cannot substitute (H4 structural authority); regime is deterministic, bounded and labelled a ranking value not a probability; macro context only from D1/W1/MN1; degraded/stale data yields INELIGIBLE with explicit reasons; aggregate market quality never fabricates GOOD. Classified APPROVED. No behaviour file changed.'
+  verification: 'self-contained standalone TU + combined all-headers TU under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic'
+
+- id: PHASE-4-FSR
+  phase: '4-conceptual'
+  module: FEATURE_STRUCTURE_REGIME
+  layer: PHASE_MILESTONE
+  authority: PROPOSED
+  status: APPROVED
+  output: (phase milestone - aggregates PH4-0001)
+  dependencies:
+  - PHASE-3-TS
+  - PH4-0001
+  objective: 'Complete the conceptual Phase 4 (feature/structure/regime).'
+  acceptance: 'Features deterministic; structure respects H4 authority; regime deterministic; no-lookahead; data-quality degradation explicit; tests pass; no regression.'
+  evidence: 'Conceptual Phase 4 gate PASSED 2026-10-02. PH4-0001 APPROVED; AnalysisPipelineTests.cpp passes under both standards; no regression in previous phases.'
+
+- id: PH5-0001
+  phase: '5-conceptual'
+  module: SIGNAL
+  layer: VERIFICATION
+  authority: PROPOSED
+  status: APPROVED
+  output: src/runtime/SignalPipelineTests.cpp
+  dependencies:
+  - RT-0010
+  - RT-0011
+  - RT-0012
+  - RT-0015
+  - RT-0016
+  - RT-0017
+  - RT-0019
+  objective: 'Prove the signal pipeline as the conceptual Phase 5 hardening of manifest Phase 1.'
+  acceptance: 'Signal determinism and V3-23 identity; eligibility constraints; H4 structural authority and M15 operational trigger; score/confidence are ranking values not probabilities; risk gate; shadow-only execution; no live order path; append-only idempotent ledger provenance.'
+  evidence: 'Implemented and reviewed 2026-10-02. src/runtime/SignalPipelineTests.cpp passes under c++17/c++20 strict (real code paths, no mocks) proving: signal identity (V3-23 DecisionID) is deterministic and symbol-sensitive; eligibility gates the signal; the trigger timeframe is M15 while structure is H4 (authority preserved); score/confidence are deterministic bounded ranking values and non-VALID data yields zero confidence; the risk gate refuses unusable quality and zero ATR and emits a non-order proposal (is_order always false); every shadow fill/position has is_live false; an attempted live execution is blocked/unavailable (SHADOW_ONLY) - the negative test; the shadow ledger is append-only and idempotent with deterministic entry identity and preserved decision provenance. Classified APPROVED. Adds an explicit live-execution-blocked guard to RT-0016 (no live path added).'
+  verification: 'self-contained standalone TU + combined all-headers TU under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic'
+
+- id: PHASE-5-SIG
+  phase: '5-conceptual'
+  module: SIGNAL
+  layer: PHASE_MILESTONE
+  authority: PROPOSED
+  status: APPROVED
+  output: (phase milestone - aggregates PH5-0001)
+  dependencies:
+  - PHASE-4-FSR
+  - PH5-0001
+  objective: 'Complete the conceptual Phase 5 (signal).'
+  acceptance: 'Signal deterministic; eligibility deterministic; M15 operational role preserved; H4 structural authority preserved; risk constraints enforced; shadow-only execution guaranteed; no live order path; no regression.'
+  evidence: 'Conceptual Phase 5 gate PASSED 2026-10-02. PH5-0001 APPROVED; SignalPipelineTests.cpp passes under both standards; no regression in previous phases.'
+
+- id: MT5-0001
+  phase: MT5
+  module: MT5_BOUNDARY
+  layer: MQL5_SOURCE
+  authority: PROPOSED
+  status: APPROVED
+  output: src/mt5/mql5/Common.mqh
+  dependencies:
+  - RT-0021
+  - MT5-0001
+  objective: 'Common value types and pure helpers. Canonical timeframe enum + explicit label/ENUM_TIMEFRAMES mapping, message-type/quality/health enums, closed-bar struct, locale-independent formatting and SHA-256 hex helper.'
+  acceptance: 'Nine explicit timeframe labels in canonical order; AURA_STREAM_COUNT == 9; no trading functions.'
+  evidence: 'Implemented and statically reviewed 2026-10-02. MQL5 static audit PASS: exactly one physical EA; nine explicit logical timeframe labels in canonical order; AURA_STREAM_COUNT == 9; single shared transport; zero OrderSend/PositionModify/CTrade live-trade tokens; include graph resolves; brackets balanced; EA lifecycle handlers present. MetaEditor is NOT available in this environment, so MQL5 compilation and real terminal runtime are UNPROVEN. See project-control/MT5_ONE_EA_NINE_STREAM_CONTROL.md.'
+
+- id: MT5-0002
+  phase: MT5
+  module: MT5_BOUNDARY
+  layer: MQL5_SOURCE
+  authority: PROPOSED
+  status: APPROVED
+  output: src/mt5/mql5/Protocol.mqh
+  dependencies:
+  - RT-0021
+  - MT5-0001
+  objective: 'Deterministic message framing. One frame per stream message carrying explicit protocol/schema version, message id, symbol, timeframe, sequence, event_time, receive_time, type, payload and checksum; identity never positional.'
+  acceptance: 'Frame layout matches the C++ ProtocolCodec; message_id contains no frame delimiter; no trading functions.'
+  evidence: 'Implemented and statically reviewed 2026-10-02. MQL5 static audit PASS: exactly one physical EA; nine explicit logical timeframe labels in canonical order; AURA_STREAM_COUNT == 9; single shared transport; zero OrderSend/PositionModify/CTrade live-trade tokens; include graph resolves; brackets balanced; EA lifecycle handlers present. MetaEditor is NOT available in this environment, so MQL5 compilation and real terminal runtime are UNPROVEN. See project-control/MT5_ONE_EA_NINE_STREAM_CONTROL.md.'
+
+- id: MT5-0003
+  phase: MT5
+  module: MT5_BOUNDARY
+  layer: MQL5_SOURCE
+  authority: PROPOSED
+  status: APPROVED
+  output: src/mt5/mql5/SocketClient.mqh
+  dependencies:
+  - RT-0021
+  - MT5-0001
+  objective: 'The single shared transport. One socket for every stream; connect/send/receive/poll/reconnect; transport failure does not erase logical stream state.'
+  acceptance: 'Single CSocketClient; no per-stream socket; no trading functions.'
+  evidence: 'Implemented and statically reviewed 2026-10-02. MQL5 static audit PASS: exactly one physical EA; nine explicit logical timeframe labels in canonical order; AURA_STREAM_COUNT == 9; single shared transport; zero OrderSend/PositionModify/CTrade live-trade tokens; include graph resolves; brackets balanced; EA lifecycle handlers present. MetaEditor is NOT available in this environment, so MQL5 compilation and real terminal runtime are UNPROVEN. See project-control/MT5_ONE_EA_NINE_STREAM_CONTROL.md.'
+
+- id: MT5-0004
+  phase: MT5
+  module: MT5_BOUNDARY
+  layer: MQL5_SOURCE
+  authority: PROPOSED
+  status: APPROVED
+  output: src/mt5/mql5/TimeframeStream.mqh
+  dependencies:
+  - RT-0021
+  - MT5-0001
+  objective: 'One logical stream independent state. Per-stream last closed bar, sequence, init/recovery state, quality, health, provenance, last error, last success; closed-bar-only capture; duplicate/regression rejection; no forming bar.'
+  acceptance: 'Independent per-stream state; forming bar never captured; duplicate close_time rejected; no future timestamps.'
+  evidence: 'Implemented and statically reviewed 2026-10-02. MQL5 static audit PASS: exactly one physical EA; nine explicit logical timeframe labels in canonical order; AURA_STREAM_COUNT == 9; single shared transport; zero OrderSend/PositionModify/CTrade live-trade tokens; include graph resolves; brackets balanced; EA lifecycle handlers present. MetaEditor is NOT available in this environment, so MQL5 compilation and real terminal runtime are UNPROVEN. See project-control/MT5_ONE_EA_NINE_STREAM_CONTROL.md.'
+
+- id: MT5-0005
+  phase: MT5
+  module: MT5_BOUNDARY
+  layer: MQL5_SOURCE
+  authority: PROPOSED
+  status: APPROVED
+  output: src/mt5/mql5/StreamManager.mqh
+  dependencies:
+  - RT-0021
+  - MT5-0001
+  objective: 'Nine streams over one transport. Owns exactly nine CTimeframeStream objects and one CSocketClient; multiplexes all nine; isolates failure/recovery per stream; heartbeat and per-stream health.'
+  acceptance: 'AURA_STREAM_COUNT == 9 streams; one transport member; one stream failure never resets another.'
+  evidence: 'Implemented and statically reviewed 2026-10-02. MQL5 static audit PASS: exactly one physical EA; nine explicit logical timeframe labels in canonical order; AURA_STREAM_COUNT == 9; single shared transport; zero OrderSend/PositionModify/CTrade live-trade tokens; include graph resolves; brackets balanced; EA lifecycle handlers present. MetaEditor is NOT available in this environment, so MQL5 compilation and real terminal runtime are UNPROVEN. See project-control/MT5_ONE_EA_NINE_STREAM_CONTROL.md.'
+
+- id: MT5-0006
+  phase: MT5
+  module: MT5_BOUNDARY
+  layer: MQL5_SOURCE
+  authority: PROPOSED
+  status: APPROVED
+  output: src/mt5/mql5/ShadowOrderGateway.mqh
+  dependencies:
+  - RT-0021
+  - MT5-0001
+  objective: 'Shadow-only execution gateway. Records shadow/paper intents only; a live-execution request is explicitly blocked/unavailable.'
+  acceptance: 'No OrderSend/PositionModify token; RequestLiveExecution always returns executed=false (SHADOW_ONLY).'
+  evidence: 'Implemented and statically reviewed 2026-10-02. MQL5 static audit PASS: exactly one physical EA; nine explicit logical timeframe labels in canonical order; AURA_STREAM_COUNT == 9; single shared transport; zero OrderSend/PositionModify/CTrade live-trade tokens; include graph resolves; brackets balanced; EA lifecycle handlers present. MetaEditor is NOT available in this environment, so MQL5 compilation and real terminal runtime are UNPROVEN. See project-control/MT5_ONE_EA_NINE_STREAM_CONTROL.md.'
+
+- id: MT5-0007
+  phase: MT5
+  module: MT5_BOUNDARY
+  layer: MQL5_SOURCE
+  authority: PROPOSED
+  status: APPROVED
+  output: src/mt5/mql5/AURA_MT5_EA.mq5
+  dependencies:
+  - RT-0021
+  - MT5-0001
+  objective: 'The one physical EA entry point. OnInit/OnTick/OnTimer/OnDeinit wiring one CStreamManager (nine streams) and one shadow gateway.'
+  acceptance: 'Exactly one .mq5 file; no per-timeframe EA; shadow-only; all four lifecycle handlers present.'
+  evidence: 'Implemented and statically reviewed 2026-10-02. MQL5 static audit PASS: exactly one physical EA; nine explicit logical timeframe labels in canonical order; AURA_STREAM_COUNT == 9; single shared transport; zero OrderSend/PositionModify/CTrade live-trade tokens; include graph resolves; brackets balanced; EA lifecycle handlers present. MetaEditor is NOT available in this environment, so MQL5 compilation and real terminal runtime are UNPROVEN. See project-control/MT5_ONE_EA_NINE_STREAM_CONTROL.md.'
+
+- id: MT5-0008
+  phase: MT5
+  module: MT5_BOUNDARY
+  layer: CXX_SOURCE
+  authority: PROPOSED
+  status: APPROVED
+  output: src/mt5/ProtocolCodec.h
+  dependencies:
+  - FND-0010
+  - FND-0013
+  - RT-0001
+  - RT-0002
+  objective: 'C++ decoder/encoder counterpart of Protocol.mqh: parse a frame into MessageMetadata + EventMetadata + MarketBar; validate protocol/schema/checksum/explicit timeframe; reject malformed/missing-timeframe/future-dated frames.'
+  acceptance: 'Deterministic encode/decode round-trip; explicit timeframe identity; malformed/unknown-protocol/schema/future-dated rejected; pure, no I/O.'
+  evidence: 'Implemented and reviewed 2026-10-02. Covered by src/mt5/Mt5ReceiverTests.cpp (round-trip, deterministic encoding, malformed/unknown-timeframe/checksum/future-dated rejection) passing under c++17/c++20 strict; header self-contained and in the combined all-headers TU.'
+  verification: 'self-contained standalone TU + combined all-headers TU under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic'
+
+- id: MT5-0009
+  phase: MT5
+  module: MT5_BOUNDARY
+  layer: CXX_SOURCE
+  authority: PROPOSED
+  status: APPROVED
+  output: src/mt5/Mt5StreamManager.h
+  dependencies:
+  - MT5-0008
+  - RT-0004
+  - RT-0005
+  objective: 'Receiver stream manager: route decoded frames by explicit timeframe, apply closed bars through the deterministic finalizer/store, reject duplicates/regressions, track per-stream sequence and health; stream-independent.'
+  acceptance: 'Nine explicit streams; routing by explicit timeframe never position; duplicates/regressions rejected idempotently; failure/recovery isolation; no fabricated state.'
+  evidence: 'Implemented and reviewed 2026-10-02. Covered by src/mt5/Mt5ReceiverTests.cpp (nine-stream routing, duplicate/regression rejection, M1-failure/H4-unaffected, M1-recovery/H4-not-reset, W1-outage/H1-unaffected, determinism) under c++17/c++20 strict; header self-contained and in the combined all-headers TU.'
+  verification: 'self-contained standalone TU + combined all-headers TU under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic'
+
+- id: MT5-0010
+  phase: MT5
+  module: MT5_BOUNDARY
+  layer: VERIFICATION
+  authority: PROPOSED
+  status: APPROVED
+  output: src/mt5/Mt5ReceiverTests.cpp
+  dependencies:
+  - MT5-0008
+  - MT5-0009
+  objective: 'Behavioural tests for the MT5 C++ codec and receiver.'
+  acceptance: 'Decode round-trip; nine-stream routing; malformed/missing-timeframe/checksum/future/duplicate rejection; per-stream isolation; no-lookahead; determinism.'
+  evidence: 'Implemented and reviewed 2026-10-02. MT5 one-EA / nine-stream receiver tests PASS under c++17/c++20 strict (real code paths, no mocks). Classified APPROVED. This proves the C++ receiver, not a live MT5 terminal connection.'
+  verification: 'self-contained standalone TU + combined all-headers TU under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic'
+
+- id: PHASE-MT5
+  phase: MT5
+  module: MT5_BOUNDARY
+  layer: PHASE_MILESTONE
+  authority: PROPOSED
+  status: APPROVED
+  output: (phase milestone - aggregates MT5-0001..MT5-0010)
+  dependencies:
+  - PHASE-1
+  - MT5-0001
+  - MT5-0007
+  - MT5-0009
+  - MT5-0010
+  objective: 'Implement the approved MT5 one-physical-EA / nine-logical-stream boundary.'
+  acceptance: 'Physical EA count = 1; logical stream count = 9; transport count = 1; explicit stream identity; no positional multiplexing; no shared mutable stream state; no live broker execution.'
+  evidence: 'MT5 boundary milestone 2026-10-02: physical EA count 1, logical stream count 9, transport count 1. MQL5 static audit PASS (one EA, nine explicit streams, one transport, zero live-trade tokens). C++ codec/receiver tests PASS under c++17/c++20 strict. MetaEditor/MT5 NOT available: real terminal connectivity is UNPROVEN. Live trading NOT enabled.'
+
 last_updated: '2026-10-02'

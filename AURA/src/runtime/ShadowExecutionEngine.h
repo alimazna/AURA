@@ -43,6 +43,28 @@ struct SimulatedFill {
     bool valid{false};
 };
 
+// Why a live execution request was refused. The system is shadow-only (V3-32);
+// there is no live mode to switch on.
+enum class LiveExecutionBlockReason : std::uint8_t {
+    NONE = 0,
+    SHADOW_ONLY,
+};
+
+constexpr std::string_view to_string(LiveExecutionBlockReason reason) noexcept {
+    switch (reason) {
+        case LiveExecutionBlockReason::NONE:        return "NONE";
+        case LiveExecutionBlockReason::SHADOW_ONLY: return "SHADOW_ONLY";
+    }
+    return "NONE";
+}
+
+// Result of an attempted live execution. `executed` is always false in this
+// phase: the system is shadow-only.
+struct LiveExecutionResult {
+    bool executed{false};
+    LiveExecutionBlockReason reason{LiveExecutionBlockReason::SHADOW_ONLY};
+};
+
 // Models the shadow execution lifecycle.
 //
 // RT-0016 / Phase 1 deterministic runtime. Given a risk proposal and an explicit
@@ -98,6 +120,20 @@ public:
         if (!(size > 0.0) || holding_ns <= 0) return 0.0;
         const double days = static_cast<double>(holding_ns) / (86400.0 * 1e9);
         return cost_model_.swap_per_unit_per_day * size * days;
+    }
+
+    // Attempts a live execution. Always blocked: the system is shadow-only
+    // (V3-32) and there is no live mode. This exists so callers have an explicit,
+    // auditable refusal rather than a compile-time omission, and so tests can
+    // prove no live order path is reachable. It places no order and does no I/O.
+    LiveExecutionResult request_live_execution(const RiskProposal& proposal,
+                                               double reference_price) const {
+        (void)proposal;
+        (void)reference_price;
+        LiveExecutionResult result;
+        result.executed = false;
+        result.reason = LiveExecutionBlockReason::SHADOW_ONLY;
+        return result;
     }
 
     const ExecutionCostModel& cost_model() const noexcept { return cost_model_; }

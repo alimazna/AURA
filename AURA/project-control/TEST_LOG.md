@@ -439,6 +439,55 @@ deterministic and auditable; failures structured"). All 4 tasks and the mileston
 Compilation and structural checks support but do not by themselves prove architectural correctness;
 no profitability, calibration, broker-validation or production-safety claim is made.
 
+## 2026-10-02 - Conceptual Phase 3/4/5 verification + MT5 one-EA/nine-stream boundary
+
+Commits: see `HANDOFF.md` / `PROJECT_STATE.md` (conceptual P3/P4/P5 wave and MT5 wave).
+
+Toolchain: `g++ (Debian 14.2.0-19) 14.2.0`, `-std=c++17` and `-std=c++20`, `-Wall -Wextra -Werror
+-pedantic`. Python 3 static audits. No application build system; ad-hoc harness.
+
+Build/test commands:
+- per-header self-containment and combined all-headers TU (80 headers) under both standards
+- `g++ -std=<std> -Wall -Wextra -Werror -pedantic -I src src/<artifact>.cpp src/foundation/Hasher.cpp -o t && ./t`
+  for `RuntimeTests`, `DegradationTests`, `ObservationTests`, `TimeframeStateTests`,
+  `AnalysisPipelineTests`, `SignalPipelineTests`, `Mt5ReceiverTests`
+- MQL5 static audit (python) and repository static audit (python)
+
+Result: PASS.
+- 80 headers self-contained and combined TU OK under c++17/c++20 strict.
+- All seven behavioural test artifacts PASS under both standards (real code paths, no mocks):
+  - Conceptual P3 (`TimeframeStateTests`): nine explicit stream identities; M1 failure leaves M15
+    unchanged; M15 recovery does not reset M1/H4; W1 outage does not alter H1; per-stream sequence;
+    duplicate finalized bar and same-close_time repaint rejected; future-dated and forming bars
+    rejected (no lookahead/no repaint); per-stream quality; deterministic progress; provenance.
+  - Conceptual P4 (`AnalysisPipelineTests`): deterministic bounded features with `based_on`
+    provenance; forming bar refuses computation; empty/unknown input -> explicit invalid; H4
+    structural authority (M15/M1 refused); deterministic bounded regime (ranking, not probability);
+    macro context only D1/W1/MN1; degraded/stale -> INELIGIBLE with reasons; market quality never
+    fabricates GOOD.
+  - Conceptual P5 (`SignalPipelineTests`): deterministic symbol-sensitive V3-23 identity; eligibility
+    gates the signal; M15 trigger under H4 structure; score/confidence deterministic and zero on
+    non-VALID data; risk gate refuses unusable quality / zero ATR; shadow fills/positions
+    `is_live == false`; attempted live execution blocked (`SHADOW_ONLY`); append-only idempotent
+    ledger with deterministic identity and preserved provenance.
+  - MT5 (`Mt5ReceiverTests`): encode/decode round-trip; nine-stream routing by explicit timeframe;
+    malformed / unknown-timeframe / checksum-mismatch / future-dated rejection; duplicate and
+    regression rejection; M1-failure/H4-unaffected; M1-recovery/H4-not-reset; W1-outage/H1-unaffected;
+    deterministic per-stream progress.
+- MQL5 static audit PASS: exactly one physical EA; nine explicit timeframe labels in canonical order;
+  `AURA_STREAM_COUNT == 9`; single shared transport; zero `OrderSend`/`PositionModify`/`CTrade`
+  tokens; includes resolve; brackets balanced; `OnInit`/`OnTick`/`OnTimer`/`OnDeinit` present.
+- Repository static audit: no include cycles; correct layer direction; no duplicate class
+  definitions; no live-execution tokens in C++; no secrets.
+
+Interpretation:
+The conceptual Phase 3/4/5 gates PASSED (verified against manifest Phase 1, which they map to per
+`PHASE_RECONCILIATION.md`). The MT5 one-EA/nine-stream boundary is implemented to the statically
+verified level. MetaEditor/MT5 are NOT available, so MQL5 compilation and real terminal connectivity
+are UNPROVEN. Live trading is NOT enabled. Compilation and structural checks support but do not prove
+architectural correctness; no profitability, calibration, broker-validation or production-safety
+claim is made.
+
 ## Future test entry format
 
 - Date
