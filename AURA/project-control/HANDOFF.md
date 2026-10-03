@@ -91,6 +91,23 @@ Date: 2026-10-02
   explicit `DECISIONS.md` entry.
 - Pushed to `origin/main`; remote URL is token-free and no credential is persisted anywhere.
 
+### Session end state (2026-10-02, canonical Phases 3–4)
+
+- Under the session authorization, canonical Phases 3–11 were promoted into active scope via
+  `DECISIONS.md` ("Session authorization: promote canonical Phases 3–11"). Presentation-phase (9)
+  scope is recorded as headless deterministic view-models.
+- Phase 3 (Self-Learning) COMPLETE and `APPROVED`: `src/learning/` holds `KnowledgeObject`,
+  `KnowledgeStore`, `KnowledgeLifecycle`, `ContextLearning`, `ContradictionEngine`, `KnowledgeDecay`,
+  `FailureMemory`, `LearningTests.cpp` (`LEARN-0001`..`LEARN-0008`, `PHASE-3-MILESTONE`).
+- Phase 4 (Research Plane) COMPLETE and `APPROVED`: `src/research/` holds `Hypothesis`, `Experiment`,
+  `ExperimentFingerprint`, `ResearchBudget`, `ExperimentLedger`, `ResearchPlanner`, `ResearchSandbox`,
+  `ResearchTests.cpp` (`RESEARCH-0001`..`RESEARCH-0008`, `PHASE-4-MILESTONE`).
+- Verification: all Phase 3/4 headers self-contained + combined TU under c++17/c++20 strict;
+  `LearningTests.cpp` and `ResearchTests.cpp` PASS under both standards. No future-outcome leakage;
+  research cannot mutate runtime; no live path. Details in `TEST_LOG.md`.
+- Manifest now 131 tasks. Next: canonical Phases 5–11 (Evolution, Validation, Governance, Operating
+  Window & Recovery, Desktop Control Center, Telegram, Controlled Real-World Validation).
+
 ### Session end state (2026-10-02, conceptual Phase 3/4/5 + MT5 one-EA/nine-stream)
 
 - Continuation request's conceptual "Phase 3/4/5" (Timeframe State / Feature-Structure-Regime /

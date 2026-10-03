@@ -144,6 +144,60 @@ Only explicit human decisions belong here.
 - **Scope-change flag:** No. Implements an already-authorized boundary; no deferred phase promoted.
 - **Master V3 status:** Preserved unchanged; shadow-only (V3-32) upheld; live trading not enabled.
 
+## 2026-10-02 — Session authorization: promote canonical Phases 3–11 into active scope
+
+- **Date:** 2026-10-02
+- **Decision:** Under the current human execution authorization ("FULL AUTONOMOUS CONTINUATION —
+  Execute All Remaining Canonical Phases"), the canonical deferred phases of the Master V3
+  **authoritative order (V3-40)** are promoted into active implementation scope, sequentially and
+  respecting dependencies:
+  - Phase 3 — Self-Learning (`src/learning/`)
+  - Phase 4 — Research Plane (`src/research/`)
+  - Phase 5 — Evolution (`src/evolution/`)
+  - Phase 6 — Validation (`src/validation/`)
+  - Phase 7 — Governance (`src/governance/`)
+  - Phase 8 — Operating Window & Recovery (`src/operatingwindow/`)
+  - Phase 9 — Desktop Control Center (`src/desktop/`)
+  - Phase 10 — Auxiliary Telegram (`src/telegram/`)
+  - Phase 11 — Controlled Real-World Validation (`src/realworld/`)
+- **Scope:** Implement the capability sets named in V3-40 for each phase as **contract/logic layers
+  in the `src/` C++ tree**, with real behavioural tests, preserving determinism, causality,
+  provenance, versioning, idempotency and auditability.
+- **Non-goals:** No live/real-money trading; no unattended execution; no profitability or calibrated
+  probability claims; no automatic production self-modification; no GUI toolkit or network I/O
+  (Phase 9/10 are deterministic offline logic with injected/fake transports); no real Telegram token;
+  no promotion of a candidate without explicit human governance (Phase 7).
+- **Safety constraints:** Shadow-only is preserved end-to-end; Telegram is reporting-only and never a
+  live-command channel; the research/evolution layers cannot mutate runtime behaviour; validation is
+  a firewall between "interesting" and "credible"; rollback is bounded and versioned.
+- **Dependencies:** Each phase depends on the preceding phases per V3-40 and on the approved
+  foundation/resilience/runtime/observation layers.
+- **Approval basis:** The human execution authorization in this session, which explicitly directs the
+  agent to execute all currently authorized canonical phases and to create the smallest accurate
+  decision record needed to authorize promotion. This does not modify Master V3.
+- **Scope-change flag:** Yes (promotion of deferred phases), recorded here per the
+  `IMPLEMENTATION_SCOPE.md` scope-change rule.
+- **Master V3 status:** Preserved unchanged. The older section-109 phase names ("Phase 3 = Timeframe
+  State") remain a historical/legacy listing; V3-40 is authoritative, consistent with the earlier
+  2026-10-02 reconciliation decision.
+
+## 2026-10-02 — Phase 9 desktop represented as headless deterministic view-models
+
+- **Date:** 2026-10-02
+- **Decision:** Master V3-37 / Phase 9 (Desktop Control Center) is implemented in this environment as
+  **headless, deterministic, read-only view-model projection types** over the existing registered
+  components (knowledge, research, evolution, governance, validation, operating-window, observation,
+  audit). No GUI toolkit, windowing system, network or filesystem I/O is introduced.
+- **Rationale:** The authoritative capability set for Phase 9 (dashboard, research UI, knowledge UI,
+  candidate UI, approval center, evolution graph UI, incident UI, schedule UI, audit UI) describes
+  presentation surfaces. In a headless CI/Linux environment the verifiable, architecture-conforming
+  deliverable is the deterministic data-projection layer the UI would consume. This preserves the
+  separation between a presentation shell and the trusted logic it displays, and avoids fabricating
+  behaviour (no fabricated health, no fabricated confidence).
+- **Affected tasks:** Phase 9 file-level tasks (`src/desktop/`).
+- **Scope-change flag:** No. Implements the Phase 9 capability set at the projection layer.
+- **Master V3 status:** Preserved unchanged.
+
 ## Decision format
 
 For each future material decision record:

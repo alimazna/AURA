@@ -247,19 +247,40 @@ This is the human-readable snapshot of where the project currently stands.
   audit clean. MetaEditor/MT5 NOT available — real terminal connectivity is UNPROVEN. Details in
   `TEST_LOG.md` and `FINAL_VERIFICATION_REPORT.md`.
 
+## Canonical Phase 3/4 — Self-Learning and Research Plane (2026-10-02)
+
+- Canonical Phases 3–11 were promoted into active scope by an explicit `DECISIONS.md` entry ("Session
+  authorization: promote canonical Phases 3–11"), per the `IMPLEMENTATION_SCOPE.md` scope-change rule.
+  Master V3-40 is authoritative; the older section-109 phase names are legacy.
+- Phase 3 (Self-Learning) is COMPLETE and `APPROVED` (`src/learning/`): `KnowledgeObject` (scoped,
+  versioned, point-in-time), `KnowledgeStore` (append-only, versioned, no silent overwrite),
+  `KnowledgeLifecycle` (explicit transitions only), `ContextLearning` (excludes future-outcome
+  observations), `ContradictionEngine` (contradictions preserved, never resolved by overwrite),
+  `KnowledgeDecay` (aged knowledge never erased), `FailureMemory` (structured error memory), and
+  `LearningTests.cpp`.
+- Phase 4 (Research Plane) is COMPLETE and `APPROVED` (`src/research/`): `Hypothesis` (falsifiability
+  mandatory), `Experiment`, `ExperimentFingerprint` (deterministic SHA-256 over stable fields),
+  `ResearchBudget` (explicit budget states, no overspend), `ExperimentLedger` (append-only, duplicate
+  detection), `ResearchPlanner` (protocol fixed before evaluation), `ResearchSandbox` (never mutates
+  runtime), and `ResearchTests.cpp`.
+- Verification: all Phase 3/4 headers self-contained + combined TU under c++17/c++20 strict;
+  `LearningTests.cpp` and `ResearchTests.cpp` PASS under both standards.
+- No live path, no profitability/calibration claim, and research cannot mutate runtime behaviour.
+
 ## Current task
 
-- Phases 0, 0.5, 1 and 2 are COMPLETE and `APPROVED`. Conceptual Phase 3/4/5 are VERIFIED and the
-  MT5 one-EA/nine-stream boundary is IMPLEMENTED (MQL5 static + C++ tests).
-- Canonical manifest Phases 3–11 (Self-Learning, Research Plane, Evolution, …) remain `DEFERRED` and
-  have no file-level decomposition. Promotion of a deferred phase requires an explicit `DECISIONS.md`
-  entry (per `IMPLEMENTATION_SCOPE.md`). Real MT5 terminal validation is also deferred.
+- Phases 0, 0.5, 1 and 2 are COMPLETE and `APPROVED`. Conceptual Phase 3/4/5 verification and the
+  MT5 one-EA/nine-stream boundary are done. Canonical Phases 3–4 are now COMPLETE and `APPROVED`.
+- Canonical Phases 5–11 (Evolution, Validation, Governance, Operating Window & Recovery, Desktop
+  Control Center, Telegram, Controlled Real-World Validation) are promoted and in progress.
+- Real MT5 terminal validation remains the final step and is environment-limited (no MetaEditor/MT5
+  on Linux).
 
 ## Next action
 
-1. To continue, either promote the next canonical deferred phase via a `DECISIONS.md` entry, or
-   compile the MQL5 EA in MetaEditor on a Windows host and test real terminal connectivity.
+1. Implement canonical Phases 5–11 sequentially with real tests, updating the control plane per wave.
 2. Preserve implementation + state in Git after each wave.
+3. Perform final MT5 validation last (demo/shadow only) if a MetaEditor/MT5 environment is available.
 
 ## Update rule
 

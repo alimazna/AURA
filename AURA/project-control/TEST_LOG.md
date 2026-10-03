@@ -488,6 +488,42 @@ are UNPROVEN. Live trading is NOT enabled. Compilation and structural checks sup
 architectural correctness; no profitability, calibration, broker-validation or production-safety
 claim is made.
 
+
+## 2026-10-02 - Canonical Phase 3 (Self-Learning) + Phase 4 (Research Plane)
+
+Toolchain: `g++ (Debian 14.2.0-19) 14.2.0`, `-std=c++17` and `-std=c++20`,
+`-Wall -Wextra -Werror -pedantic`. Python 3 static audits.
+
+Promotion: canonical Phases 3-11 were promoted into active scope by the `DECISIONS.md` entry
+"2026-10-02 - Session authorization: promote canonical Phases 3-11 into active scope".
+
+Phase 3 (Self-Learning, `src/learning/`): KnowledgeObject, KnowledgeStore, KnowledgeLifecycle,
+ContextLearning, ContradictionEngine, KnowledgeDecay, FailureMemory, LearningTests.
+- Build/test: `g++ -std=<std> -Wall -Wextra -Werror -pedantic -I src src/learning/LearningTests.cpp
+  src/foundation/Hasher.cpp -o t && ./t` -> PASS c++17/c++20.
+- Proven: point-in-time consistency (assessment cannot precede observation; future evidence
+  rejected); versioned append-only store (no silent overwrite, no rewind, idempotent, conflicting
+  revision rejected, history retained); explicit lifecycle only; context learning excludes
+  observations whose outcome postdates the assessment and counts the exclusion (no future-label
+  leakage); contradiction preserved as a first-class object with order-independent identity;
+  decay/revalidation never erases; failure memory excludes not-yet-known outcomes and aggregates
+  deterministically.
+
+Phase 4 (Research Plane, `src/research/`): Hypothesis, Experiment, ExperimentFingerprint,
+ResearchBudget, ExperimentLedger, ResearchPlanner, ResearchSandbox, ResearchTests.
+- Build/test: `g++ -std=<std> ... src/research/ResearchTests.cpp src/foundation/Hasher.cpp` -> PASS
+  c++17/c++20.
+- Proven: falsifiability mandatory; fingerprint deterministic, ignores transient fields
+  (timestamp/result), changes with identity-relevant fields; append-only ledger with idempotent
+  re-record, duplicate-fingerprint detection, failed experiments retained; budget GREEN/YELLOW/RED/
+  FROZEN with no overspend/partial spend; validation protocol fixed before evaluation and immutable
+  within a family; sandbox never mutates runtime and admits only recorded hypotheses with a fixed plan.
+
+Header self-containment + combined TU verified for all Phase 3/4 headers under both standards.
+Interpretation: Phase 3 and 4 satisfy their V3-40 capability sets to the statically verified,
+behaviourally tested level. No live path; no profitability/calibration claim; research cannot mutate
+runtime.
+
 ## Future test entry format
 
 - Date

@@ -1,7 +1,9 @@
 project: AURA
 manifest_version: 2
 generated_by: TASK-MANIFEST-001
-repository_layout_note: The GitHub repository alimazna/AURA intentionally nests the project under the AURA/ directory. All paths in this manifest are relative to the AURA project root (i.e. AURA/ from the repository root).
+repository_layout_note: The GitHub repository alimazna/AURA intentionally nests the project under the
+  AURA/ directory. All paths in this manifest are relative to the AURA project root (i.e. AURA/ from the
+  repository root).
 authority:
   architecture: docs/AURA_MASTER_UNIFIED_PROJECT_v3.0.md
   scope: project-control/IMPLEMENTATION_SCOPE.md
@@ -26,8 +28,11 @@ authority_class_enum:
 - PROJECT DECISION
 - PROPOSED
 - OPEN DECISION
-path_status_note: Phase 0 filenames are from V3-42 (CANONICAL decomposition). Phase 0.5/1/2 filenames and src/ layout are PROPOSED implementation decomposition and are subject to integration review (V3-16, V3-46). They must not be treated as canonical architecture.
-current_task: "Conceptual Phase 3/4/5 VERIFIED and MT5 one-EA/nine-stream boundary IMPLEMENTED (MQL5 static + C++ tests). Next: canonical manifest Phases 3-11 remain DEFERRED; promotion requires a DECISIONS.md entry."
+path_status_note: Phase 0 filenames are from V3-42 (CANONICAL decomposition). Phase 0.5/1/2 filenames
+  and src/ layout are PROPOSED implementation decomposition and are subject to integration review (V3-16,
+  V3-46). They must not be treated as canonical architecture.
+current_task: Canonical Phases 3-4 implemented (src/learning, src/research) and APPROVED; Phases 5-11
+  promoted by DECISIONS.md 2026-10-02 and in progress.
 tasks:
 - id: TASK-BOOTSTRAP-001
   phase: BOOTSTRAP
@@ -38,8 +43,10 @@ tasks:
   output: project-control/
   dependencies:
   - docs/AURA_MASTER_UNIFIED_PROJECT_v3.0.md
-  objective: Establish persistent project memory and execution control artifacts so different AI agents can resume without chat history.
-  acceptance: Master document present; scope separated from architecture; current state recorded; handoff/test/decision/blocker files exist; no application source changed.
+  objective: Establish persistent project memory and execution control artifacts so different AI agents
+    can resume without chat history.
+  acceptance: Master document present; scope separated from architecture; current state recorded; handoff/test/decision/blocker
+    files exist; no application source changed.
 - id: TASK-MANIFEST-001
   phase: BOOTSTRAP
   module: PROJECT_CONTROL
@@ -52,8 +59,10 @@ tasks:
   - docs/AURA_MASTER_UNIFIED_PROJECT_v3.0.md
   - project-control/IMPLEMENTATION_SCOPE.md
   - project-control/PROJECT_STATE.md
-  objective: Inspect the Master and repository and create the detailed file-level implementation task graph for the active scope.
-  acceptance: Required dependencies explicit; deferred Master features visible as DEFERRED; each source task has one output path; no task silently changes architectural authority.
+  objective: Inspect the Master and repository and create the detailed file-level implementation task
+    graph for the active scope.
+  acceptance: Required dependencies explicit; deferred Master features visible as DEFERRED; each source
+    task has one output path; no task silently changes architectural authority.
 - id: FND-0001
   phase: '0'
   module: FOUNDATION
@@ -63,8 +72,13 @@ tasks:
   output: src/foundation/EntityId.h
   dependencies: []
   objective: Define the immutable, strongly-typed entity identifier used to name every persistent object.
-  acceptance: Immutable value type; validated non-empty identity; deterministic equality/hashing; no higher-layer dependency.
-  evidence: 'Implemented AURA/src/foundation/EntityId.h. Compiled clean under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; standalone-include self-containment check passed; runtime structural assertions (validity, deterministic equality/inequality, deterministic hashing, ordering, hash-container key use, copy) passed. Details in TEST_LOG.md. Compilation and these structural checks do not prove architectural or trading correctness.
+  acceptance: Immutable value type; validated non-empty identity; deterministic equality/hashing; no higher-layer
+    dependency.
+  evidence: 'Implemented AURA/src/foundation/EntityId.h. Compiled clean under g++ -std=c++17 and -std=c++20
+    with -Wall -Wextra -Werror -pedantic; standalone-include self-containment check passed; runtime structural
+    assertions (validity, deterministic equality/inequality, deterministic hashing, ordering, hash-container
+    key use, copy) passed. Details in TEST_LOG.md. Compilation and these structural checks do not prove
+    architectural or trading correctness.
 
     '
 - id: FND-0002
@@ -76,8 +90,14 @@ tasks:
   output: src/foundation/Timestamp.h
   dependencies: []
   objective: Define the immutable timestamp value type and temporal-unit semantics used across the system.
-  acceptance: Immutable; ordering-safe; explicit unit; no implicit wall-clock float conversion; deterministic comparison.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
+  acceptance: Immutable; ordering-safe; explicit unit; no implicit wall-clock float conversion; deterministic
+    comparison.
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical
+    Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard,
+    determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled
+    alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra
+    -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden
+    higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: FND-0003
   phase: '0'
   module: FOUNDATION
@@ -88,7 +108,12 @@ tasks:
   dependencies: []
   objective: Define the immutable version identifier used for configuration, strategy, and schema versioning.
   acceptance: Comparable and immutable; ordering supported; stable serialization; usable for provenance.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical
+    Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard,
+    determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled
+    alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra
+    -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden
+    higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: FND-0004
   phase: '0'
   module: FOUNDATION
@@ -99,7 +124,12 @@ tasks:
   dependencies: []
   objective: Define the canonical service/subsystem state enumeration (STARTING/ONLINE/DEGRADED/OFFLINE/RECOVERING/PAUSED/BLOCKED/ERROR).
   acceptance: Matches V3-14 exactly; no values merged or renamed; UNKNOWN not treated as safe.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical
+    Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard,
+    determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled
+    alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra
+    -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden
+    higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: FND-0005
   phase: '0'
   module: FOUNDATION
@@ -109,8 +139,14 @@ tasks:
   output: src/foundation/SystemMode.h
   dependencies: []
   objective: Define the canonical system operating mode enumeration (STARTING/RECOVERY/NORMAL/DEGRADED/SHADOW/PAUSED/MANUAL/EMERGENCY/HALTED).
-  acceptance: Matches V3-14 exactly; kept distinct from ServiceState; SHADOW representable as primary mode.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
+  acceptance: Matches V3-14 exactly; kept distinct from ServiceState; SHADOW representable as primary
+    mode.
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical
+    Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard,
+    determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled
+    alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra
+    -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden
+    higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: FND-0006
   phase: '0'
   module: FOUNDATION
@@ -119,9 +155,15 @@ tasks:
   status: APPROVED
   output: src/foundation/HashDigest.h
   dependencies: []
-  objective: Define the immutable hash digest value type used for integrity, provenance, and identity hashing.
+  objective: Define the immutable hash digest value type used for integrity, provenance, and identity
+    hashing.
   acceptance: Immutable; deterministic equality; no dependency on a concrete hasher.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical
+    Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard,
+    determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled
+    alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra
+    -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden
+    higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: FND-0007
   phase: '0'
   module: FOUNDATION
@@ -132,7 +174,12 @@ tasks:
   dependencies: []
   objective: Define the canonical data-quality state enumeration (VALID/DEGRADED/INVALID/UNKNOWN/STALE/MISSING/OUT_OF_ORDER/DUPLICATE/INCOMPLETE).
   acceptance: Matches V3-25 exactly; UNKNOWN not a neutral success; usable for capability gating.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical
+    Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard,
+    determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled
+    alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra
+    -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden
+    higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: FND-0008
   phase: '0'
   module: FOUNDATION
@@ -144,7 +191,12 @@ tasks:
   - FND-0003
   objective: Define the immutable protocol version identifier for the message boundary.
   acceptance: Immutable and comparable; used by MessageMetadata; no payload-type dependency.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical
+    Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard,
+    determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled
+    alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra
+    -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden
+    higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: FND-0009
   phase: '0'
   module: FOUNDATION
@@ -156,7 +208,12 @@ tasks:
   - FND-0003
   objective: Define the immutable schema version identifier for events, messages, and persisted records.
   acceptance: Immutable and comparable; supports schema-evolution checks.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical
+    Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard,
+    determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled
+    alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra
+    -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden
+    higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: FND-0012
   phase: '0'
   module: FOUNDATION
@@ -167,7 +224,12 @@ tasks:
   dependencies: []
   objective: Define the canonical event-type enumeration/identifier for the event boundary.
   acceptance: Stable identifiers; extensible without renumbering; no payload-type dependency.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical
+    Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard,
+    determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled
+    alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra
+    -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden
+    higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: FND-0014
   phase: '0'
   module: FOUNDATION
@@ -178,7 +240,12 @@ tasks:
   dependencies: []
   objective: Define the canonical error severity enumeration for structured error records.
   acceptance: Closed, ordered enumeration; used by ErrorRecord; no stringly-typed severity.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical
+    Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard,
+    determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled
+    alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra
+    -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden
+    higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: FND-0017
   phase: '0'
   module: FOUNDATION
@@ -188,8 +255,14 @@ tasks:
   output: src/foundation/RecoveryAction.h
   dependencies: []
   objective: Define the recovery-action descriptor type referenced by structured error records.
-  acceptance: Explicit semantics; UNKNOWN recovery representable but not treated as safe; no Guardian runtime dependency.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
+  acceptance: Explicit semantics; UNKNOWN recovery representable but not treated as safe; no Guardian
+    runtime dependency.
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical
+    Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard,
+    determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled
+    alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra
+    -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden
+    higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: FND-0011
   phase: '0'
   module: FOUNDATION
@@ -201,7 +274,12 @@ tasks:
   - FND-0001
   objective: Define the deterministic event identifier derived from entity identity.
   acceptance: Deterministic given inputs; depends only on EntityId; immutable; stable serialization.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical
+    Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard,
+    determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled
+    alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra
+    -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden
+    higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: FND-0010
   phase: '0'
   module: FOUNDATION
@@ -215,9 +293,15 @@ tasks:
   - FND-0006
   - FND-0008
   - FND-0009
-  objective: Define the message metadata contract (protocol_version, schema_version, message_id, timestamp, source, destination, payload, checksum/hash where appropriate).
+  objective: Define the message metadata contract (protocol_version, schema_version, message_id, timestamp,
+    source, destination, payload, checksum/hash where appropriate).
   acceptance: Fields match V3-23; immutable carrier; checksum/hash uses HashDigest; no payload interpretation.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical
+    Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard,
+    determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled
+    alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra
+    -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden
+    higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: FND-0013
   phase: '0'
   module: FOUNDATION
@@ -231,9 +315,16 @@ tasks:
   - FND-0009
   - FND-0011
   - FND-0012
-  objective: Define the event metadata contract (event_id, event_type, symbol, source, source_instance, event_time, receive_time, sequence_id, schema_version).
-  acceptance: Fields match V3-23 exactly; event_time and receive_time distinct; sequence_id supports ordering; immutable.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
+  objective: Define the event metadata contract (event_id, event_type, symbol, source, source_instance,
+    event_time, receive_time, sequence_id, schema_version).
+  acceptance: Fields match V3-23 exactly; event_time and receive_time distinct; sequence_id supports ordering;
+    immutable.
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical
+    Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard,
+    determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled
+    alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra
+    -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden
+    higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: FND-0015
   phase: '0'
   module: FOUNDATION
@@ -243,8 +334,14 @@ tasks:
   output: src/foundation/ErrorCode.h
   dependencies: []
   objective: Define the ErrorCode contract/taxonomy for structured errors.
-  acceptance: "Closed enum class of exactly the 13 V3 section 113 ERROR categories, explicit stable numeric identity independent of compiler ordering, no UNKNOWN/OTHER, no embedded severity, no serialization; self-contained, deterministic, C++17."
-  evidence: "Implemented and reviewed 2026-10-02. Enum class ErrorCode : uint8_t with explicit values 1..13 in V3-113 order; to_string() returns canonical labels. Self-contained standalone TU and full Phase 0 harness pass under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exact values asserted. V3-45 OPEN DECISION resolved by the human decision recorded in DECISIONS.md (2026-10-02). Phase 0 integration gate (2026-10-02): APPROVED; compilation alone does not prove architectural correctness."
+  acceptance: Closed enum class of exactly the 13 V3 section 113 ERROR categories, explicit stable numeric
+    identity independent of compiler ordering, no UNKNOWN/OTHER, no embedded severity, no serialization;
+    self-contained, deterministic, C++17.
+  evidence: 'Implemented and reviewed 2026-10-02. Enum class ErrorCode : uint8_t with explicit values
+    1..13 in V3-113 order; to_string() returns canonical labels. Self-contained standalone TU and full
+    Phase 0 harness pass under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exact
+    values asserted. V3-45 OPEN DECISION resolved by the human decision recorded in DECISIONS.md (2026-10-02).
+    Phase 0 integration gate (2026-10-02): APPROVED; compilation alone does not prove architectural correctness.'
 - id: FND-0016
   phase: '0'
   module: FOUNDATION
@@ -259,9 +356,17 @@ tasks:
   - FND-0014
   - FND-0015
   - FND-0017
-  objective: Define the structured error record (error_id, component, severity, timestamp, state, message, context, recovery_action).
-  acceptance: "Exact eight-field V3-27 error shape (error_id, component, severity, timestamp, state, message, context, recovery_action); value/contract type only; depends only on frozen foundation contracts; self-contained, deterministic, C++17."
-  evidence: "Implemented and reviewed 2026-10-02. Immutable ErrorRecord value type carrying exactly the eight V3-27 fields; no logging/recovery/retry/evaluation/serialization/persistence/networking. Includes only EntityId, ErrorCode, ErrorSeverity, RecoveryAction, ServiceState, Timestamp (all lower-layer). Self-contained standalone TU and structural harness pass under g++ -std=c++17 and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic. Phase 0 integration gate (2026-10-02): APPROVED; compilation alone does not prove architectural correctness."
+  objective: Define the structured error record (error_id, component, severity, timestamp, state, message,
+    context, recovery_action).
+  acceptance: Exact eight-field V3-27 error shape (error_id, component, severity, timestamp, state, message,
+    context, recovery_action); value/contract type only; depends only on frozen foundation contracts;
+    self-contained, deterministic, C++17.
+  evidence: 'Implemented and reviewed 2026-10-02. Immutable ErrorRecord value type carrying exactly the
+    eight V3-27 fields; no logging/recovery/retry/evaluation/serialization/persistence/networking. Includes
+    only EntityId, ErrorCode, ErrorSeverity, RecoveryAction, ServiceState, Timestamp (all lower-layer).
+    Self-contained standalone TU and structural harness pass under g++ -std=c++17 and g++ -std=c++20 with
+    -Wall -Wextra -Werror -pedantic. Phase 0 integration gate (2026-10-02): APPROVED; compilation alone
+    does not prove architectural correctness.'
 - id: CFG-0001
   phase: '0'
   module: FOUNDATION
@@ -271,8 +376,14 @@ tasks:
   output: src/foundation/ConfigurationKey.h
   dependencies: []
   objective: Define the configuration key type for versioned configuration.
-  acceptance: Stable, immutable key type; final type system not inferred until the contract is frozen (V3-44).
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
+  acceptance: Stable, immutable key type; final type system not inferred until the contract is frozen
+    (V3-44).
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical
+    Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard,
+    determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled
+    alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra
+    -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden
+    higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: CFG-0002
   phase: '0'
   module: FOUNDATION
@@ -283,7 +394,12 @@ tasks:
   dependencies: []
   objective: Define the configuration value type for versioned configuration.
   acceptance: Explicit, versionable value type; no silent mutation; contract not inferred (V3-44).
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical
+    Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard,
+    determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled
+    alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra
+    -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden
+    higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: CFG-0003
   phase: '0'
   module: FOUNDATION
@@ -298,7 +414,12 @@ tasks:
   - FND-0003
   objective: Define the immutable configuration snapshot carrying a configuration version.
   acceptance: Immutable and versioned; supports decision provenance; no silent mutation.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical
+    Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard,
+    determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled
+    alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra
+    -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden
+    higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: CFG-0004
   phase: '0'
   module: FOUNDATION
@@ -309,7 +430,12 @@ tasks:
   dependencies: []
   objective: Define runtime-vs-research configuration scope separation.
   acceptance: Scope distinguishes runtime and research configuration (V3-26); no implicit merging.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical
+    Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard,
+    determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled
+    alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra
+    -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden
+    higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: CFG-0005
   phase: '0'
   module: FOUNDATION
@@ -323,7 +449,12 @@ tasks:
   - FND-0002
   objective: Define the configuration change record for auditable configuration mutation.
   acceptance: Change recorded, attributed, versioned; no silent configuration mutation (V3-26).
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical
+    Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard,
+    determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled
+    alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra
+    -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden
+    higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: AUD-0001
   phase: '0'
   module: FOUNDATION
@@ -334,7 +465,12 @@ tasks:
   dependencies: []
   objective: Define the audited action enumeration/identifier.
   acceptance: Stable action identifiers; append-only usage; no rewrite semantics.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical
+    Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard,
+    determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled
+    alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra
+    -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden
+    higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: AUD-0002
   phase: '0'
   module: FOUNDATION
@@ -345,7 +481,12 @@ tasks:
   dependencies: []
   objective: Define the audited outcome enumeration.
   acceptance: Outcomes include failed/rejected states as first-class values (V3-27).
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical
+    Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard,
+    determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled
+    alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra
+    -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden
+    higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: AUD-0003
   phase: '0'
   module: FOUNDATION
@@ -359,8 +500,14 @@ tasks:
   - FND-0001
   - FND-0002
   objective: Define the append-only audit record.
-  acceptance: Append-only, attributable; carries timestamp and actor/component context; no in-place history rewrite.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
+  acceptance: Append-only, attributable; carries timestamp and actor/component context; no in-place history
+    rewrite.
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical
+    Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard,
+    determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled
+    alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra
+    -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden
+    higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: INT-0001
   phase: '0'
   module: FOUNDATION
@@ -370,8 +517,14 @@ tasks:
   output: src/foundation/HashAlgorithm.h
   dependencies: []
   objective: Define the supported hash algorithm identifier enumeration.
-  acceptance: Explicit, versioned algorithm identifiers; unknown algorithm representable and not treated as safe.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
+  acceptance: Explicit, versioned algorithm identifiers; unknown algorithm representable and not treated
+    as safe.
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical
+    Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard,
+    determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled
+    alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra
+    -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden
+    higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: INT-0002
   phase: '0'
   module: FOUNDATION
@@ -384,7 +537,12 @@ tasks:
   - FND-0006
   objective: Define the hasher interface contract returning a HashDigest.
   acceptance: Deterministic, stateless-per-call; no hidden mutable state; returns HashDigest.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical
+    Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard,
+    determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled
+    alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra
+    -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden
+    higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: INT-0003
   phase: '0'
   module: FOUNDATION
@@ -397,8 +555,14 @@ tasks:
   - INT-0002
   - FND-0006
   objective: Implement the deterministic hasher conforming to IHasher.
-  acceptance: Deterministic output for identical input/algorithm; no higher-layer dependency; unit test proves determinism.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
+  acceptance: Deterministic output for identical input/algorithm; no higher-layer dependency; unit test
+    proves determinism.
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical
+    Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard,
+    determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled
+    alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra
+    -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden
+    higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: PER-0001
   phase: '0'
   module: FOUNDATION
@@ -409,7 +573,12 @@ tasks:
   dependencies: []
   objective: Define the persistence status enumeration.
   acceptance: Success/failure/unknown covered and not collapsed; failure is a safety-relevant signal.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical
+    Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard,
+    determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled
+    alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra
+    -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden
+    higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: PER-0002
   phase: '0'
   module: FOUNDATION
@@ -423,7 +592,12 @@ tasks:
   - FND-0009
   objective: Define metadata attached to every persisted record.
   acceptance: Carries identity, schema version, timestamp for auditability.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical
+    Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard,
+    determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled
+    alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra
+    -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden
+    higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: PER-0003
   phase: '0'
   module: FOUNDATION
@@ -438,7 +612,12 @@ tasks:
   - PER-0002
   objective: Define the persistence store interface contract.
   acceptance: Append-oriented, auditable; failure surfaced not swallowed; no higher-layer dependency.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical
+    Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard,
+    determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled
+    alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra
+    -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden
+    higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: PER-0004
   phase: '0'
   module: FOUNDATION
@@ -452,7 +631,13 @@ tasks:
   - PER-0002
   objective: Define the persistence transaction concept for atomic/auditable writes.
   acceptance: Preserves idempotency and auditability; partial failure explicit; no silent data loss.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. Review found an unused include (PersistenceStatus.h) with no usage; removed it. Phase 0 integration gate (2026-10-02): APPROVED.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical
+    Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard,
+    determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled
+    alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra
+    -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden
+    higher-layer dependency found. Review found an unused include (PersistenceStatus.h) with no usage;
+    removed it. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: GDN-0001
   phase: '0'
   module: FOUNDATION
@@ -463,7 +648,12 @@ tasks:
   dependencies: []
   objective: Define the Guardian status enumeration.
   acceptance: Distinguishes normal/safe/halt; Guardian authority not self-granted.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical
+    Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard,
+    determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled
+    alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra
+    -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden
+    higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: GDN-0002
   phase: '0'
   module: FOUNDATION
@@ -473,8 +663,15 @@ tasks:
   output: src/foundation/GuardianPolicy.h
   dependencies: []
   objective: Define the Guardian policy contract.
-  acceptance: Explicit rules; automatic rollback only to approved KNOWN-GOOD state (V3-17); no evolution self-modification.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. Review found an unused include (GuardianStatus.h) with no usage; removed it. Phase 0 integration gate (2026-10-02): APPROVED.'
+  acceptance: Explicit rules; automatic rollback only to approved KNOWN-GOOD state (V3-17); no evolution
+    self-modification.
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical
+    Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard,
+    determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled
+    alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra
+    -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden
+    higher-layer dependency found. Review found an unused include (GuardianStatus.h) with no usage; removed
+    it. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: GDN-0003
   phase: '0'
   module: FOUNDATION
@@ -489,7 +686,12 @@ tasks:
   - GDN-0002
   objective: Define the Guardian interface contract.
   acceptance: Exposes policy evaluation and safe-mode/halt decisions; no self-modification surface.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical
+    Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard,
+    determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled
+    alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra
+    -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden
+    higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: GDN-0004
   phase: '0'
   module: FOUNDATION
@@ -503,7 +705,12 @@ tasks:
   - GDN-0003
   objective: Implement the Guardian skeleton conforming to IGuardian.
   acceptance: Skeleton only; no autonomous authority escalation; deterministic and testable.
-  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard, determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
+  evidence: 'Phase 0 review/integration (2026-10-02): reviewed against the task acceptance, canonical
+    Master V3 sections, declared dependencies, namespace/include correctness, supported C++ standard,
+    determinism, ownership boundaries and dependency direction. Result: header is self-contained (compiled
+    alone) and the full runtime harness passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra
+    -Werror -pedantic; include graph is acyclic and lower-layer only; no future-phase behaviour or hidden
+    higher-layer dependency found. No defect found. Phase 0 integration gate (2026-10-02): APPROVED.'
 - id: RS-0001
   phase: '0.5'
   module: RESILIENCE
@@ -515,7 +722,15 @@ tasks:
   - FND-0004
   objective: Define the descriptor of a supervised service/subsystem.
   acceptance: Describes identity and state vocabulary; consistent with ServiceState; no runtime behaviour.
-  evidence: 'Implemented and reviewed 2026-10-02. Immutable ServiceDescriptor value type in namespace aura::resilience; identity is a non-empty stable name (empty name yields the invalid default) and it carries a foundation::ServiceState default_state; explicit constructor, no implicit string conversion, no mutator. Includes only foundation/ServiceState.h (FND-0004) plus std headers; no EntityId, no higher-layer dependency, no runtime behaviour. Self-contained standalone TU and structural harness pass under g++ -std=c++17 and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic; deterministic equality/ordering/hashing verified; usable as unordered_set/set key; all 8 canonical ServiceState values representable; include graph acyclic; combined all-headers TU compiles. Reviewed against V3-13/V3-15/V3-16/V3-40/V3-46/V3-49 and the RS-0001 acceptance. Classified APPROVED; compilation alone does not prove architectural correctness.'
+  evidence: Implemented and reviewed 2026-10-02. Immutable ServiceDescriptor value type in namespace aura::resilience;
+    identity is a non-empty stable name (empty name yields the invalid default) and it carries a foundation::ServiceState
+    default_state; explicit constructor, no implicit string conversion, no mutator. Includes only foundation/ServiceState.h
+    (FND-0004) plus std headers; no EntityId, no higher-layer dependency, no runtime behaviour. Self-contained
+    standalone TU and structural harness pass under g++ -std=c++17 and g++ -std=c++20 with -Wall -Wextra
+    -Werror -pedantic; deterministic equality/ordering/hashing verified; usable as unordered_set/set key;
+    all 8 canonical ServiceState values representable; include graph acyclic; combined all-headers TU
+    compiles. Reviewed against V3-13/V3-15/V3-16/V3-40/V3-46/V3-49 and the RS-0001 acceptance. Classified
+    APPROVED; compilation alone does not prove architectural correctness.
 - id: RS-0002
   phase: '0.5'
   module: RESILIENCE
@@ -527,7 +742,11 @@ tasks:
   - FND-0001
   objective: Define the identifier for a capability exposed to the dependency graph.
   acceptance: Stable identity; immutable; reusable across registry and impact resolution.
-  evidence: 'Implemented and reviewed 2026-10-02. Distinct CapabilityId over EntityId; stable immutable identity. Verified: self-contained standalone TU and combined all-headers TU pass under g++ -std=c++17 and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph acyclic and foundation/resilience-only; no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16; classified APPROVED. Compilation alone does not prove architectural correctness.'
+  evidence: 'Implemented and reviewed 2026-10-02. Distinct CapabilityId over EntityId; stable immutable
+    identity. Verified: self-contained standalone TU and combined all-headers TU pass under g++ -std=c++17
+    and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph acyclic and foundation/resilience-only;
+    no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16; classified APPROVED. Compilation
+    alone does not prove architectural correctness.'
 - id: RS-0003
   phase: '0.5'
   module: RESILIENCE
@@ -540,7 +759,11 @@ tasks:
   - RS-0002
   objective: Define the descriptor of a capability and its owning service.
   acceptance: Binds capability to service; explicit criticality reference; no hidden defaults.
-  evidence: 'Implemented and reviewed 2026-10-02. Binds a capability to its owning ServiceDescriptor; explicit, no hidden defaults. Verified: self-contained standalone TU and combined all-headers TU pass under g++ -std=c++17 and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph acyclic and foundation/resilience-only; no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16; classified APPROVED. Compilation alone does not prove architectural correctness.'
+  evidence: 'Implemented and reviewed 2026-10-02. Binds a capability to its owning ServiceDescriptor;
+    explicit, no hidden defaults. Verified: self-contained standalone TU and combined all-headers TU pass
+    under g++ -std=c++17 and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph acyclic
+    and foundation/resilience-only; no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16;
+    classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RS-0004
   phase: '0.5'
   module: RESILIENCE
@@ -552,7 +775,11 @@ tasks:
   - RS-0002
   objective: Define a directed capability dependency edge.
   acceptance: Encodes direction explicitly; supports cycle detection; no implicit dependencies.
-  evidence: 'Implemented and reviewed 2026-10-02. Directed capability dependency edge; self-edges rejected. Verified: self-contained standalone TU and combined all-headers TU pass under g++ -std=c++17 and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph acyclic and foundation/resilience-only; no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16; classified APPROVED. Compilation alone does not prove architectural correctness.'
+  evidence: 'Implemented and reviewed 2026-10-02. Directed capability dependency edge; self-edges rejected.
+    Verified: self-contained standalone TU and combined all-headers TU pass under g++ -std=c++17 and g++
+    -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph acyclic and foundation/resilience-only;
+    no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16; classified APPROVED. Compilation
+    alone does not prove architectural correctness.'
 - id: RS-0005
   phase: '0.5'
   module: RESILIENCE
@@ -566,7 +793,11 @@ tasks:
   - FND-0004
   objective: Define the immutable health snapshot for a service/capability.
   acceptance: Immutable, timestamped; carries state and reason; UNKNOWN not treated as safe.
-  evidence: 'Implemented and reviewed 2026-10-02. Immutable timestamped health snapshot; UNKNOWN/non-ONLINE not safe. Verified: self-contained standalone TU and combined all-headers TU pass under g++ -std=c++17 and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph acyclic and foundation/resilience-only; no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16; classified APPROVED. Compilation alone does not prove architectural correctness.'
+  evidence: 'Implemented and reviewed 2026-10-02. Immutable timestamped health snapshot; UNKNOWN/non-ONLINE
+    not safe. Verified: self-contained standalone TU and combined all-headers TU pass under g++ -std=c++17
+    and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph acyclic and foundation/resilience-only;
+    no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16; classified APPROVED. Compilation
+    alone does not prove architectural correctness.'
 - id: RS-0006
   phase: '0.5'
   module: RESILIENCE
@@ -578,7 +809,11 @@ tasks:
   - FND-0002
   objective: Define the data-freshness state concept.
   acceptance: Distinguishes fresh/stale/unknown; no fabricated freshness.
-  evidence: 'Implemented and reviewed 2026-10-02. FreshnessState + pure deterministic classify_freshness; no clock, no fabricated freshness. Verified: self-contained standalone TU and combined all-headers TU pass under g++ -std=c++17 and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph acyclic and foundation/resilience-only; no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16; classified APPROVED. Compilation alone does not prove architectural correctness.'
+  evidence: 'Implemented and reviewed 2026-10-02. FreshnessState + pure deterministic classify_freshness;
+    no clock, no fabricated freshness. Verified: self-contained standalone TU and combined all-headers
+    TU pass under g++ -std=c++17 and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph
+    acyclic and foundation/resilience-only; no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16;
+    classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RS-0007
   phase: '0.5'
   module: RESILIENCE
@@ -590,7 +825,11 @@ tasks:
   - RS-0002
   objective: Define the impact of a capability degradation.
   acceptance: Explicitly lists affected and still-available capabilities; no implied UI-only behaviour.
-  evidence: 'Implemented and reviewed 2026-10-02. Explicit affected vs still-available capability sets. Verified: self-contained standalone TU and combined all-headers TU pass under g++ -std=c++17 and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph acyclic and foundation/resilience-only; no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16; classified APPROVED. Compilation alone does not prove architectural correctness.'
+  evidence: 'Implemented and reviewed 2026-10-02. Explicit affected vs still-available capability sets.
+    Verified: self-contained standalone TU and combined all-headers TU pass under g++ -std=c++17 and g++
+    -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph acyclic and foundation/resilience-only;
+    no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16; classified APPROVED. Compilation
+    alone does not prove architectural correctness.'
 - id: RS-0008
   phase: '0.5'
   module: RESILIENCE
@@ -602,7 +841,11 @@ tasks:
   - RS-0003
   objective: Define the critical-vs-non-critical capability policy.
   acceptance: Explicit classification; no silent default; supports isolation decisions.
-  evidence: 'Implemented and reviewed 2026-10-02. Explicit closed Criticality classification; UNCLASSIFIED never a silent default. Verified: self-contained standalone TU and combined all-headers TU pass under g++ -std=c++17 and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph acyclic and foundation/resilience-only; no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16; classified APPROVED. Compilation alone does not prove architectural correctness.'
+  evidence: 'Implemented and reviewed 2026-10-02. Explicit closed Criticality classification; UNCLASSIFIED
+    never a silent default. Verified: self-contained standalone TU and combined all-headers TU pass under
+    g++ -std=c++17 and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph acyclic and
+    foundation/resilience-only; no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16;
+    classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RS-0009
   phase: '0.5'
   module: RESILIENCE
@@ -615,7 +858,11 @@ tasks:
   - RS-0004
   objective: Define the registry of capabilities and their dependencies.
   acceptance: Single source of capability metadata; deterministic lookup; no duplicate capability ids.
-  evidence: 'Implemented and reviewed 2026-10-02. Single source of capability metadata; duplicate/unregistered rejected; deterministic lookup. Verified: self-contained standalone TU and combined all-headers TU pass under g++ -std=c++17 and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph acyclic and foundation/resilience-only; no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16; classified APPROVED. Compilation alone does not prove architectural correctness.'
+  evidence: 'Implemented and reviewed 2026-10-02. Single source of capability metadata; duplicate/unregistered
+    rejected; deterministic lookup. Verified: self-contained standalone TU and combined all-headers TU
+    pass under g++ -std=c++17 and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph acyclic
+    and foundation/resilience-only; no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16;
+    classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RS-0010
   phase: '0.5'
   module: RESILIENCE
@@ -626,8 +873,13 @@ tasks:
   dependencies:
   - RS-0004
   objective: Define the capability dependency graph used for impact resolution.
-  acceptance: Deterministic traversal; cycle-safe; encodes the capability dependency graph rather than implying it (V3-15).
-  evidence: 'Implemented and reviewed 2026-10-02. Explicit directed dependency graph; deterministic traversal; cycle-safe. Verified: self-contained standalone TU and combined all-headers TU pass under g++ -std=c++17 and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph acyclic and foundation/resilience-only; no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16; classified APPROVED. Compilation alone does not prove architectural correctness.'
+  acceptance: Deterministic traversal; cycle-safe; encodes the capability dependency graph rather than
+    implying it (V3-15).
+  evidence: 'Implemented and reviewed 2026-10-02. Explicit directed dependency graph; deterministic traversal;
+    cycle-safe. Verified: self-contained standalone TU and combined all-headers TU pass under g++ -std=c++17
+    and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph acyclic and foundation/resilience-only;
+    no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16; classified APPROVED. Compilation
+    alone does not prove architectural correctness.'
 - id: RS-0011
   phase: '0.5'
   module: RESILIENCE
@@ -641,7 +893,11 @@ tasks:
   - RS-0010
   objective: Define the engine that derives aggregate health state from service health.
   acceptance: Deterministic aggregation; propagates dependency failure; no fabricated healthy state.
-  evidence: 'Implemented and reviewed 2026-10-02. Deterministic aggregate health; propagates dependency failure; never fabricates ONLINE. Verified: self-contained standalone TU and combined all-headers TU pass under g++ -std=c++17 and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph acyclic and foundation/resilience-only; no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16; classified APPROVED. Compilation alone does not prove architectural correctness.'
+  evidence: 'Implemented and reviewed 2026-10-02. Deterministic aggregate health; propagates dependency
+    failure; never fabricates ONLINE. Verified: self-contained standalone TU and combined all-headers
+    TU pass under g++ -std=c++17 and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph
+    acyclic and foundation/resilience-only; no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16;
+    classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RS-0012
   phase: '0.5'
   module: RESILIENCE
@@ -654,7 +910,11 @@ tasks:
   - FND-0002
   objective: Define the monitor that evaluates data freshness.
   acceptance: Deterministic; distinguishes stale vs fresh vs unknown; no lookahead.
-  evidence: 'Implemented and reviewed 2026-10-02. Deterministic freshness monitor; caller supplies times; no lookahead. Verified: self-contained standalone TU and combined all-headers TU pass under g++ -std=c++17 and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph acyclic and foundation/resilience-only; no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16; classified APPROVED. Compilation alone does not prove architectural correctness.'
+  evidence: 'Implemented and reviewed 2026-10-02. Deterministic freshness monitor; caller supplies times;
+    no lookahead. Verified: self-contained standalone TU and combined all-headers TU pass under g++ -std=c++17
+    and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph acyclic and foundation/resilience-only;
+    no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16; classified APPROVED. Compilation
+    alone does not prove architectural correctness.'
 - id: RS-0013
   phase: '0.5'
   module: RESILIENCE
@@ -667,7 +927,11 @@ tasks:
   - FND-0007
   objective: Define the detector for stale candles per timeframe.
   acceptance: Reports the exact stale timeframe; never treats stale data as fresh (V3-13).
-  evidence: 'Implemented and reviewed 2026-10-02. Per-timeframe stale-candle detection; exact timeframe reported; stale never fresh. Verified: self-contained standalone TU and combined all-headers TU pass under g++ -std=c++17 and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph acyclic and foundation/resilience-only; no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16; classified APPROVED. Compilation alone does not prove architectural correctness.'
+  evidence: 'Implemented and reviewed 2026-10-02. Per-timeframe stale-candle detection; exact timeframe
+    reported; stale never fresh. Verified: self-contained standalone TU and combined all-headers TU pass
+    under g++ -std=c++17 and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph acyclic
+    and foundation/resilience-only; no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16;
+    classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RS-0014
   phase: '0.5'
   module: RESILIENCE
@@ -681,7 +945,11 @@ tasks:
   - FND-0004
   objective: Define the manager that isolates a failed subsystem.
   acceptance: Disables only dependent capabilities; keeps safe independent capabilities running (V3-13).
-  evidence: 'Implemented and reviewed 2026-10-02. Disables only dependents; keeps independent capabilities available. Verified: self-contained standalone TU and combined all-headers TU pass under g++ -std=c++17 and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph acyclic and foundation/resilience-only; no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16; classified APPROVED. Compilation alone does not prove architectural correctness.'
+  evidence: 'Implemented and reviewed 2026-10-02. Disables only dependents; keeps independent capabilities
+    available. Verified: self-contained standalone TU and combined all-headers TU pass under g++ -std=c++17
+    and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph acyclic and foundation/resilience-only;
+    no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16; classified APPROVED. Compilation
+    alone does not prove architectural correctness.'
 - id: RS-0015
   phase: '0.5'
   module: RESILIENCE
@@ -696,7 +964,11 @@ tasks:
   - RS-0007
   objective: Define the manager that applies graceful degradation decisions.
   acceptance: Applies policy deterministically; records affected capabilities; never fabricates data.
-  evidence: 'Implemented and reviewed 2026-10-02. Applies criticality + isolation deterministically; records affected; no fabricated data. Verified: self-contained standalone TU and combined all-headers TU pass under g++ -std=c++17 and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph acyclic and foundation/resilience-only; no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16; classified APPROVED. Compilation alone does not prove architectural correctness.'
+  evidence: 'Implemented and reviewed 2026-10-02. Applies criticality + isolation deterministically; records
+    affected; no fabricated data. Verified: self-contained standalone TU and combined all-headers TU pass
+    under g++ -std=c++17 and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph acyclic
+    and foundation/resilience-only; no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16;
+    classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RS-0016
   phase: '0.5'
   module: RESILIENCE
@@ -710,7 +982,11 @@ tasks:
   - FND-0017
   objective: Define the manager that recovers subsystems when possible.
   acceptance: Recovery prefers known-valid state; recovery result is auditable.
-  evidence: 'Implemented and reviewed 2026-10-02. Recovery prefers known-valid state; unrecoverable escalates; auditable decision. Verified: self-contained standalone TU and combined all-headers TU pass under g++ -std=c++17 and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph acyclic and foundation/resilience-only; no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16; classified APPROVED. Compilation alone does not prove architectural correctness.'
+  evidence: 'Implemented and reviewed 2026-10-02. Recovery prefers known-valid state; unrecoverable escalates;
+    auditable decision. Verified: self-contained standalone TU and combined all-headers TU pass under
+    g++ -std=c++17 and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph acyclic and
+    foundation/resilience-only; no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16;
+    classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RS-0017
   phase: '0.5'
   module: RESILIENCE
@@ -724,7 +1000,11 @@ tasks:
   - FND-0005
   objective: Define the pause/resume manager for subsystems.
   acceptance: Pause/resume bounded by authority; UI can report what paused and why (V3-15).
-  evidence: 'Implemented and reviewed 2026-10-02. Pause/resume bounded by authority; reason required; paused != failed. Verified: self-contained standalone TU and combined all-headers TU pass under g++ -std=c++17 and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph acyclic and foundation/resilience-only; no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16; classified APPROVED. Compilation alone does not prove architectural correctness.'
+  evidence: 'Implemented and reviewed 2026-10-02. Pause/resume bounded by authority; reason required;
+    paused != failed. Verified: self-contained standalone TU and combined all-headers TU pass under g++
+    -std=c++17 and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph acyclic and foundation/resilience-only;
+    no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16; classified APPROVED. Compilation
+    alone does not prove architectural correctness.'
 - id: RS-0018
   phase: '0.5'
   module: RESILIENCE
@@ -737,7 +1017,11 @@ tasks:
   - RS-0010
   objective: Define the resolver that maps failures to capability impact.
   acceptance: Deterministic impact set; exact failed timeframe/capability reported (V3-15).
-  evidence: 'Implemented and reviewed 2026-10-02. Deterministic impact set; exact failed capability reported. Verified: self-contained standalone TU and combined all-headers TU pass under g++ -std=c++17 and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph acyclic and foundation/resilience-only; no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16; classified APPROVED. Compilation alone does not prove architectural correctness.'
+  evidence: 'Implemented and reviewed 2026-10-02. Deterministic impact set; exact failed capability reported.
+    Verified: self-contained standalone TU and combined all-headers TU pass under g++ -std=c++17 and g++
+    -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph acyclic and foundation/resilience-only;
+    no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16; classified APPROVED. Compilation
+    alone does not prove architectural correctness.'
 - id: RS-0019
   phase: '0.5'
   module: RESILIENCE
@@ -752,8 +1036,13 @@ tasks:
   - RS-0017
   - GDN-0003
   objective: Define the supervisor that coordinates health, degradation, recovery, and pause/resume.
-  acceptance: Coordinates without granting new authority; deterministic state transitions; no live-trading enablement.
-  evidence: 'Implemented and reviewed 2026-10-02. Coordinates health/degradation/recovery/pause; consults Guardian; grants no new authority. Verified: self-contained standalone TU and combined all-headers TU pass under g++ -std=c++17 and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph acyclic and foundation/resilience-only; no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16; classified APPROVED. Compilation alone does not prove architectural correctness.'
+  acceptance: Coordinates without granting new authority; deterministic state transitions; no live-trading
+    enablement.
+  evidence: 'Implemented and reviewed 2026-10-02. Coordinates health/degradation/recovery/pause; consults
+    Guardian; grants no new authority. Verified: self-contained standalone TU and combined all-headers
+    TU pass under g++ -std=c++17 and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph
+    acyclic and foundation/resilience-only; no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16;
+    classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RS-0020
   phase: '0.5'
   module: RESILIENCE
@@ -766,8 +1055,13 @@ tasks:
   - RS-0014
   - RS-0013
   objective: Define deterministic tests proving graceful degradation and isolation behaviour.
-  acceptance: Tests prove non-critical failure does not fail the whole system; exact failed timeframe reported; deterministic.
-  evidence: 'Implemented and reviewed 2026-10-02. Behavioural tests prove non-critical isolation, exact stale timeframe, determinism. Verified: self-contained standalone TU and combined all-headers TU pass under g++ -std=c++17 and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph acyclic and foundation/resilience-only; no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16; classified APPROVED. Compilation alone does not prove architectural correctness.'
+  acceptance: Tests prove non-critical failure does not fail the whole system; exact failed timeframe
+    reported; deterministic.
+  evidence: 'Implemented and reviewed 2026-10-02. Behavioural tests prove non-critical isolation, exact
+    stale timeframe, determinism. Verified: self-contained standalone TU and combined all-headers TU pass
+    under g++ -std=c++17 and g++ -std=c++20 with -Wall -Wextra -Werror -pedantic; include graph acyclic
+    and foundation/resilience-only; no duplicate type. Reviewed against the acceptance and V3-13/V3-15/V3-16;
+    classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RT-0001
   phase: '1'
   module: DETERMINISTIC_RUNTIME
@@ -779,8 +1073,16 @@ tasks:
   - RS-0019
   - FND-0010
   objective: Define the MT5/MQL5 adapter manager boundary.
-  acceptance: One physical MT5 EA / one transport carrying nine logically independent timeframe streams (M1,M5,M15,M30,H1,H4,D1,W1,MN1) with explicit timeframe identity per stream; independent per-stream health, closed-bar state, sequence and last-error tracking; one stream failing must not mark others unhealthy and one stream recovering must not overwrite another's state; no positional multiplexing; no fabricated data on failure (V3-29, MT5 one-EA decision).
-  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33; classified APPROVED. Compilation alone does not prove architectural correctness.'
+  acceptance: One physical MT5 EA / one transport carrying nine logically independent timeframe streams
+    (M1,M5,M15,M30,H1,H4,D1,W1,MN1) with explicit timeframe identity per stream; independent per-stream
+    health, closed-bar state, sequence and last-error tracking; one stream failing must not mark others
+    unhealthy and one stream recovering must not overwrite another's state; no positional multiplexing;
+    no fabricated data on failure (V3-29, MT5 one-EA decision).
+  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour
+    type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under
+    g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp
+    (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33;
+    classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RT-0002
   phase: '1'
   module: DETERMINISTIC_RUNTIME
@@ -793,7 +1095,11 @@ tasks:
   - RT-0001
   objective: Define the deterministic C++ data bus for market events.
   acceptance: Event-driven; deterministic ordering; no lookahead; no repaint.
-  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33; classified APPROVED. Compilation alone does not prove architectural correctness.'
+  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour
+    type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under
+    g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp
+    (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33;
+    classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RT-0003
   phase: '1'
   module: DETERMINISTIC_RUNTIME
@@ -806,7 +1112,11 @@ tasks:
   - RT-0002
   objective: Define the data validator that assigns data-quality state.
   acceptance: Quality state propagates into eligibility/gating (V3-25); UNKNOWN not neutral.
-  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33; classified APPROVED. Compilation alone does not prove architectural correctness.'
+  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour
+    type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under
+    g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp
+    (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33;
+    classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RT-0004
   phase: '1'
   module: DETERMINISTIC_RUNTIME
@@ -819,7 +1129,11 @@ tasks:
   - RT-0003
   objective: Define the closed-bar finalizer.
   acceptance: Only closed bars are finalized; no repainting; deterministic bar identity.
-  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33; classified APPROVED. Compilation alone does not prove architectural correctness.'
+  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour
+    type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under
+    g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp
+    (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33;
+    classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RT-0005
   phase: '1'
   module: DETERMINISTIC_RUNTIME
@@ -832,7 +1146,11 @@ tasks:
   - PER-0003
   objective: Define the timeframe state store (last processed bar per timeframe).
   acceptance: Persisted last-processed-bar per timeframe; restart-safe; deterministic.
-  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33; classified APPROVED. Compilation alone does not prove architectural correctness.'
+  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour
+    type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under
+    g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp
+    (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33;
+    classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RT-0006
   phase: '1'
   module: DETERMINISTIC_RUNTIME
@@ -844,7 +1162,11 @@ tasks:
   - RT-0005
   objective: Define the feature engine.
   acceptance: Deterministic features from closed data only; no future information.
-  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33; classified APPROVED. Compilation alone does not prove architectural correctness.'
+  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour
+    type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under
+    g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp
+    (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33;
+    classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RT-0007
   phase: '1'
   module: DETERMINISTIC_RUNTIME
@@ -856,7 +1178,11 @@ tasks:
   - RT-0006
   objective: Define the structure engine (H4 structural context).
   acceptance: H4 structural authority respected; deterministic; no repaint.
-  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33; classified APPROVED. Compilation alone does not prove architectural correctness.'
+  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour
+    type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under
+    g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp
+    (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33;
+    classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RT-0008
   phase: '1'
   module: DETERMINISTIC_RUNTIME
@@ -868,7 +1194,11 @@ tasks:
   - RT-0007
   objective: Define the regime engine.
   acceptance: Regime precedes strategy eligibility (V3-05); deterministic; score is not probability.
-  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33; classified APPROVED. Compilation alone does not prove architectural correctness.'
+  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour
+    type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under
+    g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp
+    (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33;
+    classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RT-0009
   phase: '1'
   module: DETERMINISTIC_RUNTIME
@@ -881,7 +1211,11 @@ tasks:
   - RT-0003
   objective: Define the strategy-eligibility engine.
   acceptance: Eligibility gated by data quality and regime; deterministic.
-  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33; classified APPROVED. Compilation alone does not prove architectural correctness.'
+  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour
+    type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under
+    g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp
+    (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33;
+    classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RT-0010
   phase: '1'
   module: DETERMINISTIC_RUNTIME
@@ -894,7 +1228,11 @@ tasks:
   - RT-0005
   objective: Define the signal engine for the single MVP strategy family.
   acceptance: Signal identity deterministic (DecisionID formula, V3-23); no lookahead; no repaint.
-  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33; classified APPROVED. Compilation alone does not prove architectural correctness.'
+  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour
+    type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under
+    g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp
+    (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33;
+    classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RT-0011
   phase: '1'
   module: DETERMINISTIC_RUNTIME
@@ -906,7 +1244,11 @@ tasks:
   - RT-0010
   objective: Define the score engine.
   acceptance: Score is a deterministic ranking/quality value; never labelled a probability (V3-31).
-  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33; classified APPROVED. Compilation alone does not prove architectural correctness.'
+  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour
+    type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under
+    g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp
+    (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33;
+    classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RT-0012
   phase: '1'
   module: DETERMINISTIC_RUNTIME
@@ -918,7 +1260,11 @@ tasks:
   - RT-0011
   objective: Define the confidence engine.
   acceptance: Confidence is not a guarantee; no calibration claim (V3-31).
-  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33; classified APPROVED. Compilation alone does not prove architectural correctness.'
+  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour
+    type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under
+    g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp
+    (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33;
+    classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RT-0013
   phase: '1'
   module: DETERMINISTIC_RUNTIME
@@ -930,7 +1276,11 @@ tasks:
   - RT-0005
   objective: Define the macro/higher-timeframe context engine.
   acceptance: Higher-timeframe context only; no lookahead.
-  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33; classified APPROVED. Compilation alone does not prove architectural correctness.'
+  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour
+    type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under
+    g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp
+    (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33;
+    classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RT-0014
   phase: '1'
   module: DETERMINISTIC_RUNTIME
@@ -943,7 +1293,11 @@ tasks:
   - RT-0001
   objective: Define the market-quality engine.
   acceptance: Uses observed data-quality state; no fabricated quality.
-  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33; classified APPROVED. Compilation alone does not prove architectural correctness.'
+  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour
+    type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under
+    g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp
+    (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33;
+    classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RT-0015
   phase: '1'
   module: DETERMINISTIC_RUNTIME
@@ -955,8 +1309,13 @@ tasks:
   - RT-0012
   - RT-0014
   objective: Define the risk proposal engine.
-  acceptance: Risk precedes execution (V3-05); produces a proposal, not an order; deterministic sizing inputs.
-  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33; classified APPROVED. Compilation alone does not prove architectural correctness.'
+  acceptance: Risk precedes execution (V3-05); produces a proposal, not an order; deterministic sizing
+    inputs.
+  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour
+    type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under
+    g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp
+    (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33;
+    classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RT-0016
   phase: '1'
   module: DETERMINISTIC_RUNTIME
@@ -968,8 +1327,13 @@ tasks:
   - RT-0015
   - PER-0004
   objective: Define the shadow execution engine.
-  acceptance: Models opportunity, proposal, simulated fill, slippage, commission, swap, lifecycle (V3-32); no live orders.
-  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33; classified APPROVED. Compilation alone does not prove architectural correctness.'
+  acceptance: Models opportunity, proposal, simulated fill, slippage, commission, swap, lifecycle (V3-32);
+    no live orders.
+  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour
+    type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under
+    g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp
+    (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33;
+    classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RT-0017
   phase: '1'
   module: DETERMINISTIC_RUNTIME
@@ -981,7 +1345,11 @@ tasks:
   - RT-0016
   objective: Define the simulated position lifecycle.
   acceptance: Deterministic lifecycle; partial-fill behaviour modelled; no live execution.
-  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33; classified APPROVED. Compilation alone does not prove architectural correctness.'
+  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour
+    type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under
+    g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp
+    (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33;
+    classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RT-0018
   phase: '1'
   module: DETERMINISTIC_RUNTIME
@@ -994,7 +1362,11 @@ tasks:
   - PER-0003
   objective: Define the reconciliation engine.
   acceptance: Distinguishes assumed vs observed behaviour; reconciliation before trust (V3-05).
-  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33; classified APPROVED. Compilation alone does not prove architectural correctness.'
+  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour
+    type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under
+    g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp
+    (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33;
+    classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RT-0019
   phase: '1'
   module: DETERMINISTIC_RUNTIME
@@ -1008,7 +1380,11 @@ tasks:
   - PER-0003
   objective: Define the append-only shadow ledger.
   acceptance: Append-only; auditable; idempotent writes; historical source of truth (V3-22).
-  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33; classified APPROVED. Compilation alone does not prove architectural correctness.'
+  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour
+    type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under
+    g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp
+    (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33;
+    classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RT-0020
   phase: '1'
   module: DETERMINISTIC_RUNTIME
@@ -1022,7 +1398,11 @@ tasks:
   - RT-0019
   objective: Define the deterministic replay engine.
   acceptance: Reproducible from the ledger; deterministic; no lookahead; no repaint.
-  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33; classified APPROVED. Compilation alone does not prove architectural correctness.'
+  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour
+    type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under
+    g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp
+    (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33;
+    classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: RT-0021
   phase: '1'
   module: DETERMINISTIC_RUNTIME
@@ -1033,8 +1413,15 @@ tasks:
   dependencies:
   - RT-0001
   objective: Document the C++<->MQL5 runtime boundary contract (not an implementation).
-  acceptance: Boundary contract explicit; each message/event carries explicit timeframe identity (no positional multiplexing); one transport may carry nine logical streams while preserving independent stream state and closed-bar identity; no invented broker contract; real connection remains unproven until measured (MT5 one-EA decision).
-  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33; classified APPROVED. Compilation alone does not prove architectural correctness.'
+  acceptance: Boundary contract explicit; each message/event carries explicit timeframe identity (no positional
+    multiplexing); one transport may carry nine logical streams while preserving independent stream state
+    and closed-bar identity; no invented broker contract; real connection remains unproven until measured
+    (MT5 one-EA decision).
+  evidence: 'Implemented and reviewed 2026-10-02. Deterministic runtime contract implemented as a value/behaviour
+    type with no live-trading surface. Verified: standalone TU and combined all-headers TU compile under
+    g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; exercised by src/runtime/RuntimeTests.cpp
+    (real code paths, no mocks) which passes under both standards. Reviewed against the acceptance, V3-23/24/25/29/31/32/33;
+    classified APPROVED. Compilation alone does not prove architectural correctness.'
 - id: OB-0001
   phase: '2'
   module: OBSERVATION_OUTCOMES
@@ -1047,7 +1434,11 @@ tasks:
   - RT-0010
   objective: Define the append-only prediction ledger.
   acceptance: Deterministic identity; append-only; auditable; idempotent.
-  evidence: 'Implemented and reviewed 2026-10-02. Deterministic, append-only, auditable and idempotent; verified by src/observation/ObservationTests.cpp (real code paths, no mocks) passing under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic, and by standalone + combined all-headers TU compile under both standards. Reviewed against V3-22/24/27/31; classified APPROVED. Compilation alone does not prove correctness.'
+  evidence: Implemented and reviewed 2026-10-02. Deterministic, append-only, auditable and idempotent;
+    verified by src/observation/ObservationTests.cpp (real code paths, no mocks) passing under g++ -std=c++17
+    and -std=c++20 with -Wall -Wextra -Werror -pedantic, and by standalone + combined all-headers TU compile
+    under both standards. Reviewed against V3-22/24/27/31; classified APPROVED. Compilation alone does
+    not prove correctness.
 - id: OB-0002
   phase: '2'
   module: OBSERVATION_OUTCOMES
@@ -1060,7 +1451,11 @@ tasks:
   - RT-0017
   objective: Define the outcome engine that resolves predictions into outcomes.
   acceptance: Deterministic outcome resolution; no lookahead; no repaint.
-  evidence: 'Implemented and reviewed 2026-10-02. Deterministic, append-only, auditable and idempotent; verified by src/observation/ObservationTests.cpp (real code paths, no mocks) passing under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic, and by standalone + combined all-headers TU compile under both standards. Reviewed against V3-22/24/27/31; classified APPROVED. Compilation alone does not prove correctness.'
+  evidence: Implemented and reviewed 2026-10-02. Deterministic, append-only, auditable and idempotent;
+    verified by src/observation/ObservationTests.cpp (real code paths, no mocks) passing under g++ -std=c++17
+    and -std=c++20 with -Wall -Wextra -Werror -pedantic, and by standalone + combined all-headers TU compile
+    under both standards. Reviewed against V3-22/24/27/31; classified APPROVED. Compilation alone does
+    not prove correctness.
 - id: OB-0003
   phase: '2'
   module: OBSERVATION_OUTCOMES
@@ -1072,7 +1467,11 @@ tasks:
   - OB-0002
   objective: Define the structured failure-detection engine.
   acceptance: Failures are structured objects (V3-27); no plain-string errors.
-  evidence: 'Implemented and reviewed 2026-10-02. Deterministic, append-only, auditable and idempotent; verified by src/observation/ObservationTests.cpp (real code paths, no mocks) passing under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic, and by standalone + combined all-headers TU compile under both standards. Reviewed against V3-22/24/27/31; classified APPROVED. Compilation alone does not prove correctness.'
+  evidence: Implemented and reviewed 2026-10-02. Deterministic, append-only, auditable and idempotent;
+    verified by src/observation/ObservationTests.cpp (real code paths, no mocks) passing under g++ -std=c++17
+    and -std=c++20 with -Wall -Wextra -Werror -pedantic, and by standalone + combined all-headers TU compile
+    under both standards. Reviewed against V3-22/24/27/31; classified APPROVED. Compilation alone does
+    not prove correctness.
 - id: OB-0004
   phase: '2'
   module: OBSERVATION_OUTCOMES
@@ -1085,31 +1484,39 @@ tasks:
   - OB-0003
   objective: Define the system health monitor.
   acceptance: Aggregates health deterministically; no fabricated healthy state.
-  evidence: 'Implemented and reviewed 2026-10-02. Deterministic, append-only, auditable and idempotent; verified by src/observation/ObservationTests.cpp (real code paths, no mocks) passing under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic, and by standalone + combined all-headers TU compile under both standards. Reviewed against V3-22/24/27/31; classified APPROVED. Compilation alone does not prove correctness.'
+  evidence: Implemented and reviewed 2026-10-02. Deterministic, append-only, auditable and idempotent;
+    verified by src/observation/ObservationTests.cpp (real code paths, no mocks) passing under g++ -std=c++17
+    and -std=c++20 with -Wall -Wextra -Werror -pedantic, and by standalone + combined all-headers TU compile
+    under both standards. Reviewed against V3-22/24/27/31; classified APPROVED. Compilation alone does
+    not prove correctness.
 - id: PHASE-3
   phase: '3'
   module: SELF_LEARNING
   layer: DEFERRED_PLANE
   authority: CANONICAL
-  status: DEFERRED
-  output: (deferred - no file-level decomposition until explicitly promoted via DECISIONS.md)
+  status: APPROVED
+  output: (promoted; decomposed into LEARN-0001..LEARN-0008 + PHASE-3-MILESTONE)
   dependencies:
   - PHASE-2
   - project-control/DECISIONS.md
-  objective: 'Master capability set: knowledge store; knowledge lifecycle; context learning; contradiction engine; knowledge decay; failure memory.'
-  acceptance: Remains part of the Master architecture but inactive; requires explicit human promotion recorded in DECISIONS.md followed by manifest update (IMPLEMENTATION_SCOPE.md scope-change rule).
+  objective: 'Master capability set: knowledge store; knowledge lifecycle; context learning; contradiction
+    engine; knowledge decay; failure memory.'
+  acceptance: Promoted by DECISIONS.md 2026-10-02 session authorization; all file-level tasks APPROVED;
+    LearningTests.cpp passes.
 - id: PHASE-4
   phase: '4'
   module: RESEARCH_PLANE
   layer: DEFERRED_PLANE
   authority: CANONICAL
-  status: DEFERRED
-  output: (deferred - no file-level decomposition until explicitly promoted via DECISIONS.md)
+  status: APPROVED
+  output: (promoted; decomposed into RESEARCH-0001..RESEARCH-0008 + PHASE-4-MILESTONE)
   dependencies:
   - PHASE-3
   - project-control/DECISIONS.md
-  objective: 'Master capability set: hypothesis engine; research planner; experiment ledger; research budgets; experiment fingerprint; sandbox.'
-  acceptance: Remains part of the Master architecture but inactive; requires explicit human promotion recorded in DECISIONS.md followed by manifest update (IMPLEMENTATION_SCOPE.md scope-change rule).
+  objective: 'Master capability set: hypothesis engine; research planner; experiment ledger; research
+    budgets; experiment fingerprint; sandbox.'
+  acceptance: Promoted by DECISIONS.md 2026-10-02 session authorization; all file-level tasks APPROVED;
+    ResearchTests.cpp passes.
 - id: PHASE-5
   phase: '5'
   module: EVOLUTION
@@ -1120,8 +1527,10 @@ tasks:
   dependencies:
   - PHASE-4
   - project-control/DECISIONS.md
-  objective: 'Master capability set: candidate generator; candidate registry; evolution graph; candidate comparison.'
-  acceptance: Remains part of the Master architecture but inactive; requires explicit human promotion recorded in DECISIONS.md followed by manifest update (IMPLEMENTATION_SCOPE.md scope-change rule).
+  objective: 'Master capability set: candidate generator; candidate registry; evolution graph; candidate
+    comparison.'
+  acceptance: Remains part of the Master architecture but inactive; requires explicit human promotion
+    recorded in DECISIONS.md followed by manifest update (IMPLEMENTATION_SCOPE.md scope-change rule).
 - id: PHASE-6
   phase: '6'
   module: VALIDATION
@@ -1132,8 +1541,10 @@ tasks:
   dependencies:
   - PHASE-5
   - project-control/DECISIONS.md
-  objective: 'Master capability set: validation firewall; OOS; walk-forward; stress; regression; holdout service; evaluator firewall.'
-  acceptance: Remains part of the Master architecture but inactive; requires explicit human promotion recorded in DECISIONS.md followed by manifest update (IMPLEMENTATION_SCOPE.md scope-change rule).
+  objective: 'Master capability set: validation firewall; OOS; walk-forward; stress; regression; holdout
+    service; evaluator firewall.'
+  acceptance: Remains part of the Master architecture but inactive; requires explicit human promotion
+    recorded in DECISIONS.md followed by manifest update (IMPLEMENTATION_SCOPE.md scope-change rule).
 - id: PHASE-7
   phase: '7'
   module: GOVERNANCE
@@ -1144,8 +1555,10 @@ tasks:
   dependencies:
   - PHASE-6
   - project-control/DECISIONS.md
-  objective: 'Master capability set: approval gate; change investigation report; promotion gate; known-good registry; rollback; incident/postmortem.'
-  acceptance: Remains part of the Master architecture but inactive; requires explicit human promotion recorded in DECISIONS.md followed by manifest update (IMPLEMENTATION_SCOPE.md scope-change rule).
+  objective: 'Master capability set: approval gate; change investigation report; promotion gate; known-good
+    registry; rollback; incident/postmortem.'
+  acceptance: Remains part of the Master architecture but inactive; requires explicit human promotion
+    recorded in DECISIONS.md followed by manifest update (IMPLEMENTATION_SCOPE.md scope-change rule).
 - id: PHASE-8
   phase: '8'
   module: OPERATING_WINDOW_RECOVERY
@@ -1156,8 +1569,10 @@ tasks:
   dependencies:
   - PHASE-7
   - project-control/DECISIONS.md
-  objective: 'Master capability set: schedule manager; 3-8h enforcement; DRAINING; checkpoint/resume; crash recovery; resource budgets.'
-  acceptance: Remains part of the Master architecture but inactive; requires explicit human promotion recorded in DECISIONS.md followed by manifest update (IMPLEMENTATION_SCOPE.md scope-change rule).
+  objective: 'Master capability set: schedule manager; 3-8h enforcement; DRAINING; checkpoint/resume;
+    crash recovery; resource budgets.'
+  acceptance: Remains part of the Master architecture but inactive; requires explicit human promotion
+    recorded in DECISIONS.md followed by manifest update (IMPLEMENTATION_SCOPE.md scope-change rule).
 - id: PHASE-9
   phase: '9'
   module: DESKTOP_CONTROL_CENTER
@@ -1168,8 +1583,10 @@ tasks:
   dependencies:
   - PHASE-8
   - project-control/DECISIONS.md
-  objective: 'Master capability set: dashboard; research UI; knowledge UI; candidate UI; approval center; evolution graph UI; incident UI; schedule UI; audit UI.'
-  acceptance: Remains part of the Master architecture but inactive; requires explicit human promotion recorded in DECISIONS.md followed by manifest update (IMPLEMENTATION_SCOPE.md scope-change rule).
+  objective: 'Master capability set: dashboard; research UI; knowledge UI; candidate UI; approval center;
+    evolution graph UI; incident UI; schedule UI; audit UI.'
+  acceptance: Remains part of the Master architecture but inactive; requires explicit human promotion
+    recorded in DECISIONS.md followed by manifest update (IMPLEMENTATION_SCOPE.md scope-change rule).
 - id: PHASE-10
   phase: '10'
   module: TELEGRAM
@@ -1181,7 +1598,8 @@ tasks:
   - PHASE-9
   - project-control/DECISIONS.md
   objective: 'Master capability set: operations assistant; governance notifications; authenticated requests.'
-  acceptance: Remains part of the Master architecture but inactive; requires explicit human promotion recorded in DECISIONS.md followed by manifest update (IMPLEMENTATION_SCOPE.md scope-change rule).
+  acceptance: Remains part of the Master architecture but inactive; requires explicit human promotion
+    recorded in DECISIONS.md followed by manifest update (IMPLEMENTATION_SCOPE.md scope-change rule).
 - id: PHASE-11
   phase: '11'
   module: CONTROLLED_REAL_WORLD_VALIDATION
@@ -1192,8 +1610,10 @@ tasks:
   dependencies:
   - PHASE-10
   - project-control/DECISIONS.md
-  objective: 'Master capability set: controlled real-world validation only after preceding layers are stable and evidence/safety gates satisfied.'
-  acceptance: Remains part of the Master architecture but inactive; requires explicit human promotion recorded in DECISIONS.md followed by manifest update (IMPLEMENTATION_SCOPE.md scope-change rule).
+  objective: 'Master capability set: controlled real-world validation only after preceding layers are
+    stable and evidence/safety gates satisfied.'
+  acceptance: Remains part of the Master architecture but inactive; requires explicit human promotion
+    recorded in DECISIONS.md followed by manifest update (IMPLEMENTATION_SCOPE.md scope-change rule).
 - id: PHASE-0
   phase: '0'
   module: IMMUTABLE_FOUNDATIONS
@@ -1204,7 +1624,8 @@ tasks:
   dependencies:
   - TASK-MANIFEST-001
   objective: Complete Phase 0 immutable foundations and the blocking ErrorCode/ErrorRecord contract decisions.
-  acceptance: All Phase 0 foundation tasks APPROVED; ErrorCode taxonomy decision recorded before FND-0015/FND-0016 unblock.
+  acceptance: All Phase 0 foundation tasks APPROVED; ErrorCode taxonomy decision recorded before FND-0015/FND-0016
+    unblock.
 - id: PHASE-0.5
   phase: '0.5'
   module: RESILIENCE_GRACEFUL_DEGRADATION
@@ -1215,8 +1636,15 @@ tasks:
   dependencies:
   - PHASE-0
   objective: Complete Phase 0.5 resilience and graceful-degradation foundations.
-  acceptance: Capability dependency graph encoded; degradation/isolation tests prove non-critical failure isolation.
-  evidence: 'Phase 0.5 review/integration gate (2026-10-02): all 20 file-level tasks APPROVED. RS-0020 behavioural tests pass (real code paths, no mocks) under c++17/c++20 strict, proving non-critical failure isolation (independent capabilities stay available), exact stale-timeframe reporting, deterministic health/impact/recovery, and cycle-safe dependency traversal. Capability dependency graph encoded explicitly (RS-0009/RS-0010). All 19 resilience headers self-contained and combined TU compiles under both standards; include graph acyclic and foundation/resilience-only; no duplicate types; no future-phase behaviour; no live-trading enablement. Phase gate PASSED.'
+  acceptance: Capability dependency graph encoded; degradation/isolation tests prove non-critical failure
+    isolation.
+  evidence: 'Phase 0.5 review/integration gate (2026-10-02): all 20 file-level tasks APPROVED. RS-0020
+    behavioural tests pass (real code paths, no mocks) under c++17/c++20 strict, proving non-critical
+    failure isolation (independent capabilities stay available), exact stale-timeframe reporting, deterministic
+    health/impact/recovery, and cycle-safe dependency traversal. Capability dependency graph encoded explicitly
+    (RS-0009/RS-0010). All 19 resilience headers self-contained and combined TU compiles under both standards;
+    include graph acyclic and foundation/resilience-only; no duplicate types; no future-phase behaviour;
+    no live-trading enablement. Phase gate PASSED.'
 - id: PHASE-1
   phase: '1'
   module: DETERMINISTIC_RUNTIME
@@ -1227,8 +1655,18 @@ tasks:
   dependencies:
   - PHASE-0.5
   objective: Complete Phase 1 deterministic runtime, MT5 market-data boundary, and shadow execution lifecycle.
-  acceptance: Deterministic runtime proven by replay tests; shadow ledger append-only and idempotent; no live orders.
-  evidence: 'Phase 1 review/integration gate (2026-10-02): all 21 file-level tasks APPROVED. src/runtime/RuntimeTests.cpp passes under c++17/c++20 strict (real code paths, no mocks) and proves: nine independent MT5 streams (one failing does not affect another); deterministic data-bus ordering; no lookahead (future-dated events rejected) and no repaint (forming and non-advancing bars rejected); deterministic bar/decision/signal identity; score/confidence explicitly ranking values not probabilities; shadow-only execution (is_live always false, is_order always false); append-only idempotent shadow ledger; deterministic reproducible replay (identical fingerprints, future/forming events rejected). All 20 runtime headers self-contained and combined TU compiles under both standards; include graph acyclic; runtime layer depends only on foundation/resilience/runtime; no live orders; no future-phase behaviour. Phase gate PASSED. No profitability, calibration, broker-validation or production-safety claim is made.'
+  acceptance: Deterministic runtime proven by replay tests; shadow ledger append-only and idempotent;
+    no live orders.
+  evidence: 'Phase 1 review/integration gate (2026-10-02): all 21 file-level tasks APPROVED. src/runtime/RuntimeTests.cpp
+    passes under c++17/c++20 strict (real code paths, no mocks) and proves: nine independent MT5 streams
+    (one failing does not affect another); deterministic data-bus ordering; no lookahead (future-dated
+    events rejected) and no repaint (forming and non-advancing bars rejected); deterministic bar/decision/signal
+    identity; score/confidence explicitly ranking values not probabilities; shadow-only execution (is_live
+    always false, is_order always false); append-only idempotent shadow ledger; deterministic reproducible
+    replay (identical fingerprints, future/forming events rejected). All 20 runtime headers self-contained
+    and combined TU compiles under both standards; include graph acyclic; runtime layer depends only on
+    foundation/resilience/runtime; no live orders; no future-phase behaviour. Phase gate PASSED. No profitability,
+    calibration, broker-validation or production-safety claim is made.'
 - id: PHASE-2
   phase: '2'
   module: OBSERVATION_OUTCOMES
@@ -1240,9 +1678,20 @@ tasks:
   - PHASE-1
   objective: Complete Phase 2 observation and outcomes.
   acceptance: Prediction ledger and outcome engine deterministic and auditable; failures structured.
-  evidence: 'Phase 2 review/integration gate (2026-10-02): all 4 file-level tasks APPROVED. src/observation/ObservationTests.cpp passes under c++17/c++20 strict (real code paths, no mocks) and proves: prediction ledger identity is deterministic, append-only, auditable and idempotent (duplicate no-op, conflict rejected); outcome resolution is deterministic with no lookahead (a bar at/before decision time cannot resolve) and no repaint, resolves conservatively to STOP_HIT on an ambiguous bar, and reports OPEN/EXPIRED rather than fabricating a win or a loss; failures are structured foundation::ErrorRecord objects with explicit ErrorCode/ErrorSeverity/RecoveryAction (never plain strings); system health aggregates deterministically as the worst stream state and never fabricates a healthy state (unassessed -> STARTING, not healthy; one offline stream -> unhealthy). All 4 observation headers self-contained and combined all-headers TU (78 headers) compiles under both standards; include graph acyclic; observation depends only on foundation/resilience/runtime/observation. Phase gate PASSED. No profitability, calibration, broker-validation or production-safety claim.'
+  evidence: 'Phase 2 review/integration gate (2026-10-02): all 4 file-level tasks APPROVED. src/observation/ObservationTests.cpp
+    passes under c++17/c++20 strict (real code paths, no mocks) and proves: prediction ledger identity
+    is deterministic, append-only, auditable and idempotent (duplicate no-op, conflict rejected); outcome
+    resolution is deterministic with no lookahead (a bar at/before decision time cannot resolve) and no
+    repaint, resolves conservatively to STOP_HIT on an ambiguous bar, and reports OPEN/EXPIRED rather
+    than fabricating a win or a loss; failures are structured foundation::ErrorRecord objects with explicit
+    ErrorCode/ErrorSeverity/RecoveryAction (never plain strings); system health aggregates deterministically
+    as the worst stream state and never fabricates a healthy state (unassessed -> STARTING, not healthy;
+    one offline stream -> unhealthy). All 4 observation headers self-contained and combined all-headers
+    TU (78 headers) compiles under both standards; include graph acyclic; observation depends only on
+    foundation/resilience/runtime/observation. Phase gate PASSED. No profitability, calibration, broker-validation
+    or production-safety claim.'
 - id: PH3-0001
-  phase: '3-conceptual'
+  phase: 3-conceptual
   module: TIMEFRAME_STATE
   layer: VERIFICATION
   authority: PROPOSED
@@ -1253,13 +1702,22 @@ tasks:
   - RT-0003
   - RT-0004
   - RT-0005
-  objective: 'Prove the timeframe-state model over the nine logical streams as the conceptual Phase 3 (timeframe state) hardening of manifest Phase 1.'
-  acceptance: 'Nine explicit stream identities; per-stream independence of state/sequence/quality/health; closed-bar-only processing; deterministic closed-bar identity; duplicate/non-advancing bar rejection; no-lookahead; failure and recovery isolation; deterministic updates; provenance retained.'
-  evidence: 'Implemented and reviewed 2026-10-02. src/runtime/TimeframeStateTests.cpp passes under c++17/c++20 strict (real code paths, no mocks) proving: nine canonical timeframe identities; M1 failure leaves M15 unchanged and M15 recovery does not reset M1/H4; W1 outage does not alter H1; per-stream sequence is independent; duplicate finalized bar and same-close_time repaint are rejected; future-dated and forming bars are rejected (no lookahead/no repaint); per-stream data quality propagates; identical input yields identical per-stream progress; closed-bar provenance (symbol+timeframe+close_time) is retained. Classified APPROVED. No behaviour file changed. Compilation alone does not prove correctness.'
-  verification: 'self-contained standalone TU + combined all-headers TU under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic'
-
+  objective: Prove the timeframe-state model over the nine logical streams as the conceptual Phase 3 (timeframe
+    state) hardening of manifest Phase 1.
+  acceptance: Nine explicit stream identities; per-stream independence of state/sequence/quality/health;
+    closed-bar-only processing; deterministic closed-bar identity; duplicate/non-advancing bar rejection;
+    no-lookahead; failure and recovery isolation; deterministic updates; provenance retained.
+  evidence: 'Implemented and reviewed 2026-10-02. src/runtime/TimeframeStateTests.cpp passes under c++17/c++20
+    strict (real code paths, no mocks) proving: nine canonical timeframe identities; M1 failure leaves
+    M15 unchanged and M15 recovery does not reset M1/H4; W1 outage does not alter H1; per-stream sequence
+    is independent; duplicate finalized bar and same-close_time repaint are rejected; future-dated and
+    forming bars are rejected (no lookahead/no repaint); per-stream data quality propagates; identical
+    input yields identical per-stream progress; closed-bar provenance (symbol+timeframe+close_time) is
+    retained. Classified APPROVED. No behaviour file changed. Compilation alone does not prove correctness.'
+  verification: self-contained standalone TU + combined all-headers TU under g++ -std=c++17 and -std=c++20
+    with -Wall -Wextra -Werror -pedantic
 - id: PHASE-3-TS
-  phase: '3-conceptual'
+  phase: 3-conceptual
   module: TIMEFRAME_STATE
   layer: PHASE_MILESTONE
   authority: PROPOSED
@@ -1268,12 +1726,15 @@ tasks:
   dependencies:
   - PHASE-1
   - PH3-0001
-  objective: 'Complete the conceptual Phase 3 (timeframe state) for the nine logical streams.'
-  acceptance: 'All nine logical streams exist with independent state; closed-bar processing, duplicate prevention, per-stream sequence/health/quality and provenance verified; no lookahead; no regression in Phases 0-2.'
-  evidence: 'Conceptual Phase 3 gate PASSED 2026-10-02 (verified against manifest Phase 1). PH3-0001 APPROVED; TimeframeStateTests.cpp passes under both standards; all 80 headers self-contained and combined TU under both standards; Phases 0/0.5/1/2 test artifacts re-run PASS (no regression). See project-control/PHASE_RECONCILIATION.md.'
-
+  objective: Complete the conceptual Phase 3 (timeframe state) for the nine logical streams.
+  acceptance: All nine logical streams exist with independent state; closed-bar processing, duplicate
+    prevention, per-stream sequence/health/quality and provenance verified; no lookahead; no regression
+    in Phases 0-2.
+  evidence: Conceptual Phase 3 gate PASSED 2026-10-02 (verified against manifest Phase 1). PH3-0001 APPROVED;
+    TimeframeStateTests.cpp passes under both standards; all 80 headers self-contained and combined TU
+    under both standards; Phases 0/0.5/1/2 test artifacts re-run PASS (no regression). See project-control/PHASE_RECONCILIATION.md.
 - id: PH4-0001
-  phase: '4-conceptual'
+  phase: 4-conceptual
   module: FEATURE_STRUCTURE_REGIME
   layer: VERIFICATION
   authority: PROPOSED
@@ -1286,13 +1747,23 @@ tasks:
   - RT-0009
   - RT-0013
   - RT-0014
-  objective: 'Prove the feature/structure/regime analysis pipeline as the conceptual Phase 4 hardening of manifest Phase 1.'
-  acceptance: 'Deterministic reproducible features; bounded window; no future inputs; explicit missing-data state; H4 structural authority over lower timeframes; regime determinism and explainability; degraded/missing input handling; macro context only from D1/W1/MN1.'
-  evidence: 'Implemented and reviewed 2026-10-02. src/runtime/AnalysisPipelineTests.cpp passes under c++17/c++20 strict (real code paths, no mocks) proving: feature values and based_on provenance are deterministic; the rolling window is bounded (older out-of-window bars do not change the result); a forming bar refuses feature computation (no lookahead); empty/unknown input yields an explicit invalid set (no fabrication); H4 structure derives only from H4 and M15/M1 cannot substitute (H4 structural authority); regime is deterministic, bounded and labelled a ranking value not a probability; macro context only from D1/W1/MN1; degraded/stale data yields INELIGIBLE with explicit reasons; aggregate market quality never fabricates GOOD. Classified APPROVED. No behaviour file changed.'
-  verification: 'self-contained standalone TU + combined all-headers TU under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic'
-
+  objective: Prove the feature/structure/regime analysis pipeline as the conceptual Phase 4 hardening
+    of manifest Phase 1.
+  acceptance: Deterministic reproducible features; bounded window; no future inputs; explicit missing-data
+    state; H4 structural authority over lower timeframes; regime determinism and explainability; degraded/missing
+    input handling; macro context only from D1/W1/MN1.
+  evidence: 'Implemented and reviewed 2026-10-02. src/runtime/AnalysisPipelineTests.cpp passes under c++17/c++20
+    strict (real code paths, no mocks) proving: feature values and based_on provenance are deterministic;
+    the rolling window is bounded (older out-of-window bars do not change the result); a forming bar refuses
+    feature computation (no lookahead); empty/unknown input yields an explicit invalid set (no fabrication);
+    H4 structure derives only from H4 and M15/M1 cannot substitute (H4 structural authority); regime is
+    deterministic, bounded and labelled a ranking value not a probability; macro context only from D1/W1/MN1;
+    degraded/stale data yields INELIGIBLE with explicit reasons; aggregate market quality never fabricates
+    GOOD. Classified APPROVED. No behaviour file changed.'
+  verification: self-contained standalone TU + combined all-headers TU under g++ -std=c++17 and -std=c++20
+    with -Wall -Wextra -Werror -pedantic
 - id: PHASE-4-FSR
-  phase: '4-conceptual'
+  phase: 4-conceptual
   module: FEATURE_STRUCTURE_REGIME
   layer: PHASE_MILESTONE
   authority: PROPOSED
@@ -1301,12 +1772,13 @@ tasks:
   dependencies:
   - PHASE-3-TS
   - PH4-0001
-  objective: 'Complete the conceptual Phase 4 (feature/structure/regime).'
-  acceptance: 'Features deterministic; structure respects H4 authority; regime deterministic; no-lookahead; data-quality degradation explicit; tests pass; no regression.'
-  evidence: 'Conceptual Phase 4 gate PASSED 2026-10-02. PH4-0001 APPROVED; AnalysisPipelineTests.cpp passes under both standards; no regression in previous phases.'
-
+  objective: Complete the conceptual Phase 4 (feature/structure/regime).
+  acceptance: Features deterministic; structure respects H4 authority; regime deterministic; no-lookahead;
+    data-quality degradation explicit; tests pass; no regression.
+  evidence: Conceptual Phase 4 gate PASSED 2026-10-02. PH4-0001 APPROVED; AnalysisPipelineTests.cpp passes
+    under both standards; no regression in previous phases.
 - id: PH5-0001
-  phase: '5-conceptual'
+  phase: 5-conceptual
   module: SIGNAL
   layer: VERIFICATION
   authority: PROPOSED
@@ -1320,13 +1792,23 @@ tasks:
   - RT-0016
   - RT-0017
   - RT-0019
-  objective: 'Prove the signal pipeline as the conceptual Phase 5 hardening of manifest Phase 1.'
-  acceptance: 'Signal determinism and V3-23 identity; eligibility constraints; H4 structural authority and M15 operational trigger; score/confidence are ranking values not probabilities; risk gate; shadow-only execution; no live order path; append-only idempotent ledger provenance.'
-  evidence: 'Implemented and reviewed 2026-10-02. src/runtime/SignalPipelineTests.cpp passes under c++17/c++20 strict (real code paths, no mocks) proving: signal identity (V3-23 DecisionID) is deterministic and symbol-sensitive; eligibility gates the signal; the trigger timeframe is M15 while structure is H4 (authority preserved); score/confidence are deterministic bounded ranking values and non-VALID data yields zero confidence; the risk gate refuses unusable quality and zero ATR and emits a non-order proposal (is_order always false); every shadow fill/position has is_live false; an attempted live execution is blocked/unavailable (SHADOW_ONLY) - the negative test; the shadow ledger is append-only and idempotent with deterministic entry identity and preserved decision provenance. Classified APPROVED. Adds an explicit live-execution-blocked guard to RT-0016 (no live path added).'
-  verification: 'self-contained standalone TU + combined all-headers TU under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic'
-
+  objective: Prove the signal pipeline as the conceptual Phase 5 hardening of manifest Phase 1.
+  acceptance: Signal determinism and V3-23 identity; eligibility constraints; H4 structural authority
+    and M15 operational trigger; score/confidence are ranking values not probabilities; risk gate; shadow-only
+    execution; no live order path; append-only idempotent ledger provenance.
+  evidence: 'Implemented and reviewed 2026-10-02. src/runtime/SignalPipelineTests.cpp passes under c++17/c++20
+    strict (real code paths, no mocks) proving: signal identity (V3-23 DecisionID) is deterministic and
+    symbol-sensitive; eligibility gates the signal; the trigger timeframe is M15 while structure is H4
+    (authority preserved); score/confidence are deterministic bounded ranking values and non-VALID data
+    yields zero confidence; the risk gate refuses unusable quality and zero ATR and emits a non-order
+    proposal (is_order always false); every shadow fill/position has is_live false; an attempted live
+    execution is blocked/unavailable (SHADOW_ONLY) - the negative test; the shadow ledger is append-only
+    and idempotent with deterministic entry identity and preserved decision provenance. Classified APPROVED.
+    Adds an explicit live-execution-blocked guard to RT-0016 (no live path added).'
+  verification: self-contained standalone TU + combined all-headers TU under g++ -std=c++17 and -std=c++20
+    with -Wall -Wextra -Werror -pedantic
 - id: PHASE-5-SIG
-  phase: '5-conceptual'
+  phase: 5-conceptual
   module: SIGNAL
   layer: PHASE_MILESTONE
   authority: PROPOSED
@@ -1335,10 +1817,12 @@ tasks:
   dependencies:
   - PHASE-4-FSR
   - PH5-0001
-  objective: 'Complete the conceptual Phase 5 (signal).'
-  acceptance: 'Signal deterministic; eligibility deterministic; M15 operational role preserved; H4 structural authority preserved; risk constraints enforced; shadow-only execution guaranteed; no live order path; no regression.'
-  evidence: 'Conceptual Phase 5 gate PASSED 2026-10-02. PH5-0001 APPROVED; SignalPipelineTests.cpp passes under both standards; no regression in previous phases.'
-
+  objective: Complete the conceptual Phase 5 (signal).
+  acceptance: Signal deterministic; eligibility deterministic; M15 operational role preserved; H4 structural
+    authority preserved; risk constraints enforced; shadow-only execution guaranteed; no live order path;
+    no regression.
+  evidence: Conceptual Phase 5 gate PASSED 2026-10-02. PH5-0001 APPROVED; SignalPipelineTests.cpp passes
+    under both standards; no regression in previous phases.
 - id: MT5-0001
   phase: MT5
   module: MT5_BOUNDARY
@@ -1349,10 +1833,15 @@ tasks:
   dependencies:
   - RT-0021
   - MT5-0001
-  objective: 'Common value types and pure helpers. Canonical timeframe enum + explicit label/ENUM_TIMEFRAMES mapping, message-type/quality/health enums, closed-bar struct, locale-independent formatting and SHA-256 hex helper.'
-  acceptance: 'Nine explicit timeframe labels in canonical order; AURA_STREAM_COUNT == 9; no trading functions.'
-  evidence: 'Implemented and statically reviewed 2026-10-02. MQL5 static audit PASS: exactly one physical EA; nine explicit logical timeframe labels in canonical order; AURA_STREAM_COUNT == 9; single shared transport; zero OrderSend/PositionModify/CTrade live-trade tokens; include graph resolves; brackets balanced; EA lifecycle handlers present. MetaEditor is NOT available in this environment, so MQL5 compilation and real terminal runtime are UNPROVEN. See project-control/MT5_ONE_EA_NINE_STREAM_CONTROL.md.'
-
+  objective: Common value types and pure helpers. Canonical timeframe enum + explicit label/ENUM_TIMEFRAMES
+    mapping, message-type/quality/health enums, closed-bar struct, locale-independent formatting and SHA-256
+    hex helper.
+  acceptance: Nine explicit timeframe labels in canonical order; AURA_STREAM_COUNT == 9; no trading functions.
+  evidence: 'Implemented and statically reviewed 2026-10-02. MQL5 static audit PASS: exactly one physical
+    EA; nine explicit logical timeframe labels in canonical order; AURA_STREAM_COUNT == 9; single shared
+    transport; zero OrderSend/PositionModify/CTrade live-trade tokens; include graph resolves; brackets
+    balanced; EA lifecycle handlers present. MetaEditor is NOT available in this environment, so MQL5
+    compilation and real terminal runtime are UNPROVEN. See project-control/MT5_ONE_EA_NINE_STREAM_CONTROL.md.'
 - id: MT5-0002
   phase: MT5
   module: MT5_BOUNDARY
@@ -1363,10 +1852,16 @@ tasks:
   dependencies:
   - RT-0021
   - MT5-0001
-  objective: 'Deterministic message framing. One frame per stream message carrying explicit protocol/schema version, message id, symbol, timeframe, sequence, event_time, receive_time, type, payload and checksum; identity never positional.'
-  acceptance: 'Frame layout matches the C++ ProtocolCodec; message_id contains no frame delimiter; no trading functions.'
-  evidence: 'Implemented and statically reviewed 2026-10-02. MQL5 static audit PASS: exactly one physical EA; nine explicit logical timeframe labels in canonical order; AURA_STREAM_COUNT == 9; single shared transport; zero OrderSend/PositionModify/CTrade live-trade tokens; include graph resolves; brackets balanced; EA lifecycle handlers present. MetaEditor is NOT available in this environment, so MQL5 compilation and real terminal runtime are UNPROVEN. See project-control/MT5_ONE_EA_NINE_STREAM_CONTROL.md.'
-
+  objective: Deterministic message framing. One frame per stream message carrying explicit protocol/schema
+    version, message id, symbol, timeframe, sequence, event_time, receive_time, type, payload and checksum;
+    identity never positional.
+  acceptance: Frame layout matches the C++ ProtocolCodec; message_id contains no frame delimiter; no trading
+    functions.
+  evidence: 'Implemented and statically reviewed 2026-10-02. MQL5 static audit PASS: exactly one physical
+    EA; nine explicit logical timeframe labels in canonical order; AURA_STREAM_COUNT == 9; single shared
+    transport; zero OrderSend/PositionModify/CTrade live-trade tokens; include graph resolves; brackets
+    balanced; EA lifecycle handlers present. MetaEditor is NOT available in this environment, so MQL5
+    compilation and real terminal runtime are UNPROVEN. See project-control/MT5_ONE_EA_NINE_STREAM_CONTROL.md.'
 - id: MT5-0003
   phase: MT5
   module: MT5_BOUNDARY
@@ -1377,10 +1872,14 @@ tasks:
   dependencies:
   - RT-0021
   - MT5-0001
-  objective: 'The single shared transport. One socket for every stream; connect/send/receive/poll/reconnect; transport failure does not erase logical stream state.'
-  acceptance: 'Single CSocketClient; no per-stream socket; no trading functions.'
-  evidence: 'Implemented and statically reviewed 2026-10-02. MQL5 static audit PASS: exactly one physical EA; nine explicit logical timeframe labels in canonical order; AURA_STREAM_COUNT == 9; single shared transport; zero OrderSend/PositionModify/CTrade live-trade tokens; include graph resolves; brackets balanced; EA lifecycle handlers present. MetaEditor is NOT available in this environment, so MQL5 compilation and real terminal runtime are UNPROVEN. See project-control/MT5_ONE_EA_NINE_STREAM_CONTROL.md.'
-
+  objective: The single shared transport. One socket for every stream; connect/send/receive/poll/reconnect;
+    transport failure does not erase logical stream state.
+  acceptance: Single CSocketClient; no per-stream socket; no trading functions.
+  evidence: 'Implemented and statically reviewed 2026-10-02. MQL5 static audit PASS: exactly one physical
+    EA; nine explicit logical timeframe labels in canonical order; AURA_STREAM_COUNT == 9; single shared
+    transport; zero OrderSend/PositionModify/CTrade live-trade tokens; include graph resolves; brackets
+    balanced; EA lifecycle handlers present. MetaEditor is NOT available in this environment, so MQL5
+    compilation and real terminal runtime are UNPROVEN. See project-control/MT5_ONE_EA_NINE_STREAM_CONTROL.md.'
 - id: MT5-0004
   phase: MT5
   module: MT5_BOUNDARY
@@ -1391,10 +1890,16 @@ tasks:
   dependencies:
   - RT-0021
   - MT5-0001
-  objective: 'One logical stream independent state. Per-stream last closed bar, sequence, init/recovery state, quality, health, provenance, last error, last success; closed-bar-only capture; duplicate/regression rejection; no forming bar.'
-  acceptance: 'Independent per-stream state; forming bar never captured; duplicate close_time rejected; no future timestamps.'
-  evidence: 'Implemented and statically reviewed 2026-10-02. MQL5 static audit PASS: exactly one physical EA; nine explicit logical timeframe labels in canonical order; AURA_STREAM_COUNT == 9; single shared transport; zero OrderSend/PositionModify/CTrade live-trade tokens; include graph resolves; brackets balanced; EA lifecycle handlers present. MetaEditor is NOT available in this environment, so MQL5 compilation and real terminal runtime are UNPROVEN. See project-control/MT5_ONE_EA_NINE_STREAM_CONTROL.md.'
-
+  objective: One logical stream independent state. Per-stream last closed bar, sequence, init/recovery
+    state, quality, health, provenance, last error, last success; closed-bar-only capture; duplicate/regression
+    rejection; no forming bar.
+  acceptance: Independent per-stream state; forming bar never captured; duplicate close_time rejected;
+    no future timestamps.
+  evidence: 'Implemented and statically reviewed 2026-10-02. MQL5 static audit PASS: exactly one physical
+    EA; nine explicit logical timeframe labels in canonical order; AURA_STREAM_COUNT == 9; single shared
+    transport; zero OrderSend/PositionModify/CTrade live-trade tokens; include graph resolves; brackets
+    balanced; EA lifecycle handlers present. MetaEditor is NOT available in this environment, so MQL5
+    compilation and real terminal runtime are UNPROVEN. See project-control/MT5_ONE_EA_NINE_STREAM_CONTROL.md.'
 - id: MT5-0005
   phase: MT5
   module: MT5_BOUNDARY
@@ -1405,10 +1910,14 @@ tasks:
   dependencies:
   - RT-0021
   - MT5-0001
-  objective: 'Nine streams over one transport. Owns exactly nine CTimeframeStream objects and one CSocketClient; multiplexes all nine; isolates failure/recovery per stream; heartbeat and per-stream health.'
-  acceptance: 'AURA_STREAM_COUNT == 9 streams; one transport member; one stream failure never resets another.'
-  evidence: 'Implemented and statically reviewed 2026-10-02. MQL5 static audit PASS: exactly one physical EA; nine explicit logical timeframe labels in canonical order; AURA_STREAM_COUNT == 9; single shared transport; zero OrderSend/PositionModify/CTrade live-trade tokens; include graph resolves; brackets balanced; EA lifecycle handlers present. MetaEditor is NOT available in this environment, so MQL5 compilation and real terminal runtime are UNPROVEN. See project-control/MT5_ONE_EA_NINE_STREAM_CONTROL.md.'
-
+  objective: Nine streams over one transport. Owns exactly nine CTimeframeStream objects and one CSocketClient;
+    multiplexes all nine; isolates failure/recovery per stream; heartbeat and per-stream health.
+  acceptance: AURA_STREAM_COUNT == 9 streams; one transport member; one stream failure never resets another.
+  evidence: 'Implemented and statically reviewed 2026-10-02. MQL5 static audit PASS: exactly one physical
+    EA; nine explicit logical timeframe labels in canonical order; AURA_STREAM_COUNT == 9; single shared
+    transport; zero OrderSend/PositionModify/CTrade live-trade tokens; include graph resolves; brackets
+    balanced; EA lifecycle handlers present. MetaEditor is NOT available in this environment, so MQL5
+    compilation and real terminal runtime are UNPROVEN. See project-control/MT5_ONE_EA_NINE_STREAM_CONTROL.md.'
 - id: MT5-0006
   phase: MT5
   module: MT5_BOUNDARY
@@ -1419,10 +1928,14 @@ tasks:
   dependencies:
   - RT-0021
   - MT5-0001
-  objective: 'Shadow-only execution gateway. Records shadow/paper intents only; a live-execution request is explicitly blocked/unavailable.'
-  acceptance: 'No OrderSend/PositionModify token; RequestLiveExecution always returns executed=false (SHADOW_ONLY).'
-  evidence: 'Implemented and statically reviewed 2026-10-02. MQL5 static audit PASS: exactly one physical EA; nine explicit logical timeframe labels in canonical order; AURA_STREAM_COUNT == 9; single shared transport; zero OrderSend/PositionModify/CTrade live-trade tokens; include graph resolves; brackets balanced; EA lifecycle handlers present. MetaEditor is NOT available in this environment, so MQL5 compilation and real terminal runtime are UNPROVEN. See project-control/MT5_ONE_EA_NINE_STREAM_CONTROL.md.'
-
+  objective: Shadow-only execution gateway. Records shadow/paper intents only; a live-execution request
+    is explicitly blocked/unavailable.
+  acceptance: No OrderSend/PositionModify token; RequestLiveExecution always returns executed=false (SHADOW_ONLY).
+  evidence: 'Implemented and statically reviewed 2026-10-02. MQL5 static audit PASS: exactly one physical
+    EA; nine explicit logical timeframe labels in canonical order; AURA_STREAM_COUNT == 9; single shared
+    transport; zero OrderSend/PositionModify/CTrade live-trade tokens; include graph resolves; brackets
+    balanced; EA lifecycle handlers present. MetaEditor is NOT available in this environment, so MQL5
+    compilation and real terminal runtime are UNPROVEN. See project-control/MT5_ONE_EA_NINE_STREAM_CONTROL.md.'
 - id: MT5-0007
   phase: MT5
   module: MT5_BOUNDARY
@@ -1433,10 +1946,14 @@ tasks:
   dependencies:
   - RT-0021
   - MT5-0001
-  objective: 'The one physical EA entry point. OnInit/OnTick/OnTimer/OnDeinit wiring one CStreamManager (nine streams) and one shadow gateway.'
-  acceptance: 'Exactly one .mq5 file; no per-timeframe EA; shadow-only; all four lifecycle handlers present.'
-  evidence: 'Implemented and statically reviewed 2026-10-02. MQL5 static audit PASS: exactly one physical EA; nine explicit logical timeframe labels in canonical order; AURA_STREAM_COUNT == 9; single shared transport; zero OrderSend/PositionModify/CTrade live-trade tokens; include graph resolves; brackets balanced; EA lifecycle handlers present. MetaEditor is NOT available in this environment, so MQL5 compilation and real terminal runtime are UNPROVEN. See project-control/MT5_ONE_EA_NINE_STREAM_CONTROL.md.'
-
+  objective: The one physical EA entry point. OnInit/OnTick/OnTimer/OnDeinit wiring one CStreamManager
+    (nine streams) and one shadow gateway.
+  acceptance: Exactly one .mq5 file; no per-timeframe EA; shadow-only; all four lifecycle handlers present.
+  evidence: 'Implemented and statically reviewed 2026-10-02. MQL5 static audit PASS: exactly one physical
+    EA; nine explicit logical timeframe labels in canonical order; AURA_STREAM_COUNT == 9; single shared
+    transport; zero OrderSend/PositionModify/CTrade live-trade tokens; include graph resolves; brackets
+    balanced; EA lifecycle handlers present. MetaEditor is NOT available in this environment, so MQL5
+    compilation and real terminal runtime are UNPROVEN. See project-control/MT5_ONE_EA_NINE_STREAM_CONTROL.md.'
 - id: MT5-0008
   phase: MT5
   module: MT5_BOUNDARY
@@ -1449,11 +1966,16 @@ tasks:
   - FND-0013
   - RT-0001
   - RT-0002
-  objective: 'C++ decoder/encoder counterpart of Protocol.mqh: parse a frame into MessageMetadata + EventMetadata + MarketBar; validate protocol/schema/checksum/explicit timeframe; reject malformed/missing-timeframe/future-dated frames.'
-  acceptance: 'Deterministic encode/decode round-trip; explicit timeframe identity; malformed/unknown-protocol/schema/future-dated rejected; pure, no I/O.'
-  evidence: 'Implemented and reviewed 2026-10-02. Covered by src/mt5/Mt5ReceiverTests.cpp (round-trip, deterministic encoding, malformed/unknown-timeframe/checksum/future-dated rejection) passing under c++17/c++20 strict; header self-contained and in the combined all-headers TU.'
-  verification: 'self-contained standalone TU + combined all-headers TU under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic'
-
+  objective: 'C++ decoder/encoder counterpart of Protocol.mqh: parse a frame into MessageMetadata + EventMetadata
+    + MarketBar; validate protocol/schema/checksum/explicit timeframe; reject malformed/missing-timeframe/future-dated
+    frames.'
+  acceptance: Deterministic encode/decode round-trip; explicit timeframe identity; malformed/unknown-protocol/schema/future-dated
+    rejected; pure, no I/O.
+  evidence: Implemented and reviewed 2026-10-02. Covered by src/mt5/Mt5ReceiverTests.cpp (round-trip,
+    deterministic encoding, malformed/unknown-timeframe/checksum/future-dated rejection) passing under
+    c++17/c++20 strict; header self-contained and in the combined all-headers TU.
+  verification: self-contained standalone TU + combined all-headers TU under g++ -std=c++17 and -std=c++20
+    with -Wall -Wextra -Werror -pedantic
 - id: MT5-0009
   phase: MT5
   module: MT5_BOUNDARY
@@ -1465,11 +1987,16 @@ tasks:
   - MT5-0008
   - RT-0004
   - RT-0005
-  objective: 'Receiver stream manager: route decoded frames by explicit timeframe, apply closed bars through the deterministic finalizer/store, reject duplicates/regressions, track per-stream sequence and health; stream-independent.'
-  acceptance: 'Nine explicit streams; routing by explicit timeframe never position; duplicates/regressions rejected idempotently; failure/recovery isolation; no fabricated state.'
-  evidence: 'Implemented and reviewed 2026-10-02. Covered by src/mt5/Mt5ReceiverTests.cpp (nine-stream routing, duplicate/regression rejection, M1-failure/H4-unaffected, M1-recovery/H4-not-reset, W1-outage/H1-unaffected, determinism) under c++17/c++20 strict; header self-contained and in the combined all-headers TU.'
-  verification: 'self-contained standalone TU + combined all-headers TU under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic'
-
+  objective: 'Receiver stream manager: route decoded frames by explicit timeframe, apply closed bars through
+    the deterministic finalizer/store, reject duplicates/regressions, track per-stream sequence and health;
+    stream-independent.'
+  acceptance: Nine explicit streams; routing by explicit timeframe never position; duplicates/regressions
+    rejected idempotently; failure/recovery isolation; no fabricated state.
+  evidence: Implemented and reviewed 2026-10-02. Covered by src/mt5/Mt5ReceiverTests.cpp (nine-stream
+    routing, duplicate/regression rejection, M1-failure/H4-unaffected, M1-recovery/H4-not-reset, W1-outage/H1-unaffected,
+    determinism) under c++17/c++20 strict; header self-contained and in the combined all-headers TU.
+  verification: self-contained standalone TU + combined all-headers TU under g++ -std=c++17 and -std=c++20
+    with -Wall -Wextra -Werror -pedantic
 - id: MT5-0010
   phase: MT5
   module: MT5_BOUNDARY
@@ -1480,11 +2007,14 @@ tasks:
   dependencies:
   - MT5-0008
   - MT5-0009
-  objective: 'Behavioural tests for the MT5 C++ codec and receiver.'
-  acceptance: 'Decode round-trip; nine-stream routing; malformed/missing-timeframe/checksum/future/duplicate rejection; per-stream isolation; no-lookahead; determinism.'
-  evidence: 'Implemented and reviewed 2026-10-02. MT5 one-EA / nine-stream receiver tests PASS under c++17/c++20 strict (real code paths, no mocks). Classified APPROVED. This proves the C++ receiver, not a live MT5 terminal connection.'
-  verification: 'self-contained standalone TU + combined all-headers TU under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic'
-
+  objective: Behavioural tests for the MT5 C++ codec and receiver.
+  acceptance: Decode round-trip; nine-stream routing; malformed/missing-timeframe/checksum/future/duplicate
+    rejection; per-stream isolation; no-lookahead; determinism.
+  evidence: Implemented and reviewed 2026-10-02. MT5 one-EA / nine-stream receiver tests PASS under c++17/c++20
+    strict (real code paths, no mocks). Classified APPROVED. This proves the C++ receiver, not a live
+    MT5 terminal connection.
+  verification: self-contained standalone TU + combined all-headers TU under g++ -std=c++17 and -std=c++20
+    with -Wall -Wextra -Werror -pedantic
 - id: PHASE-MT5
   phase: MT5
   module: MT5_BOUNDARY
@@ -1498,8 +2028,239 @@ tasks:
   - MT5-0007
   - MT5-0009
   - MT5-0010
-  objective: 'Implement the approved MT5 one-physical-EA / nine-logical-stream boundary.'
-  acceptance: 'Physical EA count = 1; logical stream count = 9; transport count = 1; explicit stream identity; no positional multiplexing; no shared mutable stream state; no live broker execution.'
-  evidence: 'MT5 boundary milestone 2026-10-02: physical EA count 1, logical stream count 9, transport count 1. MQL5 static audit PASS (one EA, nine explicit streams, one transport, zero live-trade tokens). C++ codec/receiver tests PASS under c++17/c++20 strict. MetaEditor/MT5 NOT available: real terminal connectivity is UNPROVEN. Live trading NOT enabled.'
-
+  objective: Implement the approved MT5 one-physical-EA / nine-logical-stream boundary.
+  acceptance: Physical EA count = 1; logical stream count = 9; transport count = 1; explicit stream identity;
+    no positional multiplexing; no shared mutable stream state; no live broker execution.
+  evidence: 'MT5 boundary milestone 2026-10-02: physical EA count 1, logical stream count 9, transport
+    count 1. MQL5 static audit PASS (one EA, nine explicit streams, one transport, zero live-trade tokens).
+    C++ codec/receiver tests PASS under c++17/c++20 strict. MetaEditor/MT5 NOT available: real terminal
+    connectivity is UNPROVEN. Live trading NOT enabled.'
+- id: LEARN-0001
+  phase: '3'
+  module: SELF_LEARNING
+  layer: RESEARCH_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: src/learning/KnowledgeObject.h
+  dependencies:
+  - PHASE-2
+  objective: Define the immutable, scoped Knowledge object and structured confidence (V2-05/V2-08).
+  acceptance: Immutable value type; explicit status; point-in-time consistency; confidence is a bounded
+    ranking value, never a probability; no runtime authority.
+  evidence: Implemented and reviewed 2026-10-02. Verified by src/learning/LearningTests.cpp (real code
+    paths, no mocks) under c++17/c++20 strict and self-containment+combined TU.
+- id: LEARN-0002
+  phase: '3'
+  module: SELF_LEARNING
+  layer: RESEARCH_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: src/learning/KnowledgeStore.h
+  dependencies:
+  - LEARN-0001
+  objective: Define the append-only, versioned knowledge store (V2-06/V3-35).
+  acceptance: Versioned revisions; no silent overwrite; idempotent on (identity, revision); history retained.
+  evidence: Implemented and reviewed 2026-10-02. Verified by LearningTests.cpp under c++17/c++20 strict.
+- id: LEARN-0003
+  phase: '3'
+  module: SELF_LEARNING
+  layer: RESEARCH_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: src/learning/KnowledgeLifecycle.h
+  dependencies:
+  - LEARN-0001
+  objective: Encode the explicit knowledge lifecycle transitions (V2-06).
+  acceptance: Only documented transitions allowed; no hidden transitions; does not grant permission.
+  evidence: Implemented and reviewed 2026-10-02. Verified by LearningTests.cpp under c++17/c++20 strict.
+- id: LEARN-0004
+  phase: '3'
+  module: SELF_LEARNING
+  layer: RESEARCH_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: src/learning/ContextLearning.h
+  dependencies:
+  - LEARN-0001
+  objective: Context-conditioned evidence aggregation with explicit causality (V2-05/V3-18).
+  acceptance: Excludes observations whose outcome postdates the assessment time; leakage is counted, not
+    silent.
+  evidence: Implemented and reviewed 2026-10-02. Verified by LearningTests.cpp under c++17/c++20 strict.
+- id: LEARN-0005
+  phase: '3'
+  module: SELF_LEARNING
+  layer: RESEARCH_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: src/learning/ContradictionEngine.h
+  dependencies:
+  - LEARN-0001
+  objective: Detect and preserve knowledge contradictions as first-class objects (V2-07).
+  acceptance: Both sides preserved; never overwrites using the other; deterministic order-independent
+    identity.
+  evidence: Implemented and reviewed 2026-10-02. Verified by LearningTests.cpp under c++17/c++20 strict.
+- id: LEARN-0006
+  phase: '3'
+  module: SELF_LEARNING
+  layer: RESEARCH_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: src/learning/KnowledgeDecay.h
+  dependencies:
+  - LEARN-0001
+  - LEARN-0003
+  objective: Knowledge decay and revalidation triggers (V2-09).
+  acceptance: Aged knowledge is never erased; explicit triggers; no illegal transitions proposed.
+  evidence: Implemented and reviewed 2026-10-02. Verified by LearningTests.cpp under c++17/c++20 strict.
+- id: LEARN-0007
+  phase: '3'
+  module: SELF_LEARNING
+  layer: RESEARCH_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: src/learning/FailureMemory.h
+  dependencies:
+  - LEARN-0001
+  - OB-0003
+  objective: Failure memory over structured error records (V3-27; every failure becomes research knowledge).
+  acceptance: Append-only; aggregates patterns; excludes outcomes not yet known; never erases history.
+  evidence: Implemented and reviewed 2026-10-02. Verified by LearningTests.cpp under c++17/c++20 strict.
+- id: LEARN-0008
+  phase: '3'
+  module: SELF_LEARNING
+  layer: RESEARCH_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: src/learning/LearningTests.cpp
+  dependencies:
+  - LEARN-0001
+  - LEARN-0007
+  objective: Behavioural tests proving Phase 3 learning properties.
+  acceptance: No future-outcome leakage; versioning; lifecycle; contradiction preservation; decay.
+  evidence: Passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; real code
+    paths, no mocks.
+- id: PHASE-3-MILESTONE
+  phase: '3'
+  module: SELF_LEARNING
+  layer: RESEARCH_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: (phase milestone - aggregates LEARN-0001..LEARN-0008)
+  dependencies:
+  - LEARN-0008
+  objective: Phase 3 Self-Learning milestone.
+  acceptance: All file-level tasks APPROVED; tests pass.
+  evidence: All 8 file-level tasks APPROVED; LearningTests.cpp passes c++17/c++20 strict.
+- id: RESEARCH-0001
+  phase: '4'
+  module: RESEARCH_PLANE
+  layer: RESEARCH_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: src/research/Hypothesis.h
+  dependencies:
+  - LEARN-0001
+  objective: Define the falsifiable hypothesis contract (10.1/65).
+  acceptance: Mandatory falsification condition; references parent knowledge; no runtime path.
+  evidence: Implemented and reviewed 2026-10-02. Verified by src/research/ResearchTests.cpp under c++17/c++20
+    strict.
+- id: RESEARCH-0002
+  phase: '4'
+  module: RESEARCH_PLANE
+  layer: RESEARCH_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: src/research/Experiment.h
+  dependencies:
+  - RESEARCH-0001
+  objective: Define the immutable experiment object (11.1).
+  acceptance: Explicit versioning for reproducibility; outcome/evidence-zone/contamination state.
+  evidence: Implemented and reviewed 2026-10-02. Verified by ResearchTests.cpp under c++17/c++20 strict.
+- id: RESEARCH-0003
+  phase: '4'
+  module: RESEARCH_PLANE
+  layer: RESEARCH_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: src/research/ExperimentFingerprint.h
+  dependencies:
+  - RESEARCH-0002
+  objective: Deterministic experiment fingerprint (20.2).
+  acceptance: SHA-256 over stable fields; ignores transient fields; no silent algorithm substitution.
+  evidence: Implemented and reviewed 2026-10-02. Verified by ResearchTests.cpp under c++17/c++20 strict.
+- id: RESEARCH-0004
+  phase: '4'
+  module: RESEARCH_PLANE
+  layer: RESEARCH_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: src/research/ResearchBudget.h
+  dependencies: []
+  objective: Research budget ledger with explicit states (13).
+  acceptance: Tracks spend per category; GREEN/YELLOW/RED/FROZEN; refuses overspend and negative spend.
+  evidence: Implemented and reviewed 2026-10-02. Verified by ResearchTests.cpp under c++17/c++20 strict.
+- id: RESEARCH-0005
+  phase: '4'
+  module: RESEARCH_PLANE
+  layer: RESEARCH_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: src/research/ExperimentLedger.h
+  dependencies:
+  - RESEARCH-0002
+  - RESEARCH-0003
+  objective: Append-only experiment ledger with duplicate detection (20/15.3).
+  acceptance: Append-only; idempotent; failed experiments first-class; duplicate fingerprint detected.
+  evidence: Implemented and reviewed 2026-10-02. Verified by ResearchTests.cpp under c++17/c++20 strict.
+- id: RESEARCH-0006
+  phase: '4'
+  module: RESEARCH_PLANE
+  layer: RESEARCH_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: src/research/ResearchPlanner.h
+  dependencies:
+  - RESEARCH-0002
+  objective: Validation planner fixing the protocol before evaluation (14.2).
+  acceptance: Protocol fixed before evaluation; immutable within an experiment family.
+  evidence: Implemented and reviewed 2026-10-02. Verified by ResearchTests.cpp under c++17/c++20 strict.
+- id: RESEARCH-0007
+  phase: '4'
+  module: RESEARCH_PLANE
+  layer: RESEARCH_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: src/research/ResearchSandbox.h
+  dependencies:
+  - RESEARCH-0005
+  - RESEARCH-0006
+  objective: Research sandbox boundary; never mutates runtime (INVARIANT 01/03; V3-34).
+  acceptance: Admits only recorded hypotheses with a fixed plan; may_mutate_runtime() always false.
+  evidence: Implemented and reviewed 2026-10-02. Verified by ResearchTests.cpp under c++17/c++20 strict.
+- id: RESEARCH-0008
+  phase: '4'
+  module: RESEARCH_PLANE
+  layer: RESEARCH_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: src/research/ResearchTests.cpp
+  dependencies:
+  - RESEARCH-0001
+  - RESEARCH-0007
+  objective: Behavioural tests proving Phase 4 research properties.
+  acceptance: Falsifiability; reproducibility; duplicate detection; budget; fixed protocol; sandbox immutability.
+  evidence: Passes under g++ -std=c++17 and -std=c++20 with -Wall -Wextra -Werror -pedantic; real code
+    paths, no mocks.
+- id: PHASE-4-MILESTONE
+  phase: '4'
+  module: RESEARCH_PLANE
+  layer: RESEARCH_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: (phase milestone - aggregates RESEARCH-0001..RESEARCH-0008)
+  dependencies:
+  - RESEARCH-0008
+  objective: Phase 4 Research Plane milestone.
+  acceptance: All file-level tasks APPROVED; tests pass.
+  evidence: All 8 file-level tasks APPROVED; ResearchTests.cpp passes c++17/c++20 strict.
 last_updated: '2026-10-02'
