@@ -14,7 +14,7 @@ Do not rely on any prior conversation memory.
   (durable persistence + crash recovery + packaging/CI) and the Windows x64 Release package are
   implemented and `TESTED`. Phase 9's Desktop Control Center now includes a **real GUI**
   (`GUI-0001`, IMPLEMENTED) plus read-only projections for every remaining V3-37 section
-  (`GUI-0004..GUI-0006`, IMPLEMENTED).
+  (`GUI-0004..GUI-0006`, APPROVED).
 - Authoritative build: `AURA/CMakeLists.txt` (header-only C++17/20 + the `aura_foundation` SHA-256 TU).
   It builds the `aura` console host, 18 behavioural test executables, and installs `bin/aura` +
   headers + docs. `ctest` is 18/18 green under C++17 AND C++20. On Windows/MSVC the CRT is linked
@@ -23,9 +23,9 @@ Do not rely on any prior conversation memory.
   `aura --self-test [--keep]` (bounded offline smoke), `aura --dump-frames <file>`, `aura --recover
   <store>` (report the V2-36 decision). `--store <path>` enables file-backed persistence of
   per-timeframe progress + the shadow ledger.
-- Manifest graph: 199 tasks -- 175 `APPROVED`, 7 `TESTED` (PERSIST-0001, PERSIST-0002, BUILD-0002,
-  BUILD-0003, GUI-0002, GUI-0003, PHASE-9-MILESTONE), 5 `IMPLEMENTED` (TASK-MANIFEST-001, GUI-0001,
-  GUI-0004, GUI-0005, GUI-0006), 10 `DEFERRED`, 2 `BLOCKED`.
+- Manifest graph: 199 tasks -- 178 `APPROVED`, 7 `TESTED` (PERSIST-0001, PERSIST-0002, BUILD-0002,
+  BUILD-0003, GUI-0002, GUI-0003, PHASE-9-MILESTONE), 2 `IMPLEMENTED` (TASK-MANIFEST-001, GUI-0001),
+  10 `DEFERRED`, 2 `BLOCKED`.
 - CI: `.github/workflows/ci.yml` builds/tests Linux C++17+C++20 (blocking) with the smoke test and an
   install check, plus MSVC Windows C++17/C++20, plus a `desktop-gui` job (Dear ImGui + GLFW + Xvfb
   bounded interactive smoke), plus a `windows-x64-release-package` job that builds `aura.exe` and

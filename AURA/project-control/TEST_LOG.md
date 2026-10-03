@@ -42,6 +42,21 @@ Honest limitations: this is local Linux verification. Remote CI for these commit
 once the push completes. Interactive rendering on a real Windows desktop remains UNPROVEN. No
 profitability, calibration, broker-validation or production-safety claim is made.
 
+### Remote CI (GitHub Actions) — run 37118241974, commit e4bde97
+
+All 6 jobs SUCCESS:
+- `ubuntu-latest / c++17 / gcc` — SUCCESS (full suite + smoke + install check).
+- `ubuntu-latest / c++20 / gcc` — SUCCESS.
+- `windows-latest / c++17 / msvc` — SUCCESS.
+- `windows-latest / c++20 / msvc` — SUCCESS.
+- `desktop-gui-linux (Dear ImGui + Xvfb)` — SUCCESS (full suite incl. `GuiSelfTest`; GUI headless
+  integration smoke; bounded interactive-runtime smoke under Xvfb software OpenGL).
+- `windows-x64-release-package` — SUCCESS (builds `aura.exe` + `aura_gui.exe`, runs the suite, smokes
+  both exes, re-runs both from the extracted package).
+
+This confirms the newly added section-integration code builds and its tests pass on Linux gcc (C++17
+and C++20) and Windows MSVC (C++17 and C++20), and that the GUI still builds and its smokes pass.
+
 ## 2026-10-03 — Phase 9 desktop productization: real GUI (GUI-0001/0002/0003)
 
 Scope: build and verify a real desktop control-center GUI (Dear ImGui + GLFW + OpenGL 3.3) over the

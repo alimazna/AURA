@@ -2663,8 +2663,9 @@ tasks:
     sections; wired sections bound to live runtime data; unsourced sections NOT AVAILABLE). Local:
     DesktopTests PASS c++17/c++20 strict; default build 18/18, GUI build 19/19; aura_gui --self-test
     PASS; Xvfb interactive smoke cycles all 19 sections and shuts down cleanly. Remote CI for these new
-    commits is recorded in TEST_LOG.md once pushed. Real-Windows-desktop interactive verification
-    remains UNPROVEN; MT5 EA round-trip UNPROVEN. Shadow only.'
+    commits (run 37118241974, commit e4bde97) is ALL GREEN across 6/6 jobs and recorded in TEST_LOG.md.
+    Real-Windows-desktop interactive verification remains UNPROVEN; MT5 EA round-trip UNPROVEN. Shadow
+    only.'
 - id: TG-0001
   phase: '10'
   module: AUXILIARY_TELEGRAM
@@ -3074,7 +3075,7 @@ tasks:
   module: DESKTOP_CONTROL_CENTER
   layer: APPLICATION_PLANE
   authority: PROPOSED
-  status: IMPLEMENTED
+  status: APPROVED
   output: src/desktop/ControlCenterPanels.h
   dependencies:
   - DESK-0002
@@ -3089,13 +3090,13 @@ tasks:
     no network, no clock, no input mutation.
   evidence: 'DONE 2026-10-03: added PanelSources + ControlCenterPanels (pure, deterministic). Verified
     by DesktopTests test_section_panel_availability (unsourced -> NOT AVAILABLE; wired -> available;
-    deterministic) under g++ c++17/c++20 strict.'
+    deterministic) under g++ c++17/c++20 strict; remote CI run 37118241974 all 6 jobs green.'
 - id: GUI-0005
   phase: '9'
   module: DESKTOP_CONTROL_CENTER
   layer: APPLICATION_PLANE
   authority: PROPOSED
-  status: IMPLEMENTED
+  status: APPROVED
   output: src/desktop/ControlCenterState.h, src/desktop/GuiPanels.h, tools/aura_gui.cpp
   dependencies:
   - GUI-0001
@@ -3111,13 +3112,14 @@ tasks:
     over live adapters; ledger snapshot cached by size (re-copied only when it grows). Verified by
     DesktopTests test_incident_propagation_and_corruption + test_single_runtime_owner; GuiSelfTest now
     asserts version/ledger/incident sourcing and NOT-AVAILABLE for unsourced planes; Xvfb interactive
-    smoke cycles all 19 sections and shuts down cleanly. Shadow only.'
+    smoke cycles all 19 sections and shuts down cleanly. Remote CI run 37118241974 all 6 jobs green.
+    Shadow only.'
 - id: GUI-0006
   phase: '9'
   module: DESKTOP_CONTROL_CENTER
   layer: OPERATING_GOVERNANCE_PLANE
   authority: PROPOSED
-  status: IMPLEMENTED
+  status: APPROVED
   output: src/desktop/DesktopTests.cpp (extended)
   dependencies:
   - GUI-0004
@@ -3128,7 +3130,7 @@ tasks:
     CORRUPTED_STATE and refused; single runtime owner.
   evidence: 'DONE 2026-10-03: added test_section_panel_availability, test_incident_propagation_and_corruption,
     test_single_runtime_owner. DesktopTests ALL PASS under g++ c++17 and c++20 strict (real code paths,
-    no mocks); registered with CTest (DesktopTests).'
+    no mocks); registered with CTest (DesktopTests); remote CI run 37118241974 all 6 jobs green.'
 - id: MT5-REAL-0001
   phase: DEFERRED
   module: MT5_RUNTIME

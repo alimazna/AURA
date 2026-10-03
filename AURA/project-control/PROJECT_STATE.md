@@ -415,8 +415,9 @@ See `project-control/BLOCKED.md`.
   validation evidence, approvals, evolution graph, schedule/operating window, operating-window
   checkpoints — are shown explicitly as **`NOT AVAILABLE`**, never fabricated. The GUI exposes no
   live-order path; the shadow-only invariant is asserted in tests and self-test.
-- The manifest graph is now 199 file-level tasks (175 `APPROVED`, 7 `TESTED`, 5 `IMPLEMENTED`, 10
-  `DEFERRED`, 2 `BLOCKED`). The 10 deferred Master capabilities remain visible.
+- The manifest graph is now 199 file-level tasks (178 `APPROVED`, 7 `TESTED`, 2 `IMPLEMENTED`
+  [TASK-MANIFEST-001, GUI-0001], 10 `DEFERRED`, 2 `BLOCKED`). The 10 deferred Master capabilities
+  remain visible.
 - Remaining unproven items are environment/data-bound (real-Windows-desktop interactive GUI, real
   MetaEditor/MT5 run, historical dataset campaign, and wiring sources for the still-`NOT AVAILABLE`
   panels). No live trading is enabled; Phase 11 stays a gate/registry.
