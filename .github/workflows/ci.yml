@@ -65,9 +65,9 @@ jobs:
         working-directory: AURA
         run: cmake -S . -B build -A x64 -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=17
 
-      - name: Build aura (Release)
+      - name: Build (Release, all targets incl. aura.exe)
         working-directory: AURA
-        run: cmake --build build --config Release --target aura -j 4
+        run: cmake --build build --config Release -j 4
 
       - name: Full test suite
         working-directory: AURA
