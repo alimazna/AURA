@@ -2,6 +2,7 @@
 #define AURA_RUNTIME_APPLICATIONSHELL_H
 
 #include "runtime/ApplicationPipeline.h"
+#include "runtime/ApplicationRecovery.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -230,14 +231,75 @@ private:
 // caller-owned flag set by a signal handler or the GUI to request a clean drain.
 class ApplicationShell {
 public:
-    ApplicationShell() : ApplicationShell(ApplicationPipeline::Config{}) {}
+    ApplicationShell() : ApplicationShell(ApplicationPipeline::Config{}, std::string{}) {}
 
     explicit ApplicationShell(ApplicationPipeline::Config config)
-        : pipeline_(std::move(config)) {}
+        : ApplicationShell(std::move(config), std::string{}) {}
+
+    // `store_path` selects where derived state is persisted. An empty path keeps
+    // the shell in-memory only (used by transport tests that do not persist).
+    ApplicationShell(ApplicationPipeline::Config config, std::string store_path)
+        : pipeline_(std::move(config)), store_(std::move(store_path)) {}
 
     ApplicationPipeline& pipeline() noexcept { return pipeline_; }
     TcpFrameServer& server() noexcept { return server_; }
 
+    // Persistence / recovery (PERSIST-0001). The shell owns when state is
+    // persisted, but the decision whether to resume is made only after a verified
+    // load. A failed/corrupted load never silently continues: it returns a
+    // non-resumable outcome. Shadow-only; no order is placed.
+    foundation::PersistenceStatus persist_state() {
+        PersistedManifest manifest = make_manifest(ShutdownIntent::CLEAN, true);
+        return ApplicationRecovery::persist_state(store_, pipeline_.state_store(), pipeline_.ledger(),
+                                                  manifest);
+    }
+
+    foundation::PersistenceStatus persist_pause() {
+        PersistedManifest manifest = make_manifest(ShutdownIntent::PAUSE, true);
+        return ApplicationRecovery::persist_state(store_, pipeline_.state_store(), pipeline_.ledger(),
+                                                  manifest);
+    }
+
+    // The V2-36 boot decision for this shell's store.
+    RecoveryOutcome recover(bool known_good_available = false) {
+        return ApplicationRecovery::decide(store_, config().schema_version, config().strategy_version,
+                                           config().configuration_version, known_good_available);
+    }
+
+    // Applies a verified resume: restores persisted progress into the receiver.
+    // Returns false when the state could not be restored; the caller must then
+    // treat the app as unsafe to continue (no silent fallback).
+    bool apply_resume() {
+        const foundation::PersistenceStatus progress =
+            ApplicationRecovery::restore_state(store_, pipeline_.receiver());
+        if (progress != foundation::PersistenceStatus::OK) return false;
+        const foundation::PersistenceStatus ledger =
+            ApplicationRecovery::restore_ledger(store_, pipeline_.mutable_ledger());
+        if (ledger != foundation::PersistenceStatus::OK) return false;
+        pipeline_.receiver().reset_stream_sequences();
+        return true;
+    }
+
+    foundation::FilePersistenceStore& store() noexcept { return store_; }
+    const ApplicationPipeline::Config& config() const noexcept { return pipeline_.config(); }
+
+private:
+    PersistedManifest make_manifest(ShutdownIntent intent, bool complete) const {
+        PersistedManifest manifest;
+        manifest.schema_version = config().schema_version;
+        manifest.strategy_version = config().strategy_version;
+        manifest.configuration_version = config().configuration_version;
+        manifest.intent = intent;
+        manifest.complete = complete;
+        manifest.checkpoint_at = pipeline_.last_observation();
+        manifest.checkpoint_id =
+            pipeline_.last_observation().nanoseconds() == 0
+                ? std::string{}
+                : std::string("cp|") + std::to_string(pipeline_.last_observation().nanoseconds());
+        return manifest;
+    }
+
+public:
     bool start(std::uint16_t port, const std::string& bind_address = "127.0.0.1") {
         return server_.listen_on(port, bind_address);
     }
@@ -294,6 +356,7 @@ public:
 
 private:
     ApplicationPipeline pipeline_;
+    foundation::FilePersistenceStore store_;
     TcpFrameServer server_;
     std::string pending_{};
     bool stop_{false};

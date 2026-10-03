@@ -249,6 +249,30 @@ Only explicit human decisions belong here.
 - **Scope-change flag:** Yes (Phase 12 promoted). Execution authority is unchanged.
 - **Master V3 status:** Preserved unchanged.
 
+## 2026-10-03 — Phase 13: durable persistence, crash recovery, packaging/CI
+
+- **Date:** 2026-10-03
+- **Decision:**
+  1. `PERSIST-0001` is implemented as `FilePersistenceStore` + `ApplicationRecovery` and wired into
+     `ApplicationShell`. The concrete store keeps the existing `IPersistenceStore` contract
+     (PER-0003) and adds a payload-retaining record, an atomic (temp + fsync + rename) flush, and a
+     whole-file SHA-256 checksum. No new persistence interface was invented.
+  2. Crash recovery follows the Master V2-36/V3-21 taxonomy exactly (CLEAN_SHUTDOWN, EXPECTED_PAUSE,
+     INTERRUPTED_WORK, CORRUPTED_STATE, UNKNOWN_STATE). The system REFUSES to resume corrupted,
+     version-incompatible, or uncheckpointed-interruption state rather than continue on unverified
+     state; a known-good fallback is used only when explicitly available.
+  3. `PERSIST-0002` (`aura --self-test`) and `BUILD-0002` (CMake install rules + CI) are in scope.
+     CI's Linux jobs are blocking; the MSVC Windows job is marked experimental/non-blocking because the
+     Windows toolchain is not yet proven (BLOCKED.md), so a failure is visible rather than hidden.
+  4. Shadow mode remains the sole execution path; no live order path is added. No profitability,
+     calibration, broker-validation, or production-safety claim is made.
+- **Rationale:** Persistence and recovery are required for long-running operation and are
+  environment-independent; they can be implemented and proven here without inventing toolchains or
+  datasets. The Master already fixes the recovery taxonomy, so this implements an existing decision.
+- **Affected tasks:** `PERSIST-0001`, `PERSIST-0002`, `BUILD-0002`.
+- **Scope-change flag:** Yes (Phase 13 promoted). Execution authority is unchanged.
+- **Master V3 status:** Preserved unchanged.
+
 ## Decision format
 
 For each future material decision record:

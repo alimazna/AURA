@@ -336,6 +336,42 @@ This is the human-readable snapshot of where the project currently stands.
 - Still deliberately NOT claimed: profitability, calibrated probability, broker validation,
   production safety, or live trading. Phase 11 remains a gate/registry only.
 
+## Durable persistence and crash recovery (2026-10-03)
+
+- PERSIST-0001 was the active unblocked task and is now implemented, verified and recorded `TESTED`:
+  - `src/foundation/FilePersistenceStore.h` is the concrete file-backed `IPersistenceStore`
+    (PER-0003). It is append-only, idempotent on record identity (a conflicting payload is a
+    `CONFLICT`), and crash-safe: `flush()` writes a temp file, fsyncs, and atomically renames. The
+    whole file carries a SHA-256 checksum verified on load, so a torn or tampered file is reported
+    `CORRUPT` and a truncated/decodable-error file is `UNAVAILABLE` — never silently accepted. Each
+    record stores its payload digest and (for restoration) the payload text; a payload containing a
+    tab/newline is refused.
+  - `src/runtime/ApplicationRecovery.h` implements the V2-36/V3-21 crash-recovery path: it persists
+    per-timeframe progress plus the append-only shadow ledger, and classifies the prior lifecycle as
+    one of CLEAN_SHUTDOWN, EXPECTED_PAUSE, INTERRUPTED_WORK, CORRUPTED_STATE or UNKNOWN_STATE. The
+    boot decision verifies schema/strategy/configuration identity and REFUSES to resume state that is
+    corrupted, version-incompatible, or an uncheckpointed interruption; it returns a known-good
+    fallback only when one is available. An incomplete manifest is INTERRUPTED_WORK, never
+    CLEAN_SHUTDOWN.
+  - `src/runtime/ApplicationPipeline.h` / `ApplicationShell.h` wire persistence in
+    (`persist_state`, `persist_pause`, `recover`, `apply_resume`); `Mt5StreamManager::restore_progress`
+    repopulates per-stream state from a verified store without reprocessing history.
+    `tools/run_pipeline.cpp` gains `--store`, `--self-test` and `--recover`.
+- Verification: `src/runtime/PersistenceTests.cpp` (PERSIST-0001) PASSES — idempotency, atomic
+  round-trip, byte-determinism, tamper + truncation -> CORRUPT, every lifecycle decision,
+  incompatible/corrupted -> refused, and an application restart restoring 9 timeframe states + the
+  ledger then accepting strictly-newer bars (no repaint). CTest is now 18/18 green under C++17 and
+  C++20. Real `aura --serve` received 360 socket frames -> 9/9 streams, 360 accepted, 38
+  signals/proposals/fills, 151 ledger entries, HEALTHY, persisting 161 records; `aura --recover`
+  reports CLEAN_SHUTDOWN/resumable for the good store and CORRUPTED_STATE/refused (exit 1) for a
+  tampered store. `aura --self-test` PASSES.
+- BUILD-0002 adds an installable package (CMake install rules for the host + headers + docs) and a CI
+  workflow building/testing on Linux under C++17 and C++20 with the smoke test; an MSVC Windows job is
+  included but explicitly non-blocking (the Windows toolchain remains unproven — see BLOCKED.md).
+  Remote CI has not yet been observed.
+- Still deliberately NOT claimed: profitability, calibrated probability, broker validation,
+  production safety, or live trading. All of the above is shadow-only.
+
 ## Explicit blockers (2026-10-02)
 
 - GUI-0001 (native Windows desktop application) — BLOCKED on a Windows toolchain (no MSVC/Win).
@@ -345,19 +381,25 @@ See `project-control/BLOCKED.md`.
 
 ## Current task
 
-- All canonical Phases 0–11 are COMPLETE and `APPROVED`. Phase 12 (Integration/Application) is
-  implemented: end-to-end pipeline + socket transport + real host executable + CMake build + an
-  end-to-end test, all green under c++17/c++20 and CTest.
+- All canonical Phases 0–11 are COMPLETE and `APPROVED`. Phase 12 (Integration/Application) and Phase
+  13 (durable persistence + crash recovery + packaging/CI) are implemented and `TESTED`. Phase 13 adds
+  `FilePersistenceStore.h`, `ApplicationRecovery.h`, `PersistenceTests.cpp`, the `aura`
+  `--store`/`--self-test`/`--recover` modes, CMake install rules, and a CI workflow.
+- The manifest graph is now 193 file-level tasks (176 `APPROVED`, 3 `TESTED`, 1 `IMPLEMENTED`, 10
+  `DEFERRED`, 3 `BLOCKED`). The 10 deferred Master capabilities remain visible; the 3 blockers are
+  environment-only.
 - The remaining P0/P1 items are environment-blocked (native Windows GUI, real MetaEditor/MT5 run,
-  historical dataset campaign) or are the next unblocked step (PERSIST-0001 file-backed persistence
-  wired into the application). No live trading is enabled; Phase 11 stays a gate/registry.
+  historical dataset campaign). No live trading is enabled; Phase 11 stays a gate/registry.
 
 ## Next action
 
-1. When a MetaEditor/MT5 environment becomes available, run Phase 11 controlled validation
+1. Add a Phase 13 recovery test that kills the process mid-write (SIGKILL) to prove the atomic
+   temp+rename path leaves either the old or the complete new file, never a torn one.
+2. Observe the remote CI run for `.github/workflows/ci.yml` once pushed; record real results.
+3. When a MetaEditor/MT5 environment becomes available, run Phase 11 controlled validation
    (demo/shadow only) behind the readiness gate; record real results in `TEST_LOG.md`.
-2. Keep the control plane and manifest updated per wave; preserve state in Git.
-3. Do not enable unattended live trading or make profitability/safety claims without evidence.
+4. Keep the control plane and manifest updated per wave; preserve state in Git.
+5. Do not enable unattended live trading or make profitability/safety claims without evidence.
 
 ## Update rule
 

@@ -31,9 +31,10 @@ authority_class_enum:
 path_status_note: Phase 0 filenames are from V3-42 (CANONICAL decomposition). Phase 0.5/1/2 filenames
   and src/ layout are PROPOSED implementation decomposition and are subject to integration review (V3-16,
   V3-46). They must not be treated as canonical architecture.
-current_task: 'Canonical Phases 0-11 complete. Phase 12 integration/application started: end-to-end pipeline
-  + socket transport + real host executable + CMake build done. Remaining are environment-blocked (Windows
-  GUI, real MT5, datasets) and app persistence wiring.'
+current_task: 'Canonical Phases 0-12 COMPLETE. Phase 13 (durable persistence + crash recovery + packaging/CI)
+  implemented and TESTED: FilePersistenceStore + ApplicationRecovery + app wiring + PersistenceTests +
+  aura --self-test/--recover/--store + CMake install + CI workflow. Manifest graph 193 tasks. Remaining
+  are environment-blocked only (Windows GUI, real MT5, datasets).'
 tasks:
 - id: TASK-BOOTSTRAP-001
   phase: BOOTSTRAP
@@ -3028,14 +3029,56 @@ tasks:
   module: INTEGRATION
   layer: APPLICATION_PLANE
   authority: PROJECT DECISION
-  status: READY
-  output: (wire IPersistenceStore backing into the application)
+  status: TESTED
+  output: src/foundation/FilePersistenceStore.h, src/runtime/ApplicationRecovery.h, app wiring
+    (src/runtime/ApplicationPipeline.h, src/runtime/ApplicationShell.h, tools/run_pipeline.cpp)
+    + src/runtime/PersistenceTests.cpp
   dependencies:
   - APP-0001
   - PER-0003
   objective: Durable persistence across restarts for timeframe state + ledgers in the running application.
   acceptance: A file-backed IPersistenceStore persists and restores TimeframeStateStore/ShadowLedger;
     restart resumes without reprocessing or repainting.
-  evidence: 'PLANNED: interfaces exist and are tested; the concrete file-backed store and app wiring are
-    the remaining work.'
-last_updated: '2026-10-02'
+  evidence: 'DONE 2026-10-03: FilePersistenceStore implements IPersistenceStore append-only with atomic
+    (temp+fsync+rename) flush, a whole-file SHA-256 checksum, and empty-digest/conflict/duplicate
+    rejection; ApplicationRecovery implements the V2-36 lifecycle taxonomy (CLEAN_SHUTDOWN / EXPECTED_PAUSE
+    / INTERRUPTED_WORK / CORRUPTED_STATE / UNKNOWN_STATE) and refuses corrupted or version-incompatible
+    state (never silently resumes). ApplicationShell.persist_state / recover / apply_resume wire it in;
+    aura --serve persists on clean stop. Verified: PersistenceTests ALL PASS (idempotency, round-trip,
+    determinism, tamper+truncation -> CORRUPT, all lifecycle decisions, incompatible -> refused, corrupted
+    -> refused, application restart restores 9 timeframes + ledger then accepts strictly-newer bars);
+    CTest 18/18 under C++17 and C++20; aura --serve received 360 real socket frames -> 9/9 streams, 360
+    accepted, 38 signals/proposals/fills, 151 ledger entries, HEALTHY, persisted 161 records; aura
+    --recover on the good store => CLEAN_SHUTDOWN/resumable, on a tampered store => CORRUPTED_STATE/refused
+    (exit 1); aura --self-test PASS. See TEST_LOG.md.'
+- id: PERSIST-0002
+  phase: '13'
+  module: INTEGRATION
+  layer: APPLICATION_PLANE
+  authority: PROPOSED
+  status: TESTED
+  output: tools/run_pipeline.cpp (--self-test), CMakeLists.txt
+  dependencies:
+  - PERSIST-0001
+  objective: A bounded, socket-free CI smoke that exercises the full pipeline, persistence and recovery.
+  acceptance: aura --self-test feeds a deterministic frame set, persists, then reloads and verifies recovery.
+  evidence: 'DONE 2026-10-03: aura --self-test PASS — 30 deterministic steps x 9 streams -> 270 accepted,
+    28 signals/proposals/fills, 111 ledger entries; persist OK (121 records); recovery CLEAN_SHUTDOWN
+    resumable; restores 9 timeframes + 111 ledger entries. Used by CI.'
+- id: BUILD-0002
+  phase: '13'
+  module: INTEGRATION
+  layer: APPLICATION_PLANE
+  authority: PROPOSED
+  status: TESTED
+  output: .github/workflows/ci.yml, CMakeLists.txt (install rules)
+  dependencies:
+  - BUILD-0001
+  objective: Continuous integration and installable packaging for the console host.
+  acceptance: CI builds and runs the full CTest suite under C++17 and C++20 and runs the smoke; CMake
+    exposes install rules for the host + headers.
+  evidence: 'DONE 2026-10-03: CMake install rules added and verified locally (cmake --install installs
+    bin/aura + include/aura/**.h + doc). CI workflow added: Linux gcc C++17/C++20 build+ctest+smoke+install
+    (blocking) and an MSVC Windows job marked experimental/continue-on-error so its not-yet-proven status
+    is visible, not hidden. Remote CI run not yet observed.'
+last_updated: '2026-10-03'

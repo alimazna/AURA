@@ -54,6 +54,7 @@ set(AURA_TEST_TARGETS
   "RealWorldTests:src/realworld/RealWorldTests.cpp"
   "Mt5ReceiverTests:src/mt5/Mt5ReceiverTests.cpp"
   "EndToEndTests:src/runtime/EndToEndTests.cpp"
+  "PersistenceTests:src/runtime/PersistenceTests.cpp"
 )
 
 find_package(Threads REQUIRED)
@@ -76,3 +77,13 @@ endforeach()
 enable_testing()
 
 message(STATUS "AURA: ${CMAKE_CXX_STANDARD} | tests: ${CMAKE_CXX_COMPILER_ID}")
+
+# Packaging: the console host and public headers install cleanly. The rich desktop
+# GUI is a separate Windows deliverable (see project-control/BLOCKED.md).
+include(GNUInstallDirs)
+install(TARGETS aura RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src/
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/aura
+        FILES_MATCHING PATTERN "*.h")
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/README.md
+        DESTINATION ${CMAKE_INSTALL_DOCDIR})

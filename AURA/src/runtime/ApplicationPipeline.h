@@ -91,6 +91,7 @@ public:
         ExecutionCostModel cost_model{0.1, 1.0, 0.0};
         double partial_fill_threshold{2.0};
         std::size_t bar_window{32};
+        std::string schema_version{"1.0.0"};
         std::string strategy_version{"1.0.0"};
         std::string configuration_version{"1.0.0"};
     };
@@ -158,9 +159,20 @@ public:
     }
 
     const ShadowLedger& ledger() const noexcept { return ledger_; }
+    // Mutable ledger accessor, used only to restore the append-only ledger after a
+    // verified recovery. Append semantics are unchanged (idempotent, no rewrite).
+    ShadowLedger& mutable_ledger() noexcept { return ledger_; }
     const TimeframeStateStore& state_store() const noexcept { return stream_manager_.store(); }
     const AdapterManager& adapters() const noexcept { return adapters_; }
     const Config& config() const noexcept { return config_; }
+
+    // Mutable receiver accessor, used only to restore persisted progress after a
+    // verified recovery. Exposes no live path.
+    mt5::Mt5StreamManager& receiver() noexcept { return stream_manager_; }
+
+    // Deterministic timestamp of the most recent accepted frame (no wall clock).
+    // Used as the persisted checkpoint time so persistence stays reproducible.
+    foundation::Timestamp last_observation() const noexcept { return last_observation_; }
 
     // The most recent accepted closed bar for a timeframe, or nullptr.
     const MarketBar* last_bar(Timeframe timeframe) const {

@@ -1,0 +1,55 @@
+name: AURA CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: ${{ matrix.os }} / c++${{ matrix.standard }} / ${{ matrix.compiler }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        standard: ["17", "20"]
+        compiler: [gcc]
+        include:
+          # MSVC on Windows is compiled here to prove portability only. It is
+          # explicitly allowed to fail: the Windows toolchain is not yet proven
+          # (see project-control/BLOCKED.md), so a failure is reported, not hidden.
+          - { os: windows-latest, standard: "17", compiler: msvc, experimental: true }
+          - { os: windows-latest, standard: "20", compiler: msvc, experimental: true }
+    continue-on-error: ${{ matrix.experimental == true }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        working-directory: AURA
+        run: >
+          cmake -S . -B build
+          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_CXX_STANDARD=${{ matrix.standard }}
+
+      - name: Build
+        working-directory: AURA
+        run: cmake --build build --config Release -j 4
+
+      - name: Test
+        working-directory: AURA
+        run: ctest --test-dir build -C Release --output-on-failure
+
+      - name: Smoke (aura --self-test persistence + recovery)
+        working-directory: AURA
+        shell: bash
+        run: |
+          BIN=build/aura
+          if [ ! -x "$BIN" ]; then BIN=build/Release/aura; fi
+          "$BIN" --self-test --store "$RUNNER_TEMP/aura_smoke.aura"
+
+      - name: Install (packaging check)
+        working-directory: AURA
+        run: cmake --install build --config Release --prefix "${{ runner.temp }}/aura-install"

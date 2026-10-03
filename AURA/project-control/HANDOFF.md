@@ -1,5 +1,64 @@
 # AURA — AI Handoff
 
+## Current handoff (2026-10-03)
+
+Read `AI_BOOTSTRAP.md` → `IMPLEMENTATION_SCOPE.md` → `PROJECT_STATE.md` → `TASK_MANIFEST.yaml` →
+`DECISIONS.md` → `BLOCKED.md` → `HANDOFF.md` → `TEST_LOG.md` in that order, then inspect the source.
+Do not rely on any prior conversation memory.
+
+### Where we are
+
+- Repository: `alimazna/AURA`, project nested under `AURA/`. Authority: the Master V3 is the
+  architecture reference; `IMPLEMENTATION_SCOPE.md` defines the active scope.
+- All canonical Phases 0–11 are COMPLETE and `APPROVED`. Phase 12 (integration/application) and
+  Phase 13 (durable persistence + crash recovery + packaging/CI) are implemented and `TESTED`.
+- Authoritative build: `AURA/CMakeLists.txt` (header-only C++17/20 + the `aura_foundation` SHA-256 TU).
+  It builds the `aura` console host, 18 behavioural test executables, and installs `bin/aura` +
+  headers + docs. `ctest` is 18/18 green under C++17 AND C++20.
+- Real host path (shadow-only): `aura --replay`, `aura --serve <port>` (interruptible accept),
+  `aura --self-test` (bounded offline smoke), `aura --recover <store>` (report the V2-36 decision).
+  `--store <path>` enables file-backed persistence of per-timeframe progress + the shadow ledger.
+- Manifest graph: 193 tasks — 176 `APPROVED`, 3 `TESTED` (PERSIST-0001, PERSIST-0002, BUILD-0002),
+  1 `IMPLEMENTED` (TASK-MANIFEST-001), 10 `DEFERRED`, 3 `BLOCKED`.
+- CI: `.github/workflows/ci.yml` builds/tests Linux C++17+C++20 (blocking) with the smoke test and an
+  install check; the MSVC Windows job is included but non-blocking (unproven toolchain). Remote CI
+  has not yet been observed.
+- Verified but still NOT claimed: profitability, calibrated probability, broker validation,
+  production safety, or live trading. Shadow mode remains the only execution path.
+
+### Phase 13 deliverables (this session)
+
+- `src/foundation/FilePersistenceStore.h` — concrete file-backed `IPersistenceStore`: append-only,
+  idempotent on identity, atomic `flush()` (temp + fsync + rename), whole-file SHA-256 checksum,
+  `CORRUPT`/`UNAVAILABLE` on tamper/truncation, payload retained for restoration.
+- `src/runtime/ApplicationRecovery.h` — V2-36 lifecycle taxonomy + boot decision; refuses
+  corrupted/version-incompatible/uncheckpointed state; persists and restores timeframe progress +
+  ledger (control-char-separated codecs).
+- `src/runtime/ApplicationShell.h` — `persist_state` / `persist_pause` / `recover` / `apply_resume`.
+- `src/mt5/Mt5StreamManager.h` — `restore_progress` (monotonic, no history reprocess).
+- `tools/run_pipeline.cpp` — `--store`, `--self-test`, `--recover`.
+- `src/runtime/PersistenceTests.cpp` — PERSIST-0001 tests (all pass).
+- `CMakeLists.txt` — install rules; `README.md` — usage; `TEST_LOG.md`/`PROJECT_STATE.md` updated.
+
+### Next actions
+
+1. Add a SIGKILL-during-write recovery test to prove the atomic rename leaves old-or-complete, never torn.
+2. Observe the remote CI run once pushed and record the real result in `TEST_LOG.md`.
+3. Remaining work is environment-blocked only: native Windows GUI (`GUI-0001`), real MetaEditor/MT5
+   round-trip (`MT5-REAL-0001`), and the historical XAUUSD validation campaign (`VAL-EVID-0001`).
+   See `BLOCKED.md`. Do not invent datasets/toolchains.
+
+### Do not
+
+- silently redesign the architecture or invent contracts/dependencies
+- treat existing source as automatically authoritative
+- enable unattended live trading or claim profitability/safety without evidence
+- rely on previous AI conversation memory
+
+---
+
+## Historical handoff (2026-10-02) — superseded
+
 ## Current handoff
 
 Date: 2026-10-02

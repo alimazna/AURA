@@ -606,6 +606,61 @@ terminal round-trip, a native Windows GUI, and a historical dataset campaign rem
 toolchain/terminal/dataset here). No profitability, calibration, broker-validation, production-safety
 or live-trading claim is made.
 
+## 2026-10-03 — Phase 13: durable persistence + crash recovery + packaging/CI
+
+Task/Phase: PERSIST-0001, PERSIST-0002, BUILD-0002 (Phase 13 Integration).
+
+Build command:
+`cmake -S . -B <build> -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=17|20 && cmake --build <build> -j4`
+
+Build result: PASS for both C++17 and C++20 (g++, `-Wall -Wextra -Wpedantic`), including the new
+`aura`, `PersistenceTests`, and all pre-existing targets. Header-only code also passes
+`-Wall -Wextra -Werror -pedantic -fsyntax-only` under both standards.
+
+Test command: `ctest --test-dir <build> --output-on-failure`
+
+Test result: `100% tests passed out of 18` under C++17 AND under C++20 (the count rose from 17 to 18
+with the new `PersistenceTests`). `PersistenceTests` covers, over real code paths (no mocks):
+- append idempotency (identical re-append = OK, conflicting payload = CONFLICT);
+- atomic flush + reload round-trip preserving records, digests and payloads;
+- byte-identical artifacts for identical append sequences (determinism);
+- tampered byte -> `CORRUPT`; checksum-less/truncated file -> `CORRUPT` (never silently OK);
+- V2-36 lifecycle classification (CLEAN_SHUTDOWN / EXPECTED_PAUSE / INTERRUPTED_WORK /
+  CORRUPTED_STATE / UNKNOWN_STATE), version-incompatible -> refused, corrupted -> refused,
+  uncheckpointed interruption -> refused;
+- application restart over real encoded frames: a fresh shell restores nine timeframe states and the
+  ledger, accepts strictly-newer bars (no repaint), and re-persist is idempotent.
+
+Real host verification (not compilation alone):
+- `aura --serve 12001 --store /tmp/serve.aura`: a Python client sent all 360 canonical frames over a
+  real loopback socket; on Ctrl-C the process persisted and printed: transport connected, 9/9 streams
+  healthy, 360 accepted, 0 rejected, 0 malformed, 38 signals / 38 risk proposals / 38 shadow fills,
+  151 ledger entries, HEALTHY (ONLINE), SHADOW ONLY, persisted store 161 records. This matches the
+  Phase 12 replay result exactly, so persistence did not perturb the pipeline.
+- `aura --replay /tmp/frames.txt --store /tmp/replay.aura`: 360 frames, 9/9 streams, 360 accepted,
+  38/38/38, 151 ledger entries, HEALTHY, persist OK (161 records).
+- `aura --recover /tmp/replay.aura` (good store) -> lifecycle CLEAN_SHUTDOWN, resumable yes, exit 0.
+  After flipping one payload byte, `--recover` -> CORRUPTED_STATE, resumable no, exit 1.
+- `aura --self-test` -> PASS: 30 deterministic steps x 9 streams -> 270 accepted, 28/28/28, 111 ledger
+  entries; persist OK (121 records); recovery CLEAN_SHUTDOWN resumable; restores 9 timeframes + 111
+  ledger entries.
+- `cmake --install <build> --prefix <dir>` -> installs `bin/aura`, `include/aura/**.h`, and the doc.
+
+Files changed: `src/foundation/FilePersistenceStore.h` (new), `src/runtime/ApplicationRecovery.h` (new),
+`src/runtime/PersistenceTests.cpp` (new), `src/mt5/Mt5StreamManager.h`, `src/runtime/ApplicationPipeline.h`,
+`src/runtime/ApplicationShell.h`, `tools/run_pipeline.cpp`, `CMakeLists.txt`,
+`.github/workflows/ci.yml` (new), `README.md`, and the control-plane files.
+
+Known failures: none in the local matrix. The remote GitHub Actions run has NOT yet been observed
+(will be recorded when available). The Windows/MSVC CI job is intentionally non-blocking because the
+Windows toolchain is unproven (see BLOCKED.md).
+
+Interpretation: durable persistence and the V2-36 crash-recovery decision now exist in the running
+application and are verified by unit tests and a real socket run. A corrupted or version-incompatible
+store is refused, never silently resumed; shadow-only behaviour is preserved (no proposal is ever an
+order). This does NOT establish profitability, calibrated probability, broker validation, production
+safety, or live-trading readiness.
+
 ## Future test entry format
 
 - Date
