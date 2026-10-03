@@ -181,6 +181,17 @@ public:
         return &it->second.back();
     }
 
+    // Read-only view of the retained closed-bar series for one timeframe, in
+    // arrival (chronological) order. Identity is the explicit timeframe, never a
+    // row position. Every element is an authoritative accepted closed bar, so the
+    // series contains no forming bar and cannot repaint. Empty when the stream has
+    // reported nothing.
+    const std::vector<MarketBar>& bar_series(Timeframe timeframe) const {
+        static const std::vector<MarketBar> kEmpty{};
+        const auto it = bars_.find(timeframe);
+        return it == bars_.end() ? kEmpty : it->second;
+    }
+
     // Most recent generated signal (invalid when none).
     const Signal& last_signal() const noexcept { return last_signal_; }
     // Most recent risk proposal (invalid when none).

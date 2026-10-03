@@ -18,7 +18,10 @@ Do not rely on any prior conversation memory.
   GPUs (`GUI-0007..GUI-0008`, TESTED on software GL; the specific Intel HD Graphics 3000 hardware is
   UNPROVEN, `BLOCK-006`), and a **professional visual redesign** (`GUI-0009..GUI-0013`, TESTED): an
   original design system, grouped navigation, rebuilt panels, a coherent window shell, and a real
-  per-stream `sequence` + deterministic relative `freshness` in the Timeframes view.
+  per-stream `sequence` + deterministic relative `freshness` in the Timeframes view, and the **XAUUSD
+  candlestick chart with an above-chart timeframe selector** (`GUI-0015..GUI-0020`, TESTED locally):
+  a pure chart model projected from the runtime's real retained **closed** bars, M15 default, all nine
+  timeframes selectable by explicit identity, no fabrication, identical rendering on both GL backends.
 - Authoritative build: `AURA/CMakeLists.txt` (header-only C++17/20 + the `aura_foundation` SHA-256 TU).
   It builds the `aura` console host, 18 behavioural test executables, and installs `bin/aura` +
   headers + docs. `ctest` is 18/18 green under C++17 AND C++20. On Windows/MSVC the CRT is linked
@@ -27,8 +30,8 @@ Do not rely on any prior conversation memory.
   `aura --self-test [--keep]` (bounded offline smoke), `aura --dump-frames <file>`, `aura --recover
   <store>` (report the V2-36 decision). `--store <path>` enables file-backed persistence of
   per-timeframe progress + the shadow ledger.
-- Manifest graph: 207 tasks -- 178 `APPROVED`, 14 `TESTED` (PERSIST-0001, PERSIST-0002, BUILD-0002,
-  BUILD-0003, GUI-0002, GUI-0003, PHASE-9-MILESTONE, GUI-0007, GUI-0008, GUI-0009..GUI-0013),
+- Manifest graph: 213 tasks -- 178 `APPROVED`, 20 `TESTED` (PERSIST-0001, PERSIST-0002, BUILD-0002,
+  BUILD-0003, GUI-0002, GUI-0003, PHASE-9-MILESTONE, GUI-0007..GUI-0013, GUI-0015..GUI-0020),
   2 `IMPLEMENTED` (TASK-MANIFEST-001, GUI-0001), 11 `DEFERRED`, 2 `BLOCKED`.
 - CI: `.github/workflows/ci.yml` builds/tests Linux C++17+C++20 (blocking) with the smoke test and an
   install check, plus MSVC Windows C++17/C++20, plus a `desktop-gui` job (Dear ImGui + GLFW + Xvfb
@@ -73,6 +76,38 @@ Do not rely on any prior conversation memory.
   PASS; Debug (assert-enabled) 80-frame smokes cycle all 19 sections on MODERN_GL33 and LEGACY_GL21 with
   exit 0; a captured live frame confirms the layout; modern and legacy captures are structurally
   identical. Recorded in `TEST_LOG.md`.
+
+### XAUUSD candlestick chart + timeframe selector deliverables (this session)
+
+- `src/runtime/ApplicationPipeline.h` — added const, read-only `bar_series(Timeframe)` (reference to the
+  retained closed-bar vector) and `last_bar(Timeframe)` (nullptr when absent). No mutation, no merge,
+  no ordering path; explicit identity, never a row index.
+- `src/runtime/ApplicationShell.h` — added a const `pipeline()` accessor so a read-only projection can
+  reach the pipeline from a const context.
+- `src/desktop/CandleChart.h` (new) — pure, ImGui-free chart model: `Candle`, `CandleSeries`,
+  `make_candle_series` (keeps only bars whose explicit timeframe matches, that are `closed`, and whose
+  OHLC are finite; drops the rest — never fabricates), `CandleLayout`, `ChartGeometry`,
+  `build_chart_geometry` (deterministic normalized wick/body coordinates + price grid), `chart_y_fraction`,
+  `format_utc_minute` (deterministic epoch labels), `TimeframeSelection` (**M15 default**, explicit
+  `Timeframe`, refuses `UNKNOWN`), `chart_timeframes()` (nine, in order).
+- `src/desktop/CandleChartWidget.h` (new) — ImGui rendering: `chart::timeframe_selector` (horizontal
+  `[M1]..[MN1]`, active drawn with the AURA accent), `chart::candlestick_chart` (real OHLC wicks+bodies,
+  price gutter, time axis, subtle grid, last-price marker; fixed-function draw-list only so it renders
+  on OpenGL 2.1 and 3.3), `chart::no_candle_data` (explicit `NO CANDLE DATA` / `STATUS: NOT AVAILABLE` /
+  `TIMEFRAME`).
+- `src/desktop/ControlCenterState.h` — `ControlCenterReport.chart` (the selected `CandleSeries`),
+  `timeframe_selection()` (default M15), `chart_series(Timeframe)` bound to the pipeline's retained bars.
+- `src/desktop/GuiPanels.h` — `draw_market_chart` (chart + selector + real per-timeframe metadata) is the
+  first element of `draw_dashboard`; `draw_section` now takes the state.
+- `tools/aura_gui.cpp` — `--self-test` asserts M15 default, nine timeframes, per-stream real candles and
+  `UNKNOWN` refusal; `--gui --replay <file>` feeds the trusted frames once so the window opens on real
+  closed bars.
+- `src/desktop/DesktopTests.cpp` — 7 new tests (selection default/switch, closed-bar identity, NaN
+  rejection, bullish/bearish geometry + grid, real-runtime binding, empty state, UTC formatter).
+- Verification: DesktopTests ALL PASS c++17 strict; GUI CTest 19/19; `aura_gui --self-test` PASS
+  (`chart nine timeframes OK, default M15, each stream has real candles`); Xvfb captures under both
+  `MODERN_GL33` and `LEGACY_GL21` show real green/red candle pixels (~5.4k green for the all-bullish
+  builtin set; ~12k green + ~13k red for an alternating M15 series). Recorded in `TEST_LOG.md`.
 
 ### Phase 9 V3-37 section integration deliverables (this session)
 
@@ -152,7 +187,8 @@ Do not rely on any prior conversation memory.
 ### Next actions
 
 1. Remaining work is environment/data-unproven only: real-Windows-desktop interactive GUI (UNPROVEN —
-   have a human run `aura_gui --gui` on Windows to promote it), real MetaEditor/MT5 round-trip
+   have a human run `aura_gui --gui` on Windows to promote it, and confirm the XAUUSD chart + timeframe
+   selector render there), real MetaEditor/MT5 round-trip
    (`MT5-REAL-0001`), and the historical XAUUSD validation campaign (`VAL-EVID-0001`). See
    `BLOCKED.md`. Do not invent datasets/toolchains.
 2. Wire the still-`NOT AVAILABLE` panels (prediction/observation, knowledge, research, candidates,

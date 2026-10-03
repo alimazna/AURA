@@ -3,6 +3,7 @@
 
 #include "desktop/AuraTheme.h"
 #include "desktop/AuraWidgets.h"
+#include "desktop/CandleChartWidget.h"
 #include "desktop/ControlCenterState.h"
 #include "desktop/DesktopModel.h"
 
@@ -50,9 +51,89 @@ inline int present_count(const TimeframePanel& tf) {
 
 // ---- Dashboard -------------------------------------------------------------
 
-inline void draw_dashboard(const ControlCenterReport& r) {
+// Finds the nine-timeframe row whose explicit identity matches. Never positional.
+inline const TimeframeRow* find_timeframe_row(const TimeframePanel& panel,
+                                              runtime::Timeframe tf) {
+    for (const TimeframeRow& r : panel.rows)
+        if (r.timeframe == tf) return &r;
+    return nullptr;
+}
+
+// The XAUUSD market area: the primary visual element of the dashboard. It shows a
+// real OHLC candlestick chart for the selected timeframe, a timeframe selector,
+// and chart metadata sourced from the runtime. It never fabricates candles: a
+// timeframe with no real closed bars shows an explicit NO CANDLE DATA state, and
+// the metadata fields fall back to NOT AVAILABLE rather than a fake value.
+inline void draw_market_chart(const ControlCenterReport& r, ControlCenterState& state) {
+    const CandleSeries& series = r.chart;
+    const TimeframeRow* row = find_timeframe_row(r.snapshot.timeframes, series.timeframe);
+
+    widgets::card_begin("chart_card", nullptr, ImVec2(0.0f, 0.0f), 566.0f);
+
+    // Title strip with the symbol identity and the selected timeframe.
+    ImGui::TextColored(theme::kTextPrimary, "XAUUSD");
+    ImGui::SameLine();
+    ImGui::TextColored(theme::kTextMuted, "\u00b7");
+    ImGui::SameLine();
+    ImGui::TextColored(theme::kAccent, "%s", series.label.c_str());
+    ImGui::SameLine();
+    ImGui::TextColored(theme::kTextMuted, "\u00b7 SHADOW ONLY");
+
+    // Timeframe selector: clicking switches the displayed candle stream.
+    ImGui::Spacing();
+    chart::timeframe_selector(state.timeframe_selection());
+    ImGui::Spacing();
+
+    // Chart metadata / context for the selected timeframe.
+    {
+        const int bars = static_cast<int>(series.candles.size());
+        ImGui::TextColored(theme::kTextMuted, "Closed bars");
+        ImGui::SameLine();
+        if (series.available) ImGui::TextColored(theme::kTextPrimary, "%d", bars);
+        else ImGui::TextColored(theme::kNotAvailable, "NOT AVAILABLE");
+
+        ImGui::SameLine();
+        ImGui::TextColored(theme::kTextMuted, "  |  Sequence");
+        ImGui::SameLine();
+        if (row != nullptr) widgets::value_cell(row->sequence.available, row->sequence.value);
+        else ImGui::TextColored(theme::kNotAvailable, "NOT AVAILABLE");
+
+        ImGui::SameLine();
+        ImGui::TextColored(theme::kTextMuted, "  |  Freshness");
+        ImGui::SameLine();
+        if (row != nullptr) widgets::state_cell(row->freshness);
+        else ImGui::TextColored(theme::kNotAvailable, "NOT AVAILABLE");
+
+        ImGui::SameLine();
+        ImGui::TextColored(theme::kTextMuted, "  |  Stream");
+        ImGui::SameLine();
+        if (row != nullptr) widgets::state_cell(row_health(*row));
+        else ImGui::TextColored(theme::kNotAvailable, "NOT AVAILABLE");
+    }
+    if (series.available) {
+        ImGui::TextColored(theme::kTextMuted, "Range");
+        ImGui::SameLine();
+        ImGui::TextColored(theme::kTextSecondary, "%.3f \u2013 %.3f", series.low, series.high);
+        ImGui::SameLine();
+        ImGui::TextColored(theme::kTextMuted, "  |  Last closed");
+        ImGui::SameLine();
+        ImGui::TextColored(theme::kTextSecondary, "%s",
+                           format_utc_minute(series.last_close).c_str());
+    }
+
+    ImGui::Spacing();
+    chart::candlestick_chart(series, 380.0f);
+    widgets::card_end();
+}
+
+inline void draw_dashboard(const ControlCenterReport& r, ControlCenterState& state) {
     const ControlCenterSnapshot& s = r.snapshot;
     widgets::section_header("Dashboard", "Read-only overview of the AURA shadow runtime");
+
+    // Primary element: the XAUUSD candlestick market area with timeframe selector.
+    draw_market_chart(r, state);
+    ImGui::Spacing();
+    ImGui::Spacing();
 
     const float avail = ImGui::GetContentRegionAvail().x;
     const float gap = theme::kSpace3;
@@ -781,9 +862,9 @@ inline void draw_version(const ControlCenterReport& r) {
 }
 
 // Draws the content area for the selected section index (see DesktopModel::sections()).
-inline void draw_section(const ControlCenterReport& r, int section) {
+inline void draw_section(ControlCenterState& state, const ControlCenterReport& r, int section) {
     switch (section) {
-        case 0:  draw_dashboard(r); break;
+        case 0:  draw_dashboard(r, state); break;
         case 1:  draw_market(r.snapshot); break;
         case 2:  draw_timeframes(r.snapshot); break;
         case 3:  draw_signals(r.snapshot); break;

@@ -464,7 +464,21 @@ See `project-control/BLOCKED.md`.
   `freshness` (FRESH / LAGGING / UNKNOWN / NOT AVAILABLE) computed from the newest close time in the
   snapshot — no wall clock, no lookahead. Absent values remain explicit `NOT AVAILABLE`; a wired-but-empty
   source is a distinct real empty state.
-- The manifest graph is now 207 file-level tasks (178 `APPROVED`, 14 `TESTED`, 2 `IMPLEMENTED`
+- XAUUSD candlestick chart + timeframe selector (GUI-0015..GUI-0020, `TESTED` 2026-10-03): the Dashboard
+  now leads with a real XAUUSD candlestick chart and an above-chart horizontal timeframe selector
+  `[M1][M5][M15][M30][H1][H4][D1][W1][MN1]` with **M15 active by default**. The chart is a pure,
+  ImGui-free model (`src/desktop/CandleChart.h`: `make_candle_series`, `build_chart_geometry`,
+  `TimeframeSelection`, `format_utc_minute`) projected from the closed bars the runtime actually retained
+  — only bars whose **explicit timeframe matches**, whose `closed` flag is set, and whose OHLC are finite
+  are drawn; non-closed/foreign/non-finite bars are dropped, never fabricated. A stream with no real bars
+  renders an explicit **NO CANDLE DATA / STATUS: NOT AVAILABLE / TIMEFRAME** state, never placeholder
+  candles. The selection holds an explicit `Timeframe` (never a row index) and refuses `UNKNOWN`. The
+  widget (`src/desktop/CandleChartWidget.h`) draws wicks+bodies, a price scale, a time axis and a grid
+  using only fixed-function draw-list primitives, so it renders identically on `MODERN_GL33` and
+  `LEGACY_GL21`; the active timeframe is drawn with the AURA accent. The read-only projection uses a new
+  const `ApplicationPipeline::bar_series(Timeframe)` accessor (`GUI-0015`); the report carries the
+  selected `CandleSeries` (`GUI-0017`). No order path, no lookahead, no repaint, shadow-only.
+- The manifest graph is now 213 file-level tasks (178 `APPROVED`, 20 `TESTED`, 2 `IMPLEMENTED`
   [TASK-MANIFEST-001, GUI-0001], 11 `DEFERRED`, 2 `BLOCKED`). The deferred Master capabilities
   remain visible.
 - Remaining unproven items are environment/data-bound (real-Windows-desktop interactive GUI including
@@ -496,6 +510,25 @@ See `project-control/BLOCKED.md`.
   across 6/6 jobs, including the extended `desktop-gui-linux` renderer smokes and the
   `windows-x64-release-package` job that builds and packages `aura_gui.exe`; the earlier run
   37125095527 (commit f3e1886) was also ALL GREEN.
+
+## XAUUSD candlestick chart verification (2026-10-03, local)
+
+- `DesktopTests` ALL PASS (g++ C++17 strict; GUI build) including the seven new chart tests:
+  `test_timeframe_selection_default_and_switch` (M15 default, nine-timeframe identity switching, UNKNOWN
+  refused), `test_candle_series_closed_bar_identity` (foreign-timeframe and non-closed bars excluded),
+  `test_candle_series_rejects_non_finite` (NaN dropped, not fabricated), `test_chart_geometry_bullish_bearish`
+  (wick/body ordering, 5-level grid, deterministic layout), `test_chart_series_from_real_runtime`
+  (report bound to the selected stream over real runtime frames), `test_chart_empty_state_no_fake_candles`
+  (empty -> unavailable, zero candles), `test_chart_utc_formatter` (deterministic epoch labels).
+- Full CTest under the GUI build: **19/19 passed**. `aura_gui --self-test` PASS and additionally prints
+  `chart nine timeframes OK, default M15, each stream has real candles`.
+- Interactive chart render verified by Xvfb captures (ImageMagick) under **both** renderers
+  (`MODERN_GL33` and `LEGACY_GL21`): with the all-bullish builtin frame set the chart region shows ~5.4k
+  green candle pixels; with an alternating up/down M15 series it shows ~12k green + ~13k red candle
+  pixels — i.e. real OHLC wicks and green/red bodies actually render, identically on both backends.
+- NOT claimed: human aesthetic review on the target machine; real historical XAUUSD data (the frames are
+  deterministic synthetic closed bars produced by the trusted encoder path, labelled as such); any
+  profitability/calibration/broker/production claim.
 - NOT claimed: interactive rendering on a real Windows desktop, and specifically the Intel HD Graphics
   3000 path (UNPROVEN); any profitability, calibration, broker-validation or production-safety claim.
   The visual quality of the redesign is verified structurally (layout, no assertions, both backends) and
@@ -504,10 +537,11 @@ See `project-control/BLOCKED.md`.
 ## Next action
 
 1. Re-run the updated `aura_gui.exe` (from the new Windows x64 Release package) on the Windows 10 /
-   Intel HD Graphics 3000 machine to confirm the startup line reports `renderer=LEGACY_GL21` and the
-   redesigned control center renders and shuts down cleanly; record the real result in `TEST_LOG.md`
-   (closes BLOCK-006 and promotes the redesign from structurally-verified to visually VERIFIED on the
-   target machine).
+   Intel HD Graphics 3000 machine to confirm the startup line reports `renderer=LEGACY_GL21` and that the
+   redesigned control center — including the new XAUUSD candlestick chart and timeframe selector —
+   renders and shuts down cleanly; open a window large enough to see several candles and try switching
+   timeframes. Record the real result in `TEST_LOG.md` (closes BLOCK-006 and promotes the redesign + chart
+   from structurally-verified to visually VERIFIED on the target machine).
 2. When a MetaEditor/MT5 environment becomes available, run Phase 11 controlled validation
    (demo/shadow only) behind the readiness gate; record real results in `TEST_LOG.md`.
 3. Optionally have a human run `aura_gui --gui` on a real Windows desktop to promote the interactive

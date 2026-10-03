@@ -127,6 +127,43 @@ int headless_self_test(const aura::desktop::ControlCenterOptions& options) {
                     snap.timeframes.rows.size(), snap.overview.streams_healthy,
                     snap.overview.streams_total, snap.shadow_only ? "yes" : "no");
 
+        // ---- XAUUSD candlestick chart / timeframe selector -------------------
+        auto& sel = state.timeframe_selection();
+        if (sel.selected_label() != "M15") {
+            std::printf("aura-gui: SELF-TEST FAIL (chart default timeframe is not M15)\n");
+            return 1;
+        }
+        if (aura::desktop::chart_timeframes().size() != 9) {
+            std::printf("aura-gui: SELF-TEST FAIL (chart does not expose nine timeframes)\n");
+            return 1;
+        }
+        // Switch through all nine controls; each must map to its own explicit
+        // stream and, since every stream was fed, show real candles.
+        for (const aura::runtime::Timeframe tf : aura::desktop::chart_timeframes()) {
+            if (!sel.select(tf)) {
+                std::printf("aura-gui: SELF-TEST FAIL (could not select %s)\n",
+                            std::string(aura::runtime::to_string(tf)).c_str());
+                return 1;
+            }
+            if (sel.selected() != tf || sel.selected_label() != aura::runtime::to_string(tf)) {
+                std::printf("aura-gui: SELF-TEST FAIL (selection identity for %s)\n",
+                            std::string(aura::runtime::to_string(tf)).c_str());
+                return 1;
+            }
+            const aura::desktop::CandleSeries cs = state.chart_series(tf);
+            if (cs.timeframe != tf || !cs.available || cs.candles.empty()) {
+                std::printf("aura-gui: SELF-TEST FAIL (no real candles for %s)\n",
+                            std::string(aura::runtime::to_string(tf)).c_str());
+                return 1;
+            }
+        }
+        // An unsupported selection is refused, never mapped to a bogus stream.
+        if (sel.select(aura::runtime::Timeframe::UNKNOWN)) {
+            std::printf("aura-gui: SELF-TEST FAIL (UNKNOWN timeframe was accepted)\n");
+            return 1;
+        }
+        std::printf("aura-gui: chart nine timeframes OK, default M15, each stream has real candles\n");
+
         // Additional V3-37 section projections (read-only; no fabrication).
         const auto& rep = state.refresh_report();
         std::printf("aura-gui: sections version_available=%s ledger_entries=%zu "
@@ -310,6 +347,15 @@ int run_gui(const aura::desktop::ControlCenterOptions& options, long max_frames,
                      static_cast<unsigned>(options.serve_port));
     }
 
+    // If a canonical frames file was supplied, feed it once so the window opens
+    // on real retained closed bars (this is the same trusted pipeline path the
+    // headless self-test and the console host use; no synthetic chart data).
+    if (!options.replay_path.empty()) {
+        const std::size_t fed = state.feed_replay();
+        std::printf("aura-gui: fed %zu replay frames from %s\n", fed,
+                    options.replay_path.c_str());
+    }
+
     const std::vector<aura::desktop::NavGroup> nav_groups =
         aura::desktop::navigation_groups();
     int selected = 0;
@@ -408,7 +454,7 @@ int run_gui(const aura::desktop::ControlCenterOptions& options, long max_frames,
         ImGui::SameLine();
 
         ImGui::BeginChild("content", ImVec2(0.0f, 0.0f), true);
-        aura::desktop::draw_section(report, selected);
+        aura::desktop::draw_section(state, report, selected);
         ImGui::EndChild();
 
         ImGui::EndChild();

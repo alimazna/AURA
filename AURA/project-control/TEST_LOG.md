@@ -981,6 +981,48 @@ safety, or live-trading readiness.
   bounded smoke. The native Windows GUI is NOT included and its runtime is UNPROVEN. MT5/MetaEditor is
   NOT exercised. No live order path; shadow only. No profitability/calibration/production-safety claim.
 
+## 2026-10-03 — Phase 9 GUI: XAUUSD candlestick chart + timeframe selector (GUI-0015..GUI-0020)
+
+- Date: 2026-10-03
+- Commit: (recorded with this entry; branch `phase13-persistence-recovery`)
+- Task/Phase: GUI-0015 (read-only `ApplicationPipeline::bar_series`/`last_bar`), GUI-0016
+  (`src/desktop/CandleChart.h`), GUI-0017 (`ControlCenterState.h` chart projection + selection),
+  GUI-0018 (`src/desktop/CandleChartWidget.h` + Dashboard wiring), GUI-0019 (`aura_gui` self-test +
+  `--replay` feed), GUI-0020 (`DesktopTests.cpp`).
+- Build command: `cmake --build build-gui17 -j4` (GUI build, `-DAURA_BUILD_GUI=ON`, g++ C++17).
+- Build result: PASS. `DesktopTests`, `aura`, `aura_gui` all link and build clean (one initial
+  compile error fixed: a stray `AuraTheme.h` include in `DesktopTests.cpp` pulled ImGui into the
+  ImGui-free test target; removed).
+- Test command: `./build-gui17/DesktopTests`; `ctest --test-dir build-gui17`;
+  `./build-gui17/aura_gui --self-test --store <p>`;
+  `DISPLAY=:99 aura_gui --gui --replay <frames> --renderer {modern,legacy}` + `import` capture.
+- Test result: PASS.
+  - `DesktopTests: ALL PASS` — includes the seven new chart tests (M15 default + nine-timeframe
+    identity switching + UNKNOWN refusal; foreign-timeframe/non-closed bar exclusion; NaN rejection;
+    bullish/bearish wick+body geometry and 5-level grid determinism; report bound to the selected
+    stream over real runtime frames; empty -> unavailable with zero candles; deterministic UTC labels).
+  - `ctest`: **19/19 passed** (GUI build).
+  - `aura_gui --self-test`: SELF-TEST PASS, and prints
+    `chart nine timeframes OK, default M15, each stream has real candles`.
+  - Xvfb captures: with the all-bullish builtin set the chart region has ~5,444 green candle px and
+    0 red; with an alternating M15 series it has ~11,919 green + ~12,848 red candle px. Identical
+    counts under `MODERN_GL33` and `LEGACY_GL21` (real candles render on both backends).
+- Files changed: `src/runtime/ApplicationPipeline.h` (`bar_series`/`last_bar`),
+  `src/runtime/ApplicationShell.h` (const `pipeline()`), `src/desktop/CandleChart.h` (new),
+  `src/desktop/CandleChartWidget.h` (new), `src/desktop/ControlCenterState.h` (report.chart +
+  selection + `chart_series`), `src/desktop/GuiPanels.h` (`draw_market_chart`, `draw_dashboard`,
+  `draw_section` signature), `src/desktop/DesktopTests.cpp` (7 tests), `tools/aura_gui.cpp`
+  (self-test checks + `--replay` feed in GUI mode).
+- Known failures: none.
+- Interpretation: the Dashboard now shows a real XAUUSD candlestick chart with an above-chart
+  timeframe selector (`[M1]..[MN1]`, M15 default). Candles come only from the runtime's retained
+  **closed** bars for the explicitly selected timeframe; non-closed/foreign/non-finite bars are
+  dropped and an empty stream shows NO CANDLE DATA — nothing is fabricated. The chart renders
+  identically on the OpenGL 3.3 and legacy OpenGL 2.1 backends. The frames used for the captures are
+  deterministic closed bars produced by the trusted encoder path (synthetic, not real historical
+  XAUUSD data). Interactive rendering on a real Windows desktop / Intel HD 3000 remains UNPROVEN
+  (BLOCK-006). No live-order path; shadow only. No profitability/calibration/broker/production claim.
+
 ## Future test entry format
 
 - Date

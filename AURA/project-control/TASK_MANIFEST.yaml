@@ -41,8 +41,13 @@ current_task: 'Canonical Phases 0-13 COMPLETE and TESTED, plus Phase 9 desktop p
   (GUI-0007..GUI-0008, TESTED on software GL; the specific Intel HD 3000 hardware is UNPROVEN,
   BLOCK-006), and a professional visual redesign (GUI-0009..GUI-0013: design system, grouped navigation,
   rebuilt panels, window shell, real per-stream sequence + deterministic relative freshness). Manifest
-  graph 206 tasks. Remaining are environment/data-unproven only (real-Windows-desktop interactive GUI on
-  legacy GPU, real MT5/MetaEditor round-trip, licensed XAUUSD datasets).'
+  graph 213 tasks. NEW (2026-10-03): the XAUUSD candlestick chart with a horizontal timeframe selector
+  (GUI-0015..GUI-0020) is implemented and locally TESTED — a pure, ImGui-free chart model
+  (CandleChart.h) projected from the closed bars the runtime actually retained, rendered above-chart by a
+  fixed-function widget (CandleChartWidget.h), M15 default, all nine timeframes selectable by explicit
+  identity, no fabrication (NO CANDLE DATA, non-finite/non-closed bars dropped). Remaining are
+  environment/data-unproven only (real-Windows-desktop interactive GUI on legacy GPU, real
+  MT5/MetaEditor round-trip, licensed XAUUSD datasets).'
 tasks:
 - id: TASK-BOOTSTRAP-001
   phase: BOOTSTRAP
@@ -3320,6 +3325,127 @@ tasks:
   evidence: 'DEFERRED 2026-10-03: the redesign replaced the top menu with a chrome-free operator layout
     and exposes the same safe actions via keyboard shortcuts. A visible menu/help surface is a polish
     item, not required for the current scope, and is not implemented yet.'
+- id: GUI-0015
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: APPLICATION_PLANE
+  authority: PROPOSED
+  status: TESTED
+  output: src/runtime/ApplicationPipeline.h (read-only per-timeframe bar accessor)
+  dependencies:
+  - APP-0001
+  objective: Expose the runtime's real retained closed bars for a single explicit timeframe to a
+    read-only presentation projection, without adding any mutation, merge or ordering path.
+  acceptance: A const accessor returns the retained closed bars for a given Timeframe by explicit
+    identity (never a row index); the returned series is empty when the stream has reported nothing; no
+    lookahead, no repaint, no mutation; the accessor does not expose engine internals for writing.
+  evidence: 'DONE 2026-10-03: added ApplicationPipeline::last_bar(Timeframe) (const, non-owning, returns
+    nullptr when absent) and ApplicationPipeline::bar_series(Timeframe) (const reference to the retained
+    closed-bar vector). Both are read-only projections over the existing bars_ map; no new state, no
+    mutation path. Verified by DesktopTests + aura_gui --self-test.'
+- id: GUI-0016
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: APPLICATION_PLANE
+  authority: PROPOSED
+  status: TESTED
+  output: src/desktop/CandleChart.h (new)
+  dependencies:
+  - GUI-0015
+  - GUI-0009
+  objective: A pure, ImGui-free chart model that projects the runtime's real retained CLOSED bars for a
+    selected timeframe into deterministic OHLC candles and plot geometry, so the chart is unit-testable
+    without a windowing system and never fabricates data.
+  acceptance: make_candle_series keeps only bars whose explicit timeframe matches and whose closed flag
+    is set and whose OHLC are finite (non-finite/forming/foreign bars are dropped, never drawn); a
+    timeframe with no real bars yields an unavailable, empty series; build_chart_geometry produces
+    deterministic normalized wick/body coordinates and a price grid with no wall clock and no lookahead;
+    TimeframeSelection defaults to M15 and holds an explicit Timeframe (never an index), refusing
+    UNKNOWN; format_utc_minute labels a real close time deterministically; no ImGui, no I/O, no clock.
+  evidence: 'DONE 2026-10-03: added src/desktop/CandleChart.h (Candle, CandleSeries, make_candle_series,
+    CandleLayout, ChartGeometry, build_chart_geometry, chart_y_fraction, format_utc_minute,
+    TimeframeSelection, chart_timeframes). Verified by standalone compile + new DesktopTests
+    (test_timeframe_selection_default_and_switch, test_candle_series_closed_bar_identity,
+    test_candle_series_rejects_non_finite, test_chart_geometry_bullish_bearish, test_chart_utc_formatter).'
+- id: GUI-0017
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: APPLICATION_PLANE
+  authority: PROPOSED
+  status: TESTED
+  output: src/desktop/ControlCenterState.h (extended)
+  dependencies:
+  - GUI-0016
+  objective: Carry the selected timeframe's real candle series in the read-only control-center report and
+    hold the presentation-only timeframe selection in the single runtime owner, so the GUI chart is bound
+    to the same data the runtime actually retained.
+  acceptance: ControlCenterReport gains a chart CandleSeries; ControlCenterState exposes
+    timeframe_selection() (default M15) and chart_series(Timeframe) which reads the pipeline's retained
+    bars by explicit identity; the report's chart follows the current selection; no new runtime state and
+    no order path.
+  evidence: 'DONE 2026-10-03: ControlCenterReport.chart (CandleSeries); ControlCenterState::chart_series()
+    and timeframe_selection(); report_.chart populated in refresh_report(). Verified by
+    test_chart_series_from_real_runtime and test_chart_empty_state_no_fake_candles (real runtime frames,
+    no mocks).'
+- id: GUI-0018
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: APPLICATION_PLANE
+  authority: PROPOSED
+  status: TESTED
+  output: src/desktop/CandleChartWidget.h (new), src/desktop/GuiPanels.h (Dashboard)
+  dependencies:
+  - GUI-0016
+  - GUI-0017
+  objective: Render the XAUUSD candlestick chart as the primary Dashboard element, with an above-chart
+    horizontal timeframe selector ([M1][M5][M15]...) whose active timeframe is visually distinct, closed
+    bars only, and an explicit NO CANDLE DATA state.
+  acceptance: The selector shows all nine timeframes in order with the active one highlighted and switches
+    the displayed stream on click; the chart draws real OHLC wicks+bodies with a price scale, time axis
+    and subtle grid using only fixed-function draw-list primitives (renders on OpenGL 2.1 and 3.3); an
+    empty stream shows NO CANDLE DATA / STATUS NOT AVAILABLE / TIMEFRAME, never placeholder candles; no
+    fabrication and no order path.
+  evidence: 'DONE 2026-10-03: added src/desktop/CandleChartWidget.h (chart::timeframe_selector,
+    chart::no_candle_data, chart::candlestick_chart) and wired draw_market_chart/draw_dashboard in
+    GuiPanels.h. Verified by Xvfb captures under MODERN_GL33 and LEGACY_GL21: the chart renders real
+    candles (all-bullish builtin set: ~5.4k green candle px; an alternating series: ~12k green + ~13k red
+    candle px), identical on both backends. Shadow only.'
+- id: GUI-0019
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: APPLICATION_PLANE
+  authority: PROPOSED
+  status: TESTED
+  output: tools/aura_gui.cpp (chart self-test + GUI replay feed)
+  dependencies:
+  - GUI-0018
+  objective: Prove the chart/timeframe selector in the headless self-test and let the GUI open on real
+    closed bars when a canonical frames file is supplied, without introducing a synthetic chart path.
+  acceptance: The self-test asserts the default is M15, all nine timeframes are exposed, each selects its
+    own explicit stream, every fed stream yields real non-empty candles, and UNKNOWN is refused; --gui
+    --replay <file> feeds the trusted pipeline frames once before rendering.
+  evidence: 'DONE 2026-10-03: aura_gui --self-test prints "chart nine timeframes OK, default M15, each
+    stream has real candles" and still PASSes end-to-end; run_gui feeds --replay frames through
+    state.feed_replay() before the render loop. Verified locally (self-test PASS; GUI opened on the replay
+    set and rendered real candles).'
+- id: GUI-0020
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: OPERATING_GOVERNANCE_PLANE
+  authority: PROPOSED
+  status: TESTED
+  output: src/desktop/DesktopTests.cpp (extended)
+  dependencies:
+  - GUI-0016
+  - GUI-0017
+  objective: Add deterministic, GUI-free tests proving the chart model and its runtime binding behave per
+    contract, so correctness is not inferred from compilation or a screenshot alone.
+  acceptance: Tests cover the M15 default and identity-based switching (including UNKNOWN refusal),
+    closed-bar/foreign-timeframe/non-closed filtering, non-finite rejection, bullish/bearish geometry and
+    grid determinism, the real-runtime series binding, the empty NO CANDLE DATA state, and the UTC
+    formatter; all deterministic, no mocks, no wall clock.
+  evidence: 'DONE 2026-10-03: added seven chart tests; DesktopTests ALL PASS (g++ c++17 strict); full
+    CTest 19/19 under the GUI build. See TEST_LOG.md.'
 - id: MT5-REAL-0001
   phase: DEFERRED
   module: MT5_RUNTIME

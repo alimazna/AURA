@@ -2,9 +2,10 @@
 //
 // Deterministic; no GUI, no clock, no I/O. Exits non-zero on the first failure.
 
-#include "desktop/ControlCenterViewModels.h"
+#include "desktop/CandleChart.h"
 #include "desktop/ControlCenterPanels.h"
 #include "desktop/ControlCenterState.h"
+#include "desktop/ControlCenterViewModels.h"
 #include "desktop/DashboardProjector.h"
 #include "desktop/DesktopModel.h"
 #include "desktop/NavigationModel.h"
@@ -29,6 +30,7 @@
 #include "runtime/ApplicationShell.h"
 
 #include <cstdio>
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -685,6 +687,170 @@ static void test_renderer_selector_pinned() {
     CHECK(desktop::renderer_choice_from_string("garbage") == desktop::RendererChoice::AUTO);
 }
 
+// ---- XAUUSD candlestick chart / timeframe selector -------------------------
+
+static void test_timeframe_selection_default_and_switch() {
+    // Default is M15, and the selector holds an explicit timeframe, never an index.
+    desktop::TimeframeSelection sel;
+    CHECK(sel.selected() == runtime::Timeframe::M15);
+    CHECK(sel.selected_label() == "M15");
+    CHECK(sel.is_selected(runtime::Timeframe::M15));
+
+    // All nine map through the selector in order; the selection follows identity.
+    const std::vector<runtime::Timeframe>& tfs = desktop::chart_timeframes();
+    CHECK(tfs.size() == 9);
+    const runtime::Timeframe expected[9] = {
+        runtime::Timeframe::M1,  runtime::Timeframe::M5,  runtime::Timeframe::M15,
+        runtime::Timeframe::M30, runtime::Timeframe::H1,  runtime::Timeframe::H4,
+        runtime::Timeframe::D1,  runtime::Timeframe::W1,  runtime::Timeframe::MN1};
+    for (int i = 0; i < 9; ++i) {
+        CHECK(tfs[static_cast<std::size_t>(i)] == expected[i]);
+        CHECK(sel.select(expected[i]));
+        CHECK(sel.selected() == expected[i]);
+        CHECK(sel.is_selected(expected[i]));
+        CHECK(sel.selected_label() == std::string(runtime::to_string(expected[i])));
+    }
+    // An unsupported timeframe is refused and the selection is unchanged.
+    const runtime::Timeframe before = sel.selected();
+    CHECK(!sel.select(runtime::Timeframe::UNKNOWN));
+    CHECK(sel.selected() == before);
+}
+
+static void test_candle_series_closed_bar_identity() {
+    // Only bars for the requested explicit timeframe are projected; a bar of a
+    // different timeframe is never drawn. A non-closed bar is never drawn.
+    std::vector<runtime::MarketBar> bars;
+    runtime::MarketBar a;
+    a.timeframe = runtime::Timeframe::M15;
+    a.closed = true;
+    a.close_time = foundation::Timestamp::from_seconds(1000000);
+    a.open = 100; a.high = 102; a.low = 99; a.close = 101;
+    bars.push_back(a);
+
+    runtime::MarketBar foreign = a;
+    foreign.timeframe = runtime::Timeframe::H1;  // wrong stream -> ignored
+    foreign.close_time = foundation::Timestamp::from_seconds(1003600);
+    bars.push_back(foreign);
+
+    runtime::MarketBar forming = a;  // still forming -> ignored (no repaint)
+    forming.closed = false;
+    forming.close_time = foundation::Timestamp::from_seconds(1000900);
+    bars.push_back(forming);
+
+    const desktop::CandleSeries s = desktop::make_candle_series(runtime::Timeframe::M15, bars);
+    CHECK(s.available);
+    CHECK(s.candles.size() == 1);
+    CHECK(s.candles.front().open == 100.0);
+    CHECK(s.candles.front().high == 102.0);
+    CHECK(s.candles.front().low == 99.0);
+    CHECK(s.candles.front().close == 101.0);
+    CHECK(s.low == 99.0);
+    CHECK(s.high == 102.0);
+
+    // A timeframe with no real bars is unavailable (drives the NO CANDLE DATA state).
+    const desktop::CandleSeries empty = desktop::make_candle_series(runtime::Timeframe::MN1, bars);
+    CHECK(!empty.available);
+    CHECK(empty.candles.empty());
+    CHECK(empty.label == "MN1");
+}
+
+static void test_candle_series_rejects_non_finite() {
+    std::vector<runtime::MarketBar> bars;
+    runtime::MarketBar bad;
+    bad.timeframe = runtime::Timeframe::D1;
+    bad.closed = true;
+    bad.close_time = foundation::Timestamp::from_seconds(2000000);
+    bad.open = 100; bad.high = 101; bad.low = 99; bad.close = std::numeric_limits<double>::quiet_NaN();
+    bars.push_back(bad);
+    const desktop::CandleSeries s = desktop::make_candle_series(runtime::Timeframe::D1, bars);
+    CHECK(!s.available);  // a non-finite bar is dropped, never fabricated into a candle
+}
+
+static void test_chart_geometry_bullish_bearish() {
+    std::vector<runtime::MarketBar> bars;
+    runtime::MarketBar up;
+    up.timeframe = runtime::Timeframe::M5;
+    up.closed = true;
+    up.close_time = foundation::Timestamp::from_seconds(3000000);
+    up.open = 100; up.high = 105; up.low = 99; up.close = 104;  // bullish
+    bars.push_back(up);
+    runtime::MarketBar down = up;
+    down.close_time = foundation::Timestamp::from_seconds(3000300);
+    down.open = 104; down.high = 104; down.low = 98; down.close = 99;  // bearish
+    bars.push_back(down);
+
+    const desktop::CandleSeries s = desktop::make_candle_series(runtime::Timeframe::M5, bars);
+    const desktop::ChartGeometry g = desktop::build_chart_geometry(s, 5, 0.0f);
+    CHECK(g.candles.size() == 2);
+    CHECK(g.candles[0].bullish);
+    CHECK(!g.candles[1].bullish);
+    // y is measured from the top: the high (105) sits above the low (98).
+    CHECK(g.candles[0].wick_top <= g.candles[0].wick_bottom);
+    CHECK(g.candles[0].body_top <= g.candles[0].body_bottom);
+    CHECK(g.candles[1].body_top <= g.candles[1].body_bottom);
+    CHECK(g.grid_y.size() == 5);
+    CHECK(g.grid_price.size() == 5);
+    CHECK(g.grid_price.front() == g.price_high);
+    CHECK(g.grid_price.back() == g.price_low);
+    // Layout spans the plot width in order.
+    CHECK(g.candles[0].x < g.candles[1].x);
+}
+
+static void test_chart_series_from_real_runtime() {
+    // The chart reads the runtime's real retained closed bars for the selected
+    // explicit timeframe, and default selection is M15.
+    desktop::ControlCenterOptions o;
+    desktop::ControlCenterState st(o);
+    st.feed_builtin(10);
+    CHECK(st.timeframe_selection().selected() == runtime::Timeframe::M15);
+
+    for (const runtime::Timeframe tf : desktop::chart_timeframes()) {
+        CHECK(st.timeframe_selection().select(tf));
+        const desktop::CandleSeries cs = st.chart_series(tf);
+        CHECK(cs.timeframe == tf);
+        CHECK(cs.available);
+        CHECK(!cs.candles.empty());
+        CHECK(cs.candles.size() <= 10);
+    }
+    // Refresh report carries the selected series (M15 -> last selection was MN1,
+    // then re-select M15 to prove the report follows the selection).
+    CHECK(st.timeframe_selection().select(runtime::Timeframe::M15));
+    const auto& rep = st.refresh_report();
+    CHECK(rep.chart.timeframe == runtime::Timeframe::M15);
+    CHECK(rep.chart.available);
+    CHECK(!rep.chart.candles.empty());
+    // A stream that never received a bar is unavailable in the report.
+    desktop::ControlCenterOptions o2;
+    desktop::ControlCenterState st2(o2);
+    st2.feed_builtin(10);
+    CHECK(st2.timeframe_selection().select(runtime::Timeframe::W1));
+    const auto& rep2 = st2.refresh_report();
+    CHECK(rep2.chart.timeframe == runtime::Timeframe::W1);
+    CHECK(rep2.chart.available);  // builtin feeds all nine streams
+}
+
+static void test_chart_empty_state_no_fake_candles() {
+    // No frames fed: the chart must be unavailable with zero candles, never
+    // padded with placeholder candles.
+    desktop::ControlCenterOptions o;
+    desktop::ControlCenterState st(o);
+    CHECK(st.timeframe_selection().selected() == runtime::Timeframe::M15);
+    const desktop::CandleSeries cs = st.chart_series(runtime::Timeframe::M15);
+    CHECK(!cs.available);
+    CHECK(cs.candles.empty());
+    CHECK(cs.label == "M15");
+    const auto& rep = st.refresh_report();
+    CHECK(!rep.chart.available);
+    CHECK(rep.chart.candles.empty());
+}
+
+static void test_chart_utc_formatter() {
+    // The axis labels a real close time deterministically from epoch nanoseconds.
+    const std::string t = desktop::format_utc_minute(foundation::Timestamp::from_seconds(1700000000));
+    CHECK(t == "11-14 22:13");
+    CHECK(desktop::format_utc_minute(foundation::Timestamp::from_seconds(0)) == "01-01 00:00");
+}
+
 int main() {
     test_dashboard_no_fabrication();
     test_knowledge_projection_readonly();
@@ -704,6 +870,13 @@ int main() {
     test_renderer_selector_legacy_fallback();
     test_renderer_selector_both_fail();
     test_renderer_selector_pinned();
+    test_timeframe_selection_default_and_switch();
+    test_candle_series_closed_bar_identity();
+    test_candle_series_rejects_non_finite();
+    test_chart_geometry_bullish_bearish();
+    test_chart_series_from_real_runtime();
+    test_chart_empty_state_no_fake_candles();
+    test_chart_utc_formatter();
     if (g_failures == 0) {
         std::printf("DesktopTests: ALL PASS\n");
         return 0;

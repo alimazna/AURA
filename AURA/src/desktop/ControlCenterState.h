@@ -1,6 +1,7 @@
 #ifndef AURA_DESKTOP_CONTROLCENTERSTATE_H
 #define AURA_DESKTOP_CONTROLCENTERSTATE_H
 
+#include "desktop/CandleChart.h"
 #include "desktop/ControlCenterPanels.h"
 #include "desktop/DesktopModel.h"
 #include "foundation/PersistenceStatus.h"
@@ -63,6 +64,10 @@ struct ControlCenterReport {
     CheckpointPanel checkpoints{};
     AuditPanel audit{};
     VersionPanel version{};
+    // The selected timeframe's closed-bar series for the XAUUSD candlestick
+    // chart, projected from the runtime's real retained closed bars. Empty (and
+    // unavailable) when the selected stream has reported nothing.
+    CandleSeries chart{};
 };
 
 // Runtime options for the desktop control center. Kept dependency-free so the
@@ -256,7 +261,19 @@ public:
         report_.checkpoints = ControlCenterPanels::checkpoints(src);
         report_.audit = ControlCenterPanels::audit(src, audit_);
         report_.version = ControlCenterPanels::version(shell_.pipeline());
+        report_.chart = chart_series(selection_.selected());
         return report_;
+    }
+
+    // The XAUUSD chart timeframe selector (presentation-only). M15 by default.
+    TimeframeSelection& timeframe_selection() noexcept { return selection_; }
+    const TimeframeSelection& timeframe_selection() const noexcept { return selection_; }
+
+    // Reads the runtime's real retained closed bars for one timeframe (explicit
+    // identity, never a row position) and projects them into chart candles. No
+    // candle is invented; an empty series means NO CANDLE DATA.
+    CandleSeries chart_series(runtime::Timeframe tf) const {
+        return make_candle_series(tf, shell_.pipeline().bar_series(tf));
     }
 
     const ControlCenterReport& report() const noexcept { return report_; }
@@ -286,6 +303,9 @@ private:
     std::vector<evolution::EvolutionNode> evolution_nodes_{};
     std::vector<operatingwindow::Checkpoint> checkpoints_{};
     std::vector<governance::AuditRecord> audit_{};
+    // Presentation-only chart timeframe selection (default M15). Holds an
+    // explicit Timeframe, never an index.
+    TimeframeSelection selection_{};
     bool paused_{false};
     bool recovery_evaluated_{false};
 };

@@ -242,6 +242,7 @@ public:
         : pipeline_(std::move(config)), store_(std::move(store_path)) {}
 
     ApplicationPipeline& pipeline() noexcept { return pipeline_; }
+    const ApplicationPipeline& pipeline() const noexcept { return pipeline_; }
     TcpFrameServer& server() noexcept { return server_; }
 
     // Persistence / recovery (PERSIST-0001). The shell owns when state is
