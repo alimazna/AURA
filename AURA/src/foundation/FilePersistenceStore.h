@@ -218,10 +218,22 @@ public:
                 return PersistenceStatus::UNAVAILABLE;
             }
         }
+#if defined(_WIN32)
+        // std::rename does not overwrite an existing destination on Windows, so
+        // clear the target first; the atomic swap is then a same-directory rename.
+        if (std::rename(tmp.c_str(), path_.c_str()) != 0) {
+            std::remove(path_.c_str());
+            if (std::rename(tmp.c_str(), path_.c_str()) != 0) {
+                std::remove(tmp.c_str());
+                return PersistenceStatus::FAILED;
+            }
+        }
+#else
         if (std::rename(tmp.c_str(), path_.c_str()) != 0) {
             std::remove(tmp.c_str());
             return PersistenceStatus::FAILED;
         }
+#endif
         return PersistenceStatus::OK;
     }
 
