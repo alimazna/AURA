@@ -1,16 +1,16 @@
-# AURA — AI Handoff
+# AURA -- AI Handoff
 
 ## Current handoff (2026-10-03)
 
-Read `AI_BOOTSTRAP.md` → `IMPLEMENTATION_SCOPE.md` → `PROJECT_STATE.md` → `TASK_MANIFEST.yaml` →
-`DECISIONS.md` → `BLOCKED.md` → `HANDOFF.md` → `TEST_LOG.md` in that order, then inspect the source.
+Read `AI_BOOTSTRAP.md` -> `IMPLEMENTATION_SCOPE.md` -> `PROJECT_STATE.md` -> `TASK_MANIFEST.yaml` ->
+`DECISIONS.md` -> `BLOCKED.md` -> `HANDOFF.md` -> `TEST_LOG.md` in that order, then inspect the source.
 Do not rely on any prior conversation memory.
 
 ### Where we are
 
 - Repository: `alimazna/AURA`, project nested under `AURA/`. Authority: the Master V3 is the
   architecture reference; `IMPLEMENTATION_SCOPE.md` defines the active scope.
-- All canonical Phases 0–11 are COMPLETE and `APPROVED`. Phase 12 (integration/application) and
+- All canonical Phases 011 are COMPLETE and `APPROVED`. Phase 12 (integration/application) and
   Phase 13 (durable persistence + crash recovery + packaging/CI) are implemented and `TESTED`.
 - Authoritative build: `AURA/CMakeLists.txt` (header-only C++17/20 + the `aura_foundation` SHA-256 TU).
   It builds the `aura` console host, 18 behavioural test executables, and installs `bin/aura` +
@@ -18,27 +18,28 @@ Do not rely on any prior conversation memory.
 - Real host path (shadow-only): `aura --replay`, `aura --serve <port>` (interruptible accept),
   `aura --self-test` (bounded offline smoke), `aura --recover <store>` (report the V2-36 decision).
   `--store <path>` enables file-backed persistence of per-timeframe progress + the shadow ledger.
-- Manifest graph: 193 tasks — 176 `APPROVED`, 3 `TESTED` (PERSIST-0001, PERSIST-0002, BUILD-0002),
+- Manifest graph: 193 tasks -- 176 `APPROVED`, 3 `TESTED` (PERSIST-0001, PERSIST-0002, BUILD-0002),
   1 `IMPLEMENTED` (TASK-MANIFEST-001), 10 `DEFERRED`, 3 `BLOCKED`.
 - CI: `.github/workflows/ci.yml` builds/tests Linux C++17+C++20 (blocking) with the smoke test and an
-  install check; the MSVC Windows job is included but non-blocking (unproven toolchain). Remote CI
-  has not yet been observed.
+  install check, plus MSVC Windows C++17/C++20 (non-blocking by policy, but currently passing). Remote
+  CI on PR #1 is ALL GREEN across four jobs. CI caught and we fixed two real Windows portability defects
+  (missing `ws2_32` linkage; `std::rename` not overwriting)  see TEST_LOG.md.
 - Verified but still NOT claimed: profitability, calibrated probability, broker validation,
   production safety, or live trading. Shadow mode remains the only execution path.
 
 ### Phase 13 deliverables (this session)
 
-- `src/foundation/FilePersistenceStore.h` — concrete file-backed `IPersistenceStore`: append-only,
+- `src/foundation/FilePersistenceStore.h` -- concrete file-backed `IPersistenceStore`: append-only,
   idempotent on identity, atomic `flush()` (temp + fsync + rename), whole-file SHA-256 checksum,
   `CORRUPT`/`UNAVAILABLE` on tamper/truncation, payload retained for restoration.
-- `src/runtime/ApplicationRecovery.h` — V2-36 lifecycle taxonomy + boot decision; refuses
+- `src/runtime/ApplicationRecovery.h` -- V2-36 lifecycle taxonomy + boot decision; refuses
   corrupted/version-incompatible/uncheckpointed state; persists and restores timeframe progress +
   ledger (control-char-separated codecs).
-- `src/runtime/ApplicationShell.h` — `persist_state` / `persist_pause` / `recover` / `apply_resume`.
-- `src/mt5/Mt5StreamManager.h` — `restore_progress` (monotonic, no history reprocess).
-- `tools/run_pipeline.cpp` — `--store`, `--self-test`, `--recover`.
-- `src/runtime/PersistenceTests.cpp` — PERSIST-0001 tests (all pass).
-- `CMakeLists.txt` — install rules; `README.md` — usage; `TEST_LOG.md`/`PROJECT_STATE.md` updated.
+- `src/runtime/ApplicationShell.h` -- `persist_state` / `persist_pause` / `recover` / `apply_resume`.
+- `src/mt5/Mt5StreamManager.h` -- `restore_progress` (monotonic, no history reprocess).
+- `tools/run_pipeline.cpp` -- `--store`, `--self-test`, `--recover`.
+- `src/runtime/PersistenceTests.cpp` -- PERSIST-0001 tests (all pass).
+- `CMakeLists.txt` -- install rules; `README.md` -- usage; `TEST_LOG.md`/`PROJECT_STATE.md` updated.
 
 ### Next actions
 
@@ -57,7 +58,7 @@ Do not rely on any prior conversation memory.
 
 ---
 
-## Historical handoff (2026-10-02) — superseded
+## Historical handoff (2026-10-02) -- superseded
 
 ## Current handoff
 
@@ -82,9 +83,9 @@ Date: 2026-10-02
 
 - COMPLETE/APPROVED: Phase 0 (36 tasks), Phase 0.5 (20), Phase 1 (21), Phase 2 (4), conceptual
   Phase 3/4/5 verification (6), MT5 boundary (11), plus phase milestones.
-- Deferred and still visible: canonical manifest Phases 3–11 (`DEFERRED`).
+- Deferred and still visible: canonical manifest Phases 311 (`DEFERRED`).
 - New this continuation: `PH3-0001`, `PHASE-3-TS`, `PH4-0001`, `PHASE-4-FSR`, `PH5-0001`,
-  `PHASE-5-SIG`, `MT5-0001`..`MT5-0010`, `PHASE-MT5` — all `APPROVED`.
+  `PHASE-5-SIG`, `MT5-0001`..`MT5-0010`, `PHASE-MT5` -- all `APPROVED`.
 - Authority note: Phase 0 filenames come from V3-42. The `src/` layout, the `EntityId`
   representation, the `Version` grammar, and the Phase 0.5/1/2/MT5 filenames are PROPOSED
   decomposition requiring integration review; they are not canonical architecture.
@@ -130,7 +131,7 @@ Date: 2026-10-02
 
 - Phase 0 is COMPLETE: all 36 file-level Phase 0 tasks and the `PHASE-0` milestone are `APPROVED`.
 - The integration gate re-ran the strongest available verification (70 standalone TUs across 35
-  headers × c++17/c++20 strict; full Phase 0 harness incl. SHA-256 KATs; acyclic include graph;
+  headers  c++17/c++20 strict; full Phase 0 harness incl. SHA-256 KATs; acyclic include graph;
   36/36 outputs; no strays/secrets) and reconciled 10 under-declared manifest dependency lists.
 - No task is BLOCKED; `BLOCK-001` and `BLOCK-002` are RESOLVED.
 - Next READY task is `RS-0001` (Phase 0.5). It was NOT started and must not start without explicit
@@ -157,12 +158,12 @@ Date: 2026-10-02
   integrated application runtime, build system, or real end-to-end path. The "finished Windows
   product" claim is not supported by repository evidence.
 - Phase 12 (Integration/Application) implemented and `APPROVED`:
-  - APP-0001 `src/runtime/ApplicationPipeline.h` — one real frame -> full runtime -> shadow -> ledger.
-  - APP-0002 `src/runtime/ApplicationShell.h` — real dependency-free socket transport + host loop
+  - APP-0001 `src/runtime/ApplicationPipeline.h` -- one real frame -> full runtime -> shadow -> ledger.
+  - APP-0002 `src/runtime/ApplicationShell.h` -- real dependency-free socket transport + host loop
     (POSIX/Winsock), interruptible accept, newline frame reassembly, clean drain.
-  - APP-0003 `tools/run_pipeline.cpp` — real `aura` executable (`--replay`, `--serve`), shadow only.
-  - E2E-0001 `src/runtime/EndToEndTests.cpp` — one reproducible end-to-end test over a real socket.
-  - BUILD-0001 `CMakeLists.txt` — static lib + all tests + `aura` + CTest.
+  - APP-0003 `tools/run_pipeline.cpp` -- real `aura` executable (`--replay`, `--serve`), shadow only.
+  - E2E-0001 `src/runtime/EndToEndTests.cpp` -- one reproducible end-to-end test over a real socket.
+  - BUILD-0001 `CMakeLists.txt` -- static lib + all tests + `aura` + CTest.
 - Verification: `ctest` 17/17 green; all 17 suites pass under c++17 and c++20 strict; `aura --replay`
   of 360 frames gave 9/9 streams, 360 accepted, 0 rejected, 38 signals/proposals/fills, 151 ledger
   entries, HEALTHY; `aura --serve` smoke-tested over a real socket with clean SIGTERM shutdown.
@@ -193,26 +194,26 @@ Date: 2026-10-02
 - Manifest now 182 entries: Phases 0-11 decomposed plus 10 visible DEFERRED Master capabilities.
 
 
-### Session end state (2026-10-02, canonical Phases 5–7)
+### Session end state (2026-10-02, canonical Phases 57)
 
-- Phase 5 (Evolution) COMPLETE and `APPROVED`: `src/evolution/` — `Candidate`, `CandidateRegistry`,
+- Phase 5 (Evolution) COMPLETE and `APPROVED`: `src/evolution/` -- `Candidate`, `CandidateRegistry`,
   `EvolutionGraph`, `CandidateComparison`, `EvolutionTests.cpp` (`EVOL-0001`..`EVOL-0005`).
-- Phase 6 (Validation) COMPLETE and `APPROVED`: `src/validation/` — `ValidationFirewall`,
+- Phase 6 (Validation) COMPLETE and `APPROVED`: `src/validation/` -- `ValidationFirewall`,
   `EvidenceFirewall`, `EvaluatorFirewall`, `RewardHackingDefense`, `StatisticalControls`,
   `ValidationTests.cpp` (`VALID-0001`..`VALID-0006`).
-- Phase 7 (Governance) COMPLETE and `APPROVED`: `src/governance/` — `PolicyEngine`,
+- Phase 7 (Governance) COMPLETE and `APPROVED`: `src/governance/` -- `PolicyEngine`,
   `ForbiddenBehavior`, `PromotionGate`, `HumanDecision`, `AuditLedger`, `GovernanceTests.cpp`
   (`GOV-0001`..`GOV-0006`).
 - Verification: all Phase 5/6/7 headers self-contained + combined TU under c++17/c++20 strict;
   `EvolutionTests.cpp`, `ValidationTests.cpp`, `GovernanceTests.cpp` PASS under both standards.
   No live path; constraints are vetoes; governance cannot self-promote or mutate runtime.
-- Manifest now 151 tasks. Next: canonical Phases 8–11 (Operating Window & Recovery, Desktop Control
+- Manifest now 151 tasks. Next: canonical Phases 811 (Operating Window & Recovery, Desktop Control
   Center, Telegram, Controlled Real-World Validation).
 
-### Session end state (2026-10-02, canonical Phases 3–4)
+### Session end state (2026-10-02, canonical Phases 34)
 
-- Under the session authorization, canonical Phases 3–11 were promoted into active scope via
-  `DECISIONS.md` ("Session authorization: promote canonical Phases 3–11"). Presentation-phase (9)
+- Under the session authorization, canonical Phases 311 were promoted into active scope via
+  `DECISIONS.md` ("Session authorization: promote canonical Phases 311"). Presentation-phase (9)
   scope is recorded as headless deterministic view-models.
 - Phase 3 (Self-Learning) COMPLETE and `APPROVED`: `src/learning/` holds `KnowledgeObject`,
   `KnowledgeStore`, `KnowledgeLifecycle`, `ContextLearning`, `ContradictionEngine`, `KnowledgeDecay`,
@@ -223,7 +224,7 @@ Date: 2026-10-02
 - Verification: all Phase 3/4 headers self-contained + combined TU under c++17/c++20 strict;
   `LearningTests.cpp` and `ResearchTests.cpp` PASS under both standards. No future-outcome leakage;
   research cannot mutate runtime; no live path. Details in `TEST_LOG.md`.
-- Manifest now 131 tasks. Next: canonical Phases 5–11 (Evolution, Validation, Governance, Operating
+- Manifest now 131 tasks. Next: canonical Phases 511 (Evolution, Validation, Governance, Operating
   Window & Recovery, Desktop Control Center, Telegram, Controlled Real-World Validation).
 
 ### Session end state (2026-10-02, conceptual Phase 3/4/5 + MT5 one-EA/nine-stream)
@@ -251,7 +252,7 @@ Date: 2026-10-02
 - MetaEditor/MT5 are NOT available: MQL5 compilation and real terminal connectivity are UNPROVEN.
   Live trading is NOT enabled. No profitability/calibration/broker-validation/production-safety
   claim is made.
-- Next READY: none in the active scope. Canonical manifest Phases 3–11 remain `DEFERRED`; promotion
+- Next READY: none in the active scope. Canonical manifest Phases 311 remain `DEFERRED`; promotion
   requires a `DECISIONS.md` entry. Alternatively, compile the MQL5 EA on a Windows/MetaEditor host.
 
 ### Session end state (2026-10-02, Phase 1 complete)

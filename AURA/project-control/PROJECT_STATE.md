@@ -366,9 +366,10 @@ This is the human-readable snapshot of where the project currently stands.
   reports CLEAN_SHUTDOWN/resumable for the good store and CORRUPTED_STATE/refused (exit 1) for a
   tampered store. `aura --self-test` PASSES.
 - BUILD-0002 adds an installable package (CMake install rules for the host + headers + docs) and a CI
-  workflow building/testing on Linux under C++17 and C++20 with the smoke test; an MSVC Windows job is
-  included but explicitly non-blocking (the Windows toolchain remains unproven — see BLOCKED.md).
-  Remote CI has not yet been observed.
+  workflow building/testing on Linux under C++17 and C++20 with the smoke test, plus an MSVC Windows
+  job (non-blocking by policy, but currently passing). Remote CI on PR #1 is ALL GREEN across four jobs
+  (Linux gcc C++17/C++20 and Windows MSVC C++17/C++20). CI found and we fixed two real portability
+  defects: missing `ws2_32` (Winsock) linkage on Windows, and `std::rename` not overwriting on Windows.
 - Still deliberately NOT claimed: profitability, calibrated probability, broker validation,
   production safety, or live trading. All of the above is shadow-only.
 
