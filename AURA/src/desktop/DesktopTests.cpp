@@ -11,6 +11,7 @@
 #include "desktop/NavigationModel.h"
 #include "desktop/RendererPolicy.h"
 #include "desktop/StateVisuals.h"
+#include "desktop/TerminalLayout.h"
 #include "evolution/Candidate.h"
 #include "evolution/CandidateRegistry.h"
 #include "evolution/EvolutionGraph.h"
@@ -904,6 +905,36 @@ static void test_real_metrics_projection() {
     CHECK(snap.risk.is_order == false);
 }
 
+static void test_terminal_layout_contract() {
+    using namespace desktop::layout;
+    // The timeframe strip is exactly the nine canonical timeframes, in order, one
+    // per explicit identity, non-overlapping.
+    const std::vector<Row> rows = timeframe_rows(10.0f);
+    CHECK(rows.size() == 9);
+    CHECK(rows.front().timeframe == runtime::Timeframe::M1);
+    CHECK(rows.back().timeframe == runtime::Timeframe::MN1);
+    for (std::size_t i = 1; i < rows.size(); ++i) {
+        CHECK(rows[i].x >= rows[i - 1].x + rows[i - 1].width);
+        CHECK(rows[i].timeframe != rows[i - 1].timeframe);
+    }
+    // The chart never collapses below the floor nor grows unbounded on tall
+    // viewports, and the panels always keep a usable minimum.
+    CHECK(chart_height(400.0f) == Chrome::kMinChart);
+    CHECK(chart_height(2000.0f) == Chrome::kMaxChart);
+    float big = chart_height(900.0f);
+    CHECK(big > Chrome::kMinChart);
+    CHECK(big < Chrome::kMaxChart);
+    CHECK(panel_height(900.0f, big) >= Chrome::kMinPanel);
+    CHECK(panel_height(300.0f, Chrome::kMinChart) >= Chrome::kMinPanel);
+    // Deterministic: identical inputs yield identical geometry.
+    const std::vector<Row> again = timeframe_rows(10.0f);
+    CHECK(again.size() == rows.size());
+    for (std::size_t i = 0; i < rows.size(); ++i) {
+        CHECK(again[i].x == rows[i].x);
+        CHECK(again[i].width == rows[i].width);
+    }
+}
+
 int main() {
     test_dashboard_no_fabrication();
     test_knowledge_projection_readonly();
@@ -931,6 +962,7 @@ int main() {
     test_chart_empty_state_no_fake_candles();
     test_chart_utc_formatter();
     test_real_metrics_projection();
+    test_terminal_layout_contract();
     if (g_failures == 0) {
         std::printf("DesktopTests: ALL PASS\n");
         return 0;

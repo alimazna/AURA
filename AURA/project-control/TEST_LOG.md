@@ -1070,6 +1070,77 @@ safety, or live-trading readiness.
   the target Windows/Intel HD 3000 machine (still UNPROVEN, `BLOCK-006`). No profitability/calibration/
   broker/production claim.
 
+## 2026-10-03 — Terminal UI reconstruction (GUI-0025..GUI-0030)
+
+Scope: a deep redesign of the desktop GUI's visual composition, information hierarchy, layout, component
+system and interaction model into a genuine financial/trading terminal — explicitly not another cosmetic
+theme pass. Presentation only: no runtime, persistence, protocol or MQL5/MT5 change; no new data source;
+no order path; shadow-only preserved; nothing fabricated.
+
+Environment: Linux (g++ 14.2.0, CMake, Mesa software GL under Xvfb + ImageMagick + tesseract + Pillow).
+No Intel HD 3000 GPU is available here; that specific hardware path is NOT exercised (`BLOCK-006`). The
+terminal was verified on both the OpenGL 3.3 and OpenGL 2.1 software backends and at four resolutions.
+
+Changes under test:
+- New `src/desktop/TerminalLayout.h`: pure, GUI-free geometry contract (chrome heights, `chart_height`
+  clamp, `panel_height` minimum, ordered nine-timeframe `timeframe_rows`).
+- New `src/desktop/AuraTerminal.h`: terminal composition (`top_bar`, `sidebar`, `timeframe_tabs`,
+  `market_header`, `metric_strip`, `lower_panels`, `status_bar`).
+- New `src/desktop/AuraIcons.h`: legacy-safe draw-list vector icon set + section-to-icon mapping.
+- Recreated `src/desktop/AuraTheme.h`: font-role hierarchy (`load_fonts` + hero/title/body/small/mono
+  helpers) and a denser, measured style; refreshed `src/desktop/AuraWidgets.h` (`nav_item`,
+  `panel_begin/end` with optional scroll, `badge`, `kv_row`, `empty_state`, `state_cell`).
+- Rewritten `src/desktop/CandleChartWidget.h`: inset canvas, subtle grid, integrated right-hand price
+  gutter, integrated bottom time axis, last-price marker and a finished `NO CANDLE DATA` empty state.
+- `src/desktop/DesktopModel.h`: additive real-field exposure only (signal closed-bar close time; risk
+  account equity / risk fraction / stop-ATR multiple).
+- `src/desktop/GuiPanels.h`: `draw_dashboard` recomposed chart-first (header to tabs to dominant chart to
+  metric strip to responsive secondary panels).
+- `tools/aura_gui.cpp`: shell now uses `terminal::top_bar` / `sidebar` / `status_bar` and
+  `theme::load_fonts(AURA_FONT_DIR)`; `CMakeLists.txt` stages Roboto-Medium/Cousine-Regular.
+- `src/desktop/DesktopTests.cpp`: new `test_terminal_layout_contract`.
+
+Build commands / results:
+- `g++ -std=c++17 -Wall -Wextra -Werror -pedantic -fsyntax-only` of each changed/new header: clean.
+- `cmake -S . -B build-gui17 -DAURA_BUILD_GUI=ON` + `cmake --build build-gui17`: exit 0, no errors.
+- `cmake -S . -B build-plain` + build (GUI off): exit 0, no errors.
+
+Test commands / results:
+- `./build-gui17/DesktopTests` -> `DesktopTests: ALL PASS` (incl. `test_terminal_layout_contract`).
+- `ctest --test-dir build-gui17` -> 19/19 passed.
+- `ctest --test-dir build-plain` -> 18/18 passed.
+- `./build-gui17/aura_gui --self-test` -> `SELF-TEST PASS` (270 frames, 9/9 streams, shadow-only,
+  checkpoint OK, recovery `CLEAN_SHUTDOWN` resumable).
+- Xvfb capture + OCR (tesseract) at 1280x720 / 1366x768 / 1600x900 / 1920x1080 under `MODERN_GL33` and
+  `LEGACY_GL21`: top bar reads `AURA | XAUUSD | MARKET INTELLIGENCE ... RENDERER MODERN_GL33 DATA 9/9
+  ONLINE TF M15`; the market header reads `... MARKET STREAM QUALITY BARS LAST CLOSED / ONLINE VALID 30
+  131.800`; the tab strip reads `M1 M5 M15 M30 H1 H4 D1 W1 MN1`; the metric strip reads `SCORE 0.98
+  CONFIDENCE 0.98 REALIZED SUCCESS 0% DATA LAGGING RISK PROPOSED MODE SHADOW`. The SHADOW ONLY pill was
+  colour-confirmed in the top bar (orange, x about 1208-1284). Candle pixels counted in the chart region:
+  about 2.0k green on MODERN and about 1.9k green on LEGACY. With no data feed the capture reads
+  `NO CANDLE DATA` / `MARKET STREAM NOT AVAILABLE` and `N/A` for every absent metric.
+
+Files changed: `src/desktop/TerminalLayout.h` (new), `src/desktop/AuraTerminal.h` (new),
+`src/desktop/AuraIcons.h` (new), `src/desktop/AuraTheme.h`, `src/desktop/AuraWidgets.h`,
+`src/desktop/CandleChartWidget.h`, `src/desktop/DesktopModel.h`, `src/desktop/GuiPanels.h`,
+`src/desktop/DesktopTests.cpp`, `tools/aura_gui.cpp`, `CMakeLists.txt`; control plane (`PROJECT_STATE.md`,
+`TASK_MANIFEST.yaml`, `TEST_LOG.md`, `HANDOFF.md`).
+
+Known failures: none after the fixes below. Defects found and fixed during the work: (1) a compile error
+from `GetColorU32` called unqualified in `AuraWidgets.h`; (2) `row_health` defined in both `GuiPanels.h`
+and `DesktopModel.h` (the shared definition now lives in `DesktopModel.h`); (3) a first draft of
+`test_terminal_layout_contract` asserted the wrong clamp threshold (`chart_height(700)` instead of a
+below-floor value), corrected to match the contract.
+
+Interpretation: the GUI is now a cohesive chart-first terminal with a real information hierarchy, a
+component system (top bar, icon sidebar, instrument header, tab strip, metric strip, status bar, panel
+kit), a structured financial candlestick renderer, and an interaction model that keeps only safe
+control-plane shortcuts. Layout geometry is proven deterministically and GUI-free. Visual quality is
+verified structurally + by capture/OCR under both GL backends and four resolutions, not by a human
+aesthetic review on the target Windows/Intel HD 3000 machine (still UNPROVEN, `BLOCK-006`). The synthetic
+frames are deterministic and labelled as such, not licensed historical XAUUSD data. No profitability/
+calibration/broker/production claim; shadow-only invariant and no-order-path invariant unchanged.
+
 ## Future test entry format
 
 - Date

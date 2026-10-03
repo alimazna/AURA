@@ -134,6 +134,18 @@ if(AURA_BUILD_GUI)
 
   add_executable(aura_gui ${CMAKE_CURRENT_SOURCE_DIR}/tools/aura_gui.cpp)
   target_link_libraries(aura_gui PRIVATE aura_foundation aura_imgui ${AURA_PLATFORM_LIBS})
+  # The AURA terminal type roles (Roboto-Medium / Cousine) ship with Dear ImGui.
+  # Point the executable at their source location, and also stage a copy next to
+  # the binary under `fonts/` so the build tree and packaged app are self-contained.
+  target_compile_definitions(aura_gui PRIVATE
+    AURA_FONT_DIR="${imgui_SOURCE_DIR}/misc/fonts")
+  add_custom_command(TARGET aura_gui POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:aura_gui>/fonts
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${imgui_SOURCE_DIR}/misc/fonts/Roboto-Medium.ttf
+            ${imgui_SOURCE_DIR}/misc/fonts/Cousine-Regular.ttf
+            $<TARGET_FILE_DIR:aura_gui>/fonts
+    COMMENT "Staging AURA terminal fonts")
 
   # Headless GUI integration smoke, registered with CTest. It exercises the same
   # runtime ownership, recovery evaluation and snapshot projection the window
@@ -142,6 +154,11 @@ if(AURA_BUILD_GUI)
   add_test(NAME GuiSelfTest COMMAND aura_gui --self-test)
 
   install(TARGETS aura_gui RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+  # Stage the terminal fonts beside the binary (self-contained packaged app).
+  install(FILES
+    ${imgui_SOURCE_DIR}/misc/fonts/Roboto-Medium.ttf
+    ${imgui_SOURCE_DIR}/misc/fonts/Cousine-Regular.ttf
+    DESTINATION ${CMAKE_INSTALL_BINDIR}/fonts)
 endif()
 
 # Real host executable (console host; the shadow-only operational entrypoint).

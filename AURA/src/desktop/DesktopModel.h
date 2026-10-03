@@ -1,6 +1,7 @@
 #ifndef AURA_DESKTOP_DESKTOPMODEL_H
 #define AURA_DESKTOP_DESKTOPMODEL_H
 
+#include "desktop/CandleChart.h"
 #include "desktop/DashboardProjector.h"
 #include "foundation/PersistenceStatus.h"
 #include "runtime/AdapterManager.h"
@@ -49,6 +50,13 @@ struct TimeframeRow {
     std::string freshness{"NOT AVAILABLE"};  // relative to the newest stream, or UNKNOWN
 };
 
+// The health string for a timeframe row: the stream's own service state, or an
+// explicit NOT AVAILABLE when the stream has not reported at all. Shared by the
+// terminal composition and the section panels so the wording is identical.
+inline std::string row_health(const TimeframeRow& r) {
+    return r.present ? r.service_state : "NOT AVAILABLE";
+}
+
 // The Canonical nine-frame display. Always returns exactly nine rows in V3-29
 // order (M1..MN1); streams with no data are present=false and labelled
 // NOT AVAILABLE rather than dropped or merged.
@@ -89,6 +97,10 @@ struct SignalPanel {
     bool outcomes_available{false};
     std::uint64_t positions_closed{0};
     std::uint64_t wins{0};
+    // The finalized closed bar that triggered the signal (identity + close time).
+    // Real values from the runtime; UNKNOWN when no signal has been produced.
+    std::string closed_bar{"NOT AVAILABLE"};
+    FieldValue closed_bar_close_time{};
 };
 
 struct RiskPanel {
@@ -97,6 +109,11 @@ struct RiskPanel {
     double position_size{0.0};
     double stop_distance{0.0};
     double atr{0.0};
+    // Deterministic sizing inputs from the real proposal (RT-0015), shown for
+    // auditability. These are the proposal's own recorded inputs, not fabricated.
+    double account_equity{0.0};
+    double risk_fraction{0.0};
+    double stop_atr_multiple{0.0};
     // A proposal is never an order; this mirrors the shadow-only invariant.
     bool is_order{false};
 };
@@ -177,6 +194,10 @@ public:
             s.signal.symbol = sig.symbol;
             s.signal.trigger_timeframe = std::string(runtime::to_string(sig.trigger_timeframe));
             s.signal.decision_id = sig.decision_id.to_hex();
+            s.signal.closed_bar = sig.closed_bar.valid() ? sig.closed_bar.canonical_string()
+                                                         : std::string("UNKNOWN");
+            s.signal.closed_bar_close_time = field(sig.closed_bar.close_time().nanoseconds() != 0,
+                                                   format_utc_minute(sig.closed_bar.close_time()));
         }
 
         // Real deterministic score/confidence of the latest signal. Shown only
@@ -204,6 +225,9 @@ public:
             s.risk.position_size = prop.position_size;
             s.risk.stop_distance = prop.stop_distance;
             s.risk.atr = prop.atr;
+            s.risk.account_equity = prop.account_equity;
+            s.risk.risk_fraction = prop.risk_fraction;
+            s.risk.stop_atr_multiple = prop.stop_atr_multiple;
             s.risk.is_order = prop.is_order;
         }
 

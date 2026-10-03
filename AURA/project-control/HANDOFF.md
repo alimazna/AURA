@@ -25,7 +25,11 @@ Do not rely on any prior conversation memory.
   A **premium GUI overhaul** (`GUI-0021..GUI-0024`, TESTED locally) refined the design system, recomposed
   the Dashboard into a chart-first terminal, and surfaced AURA's **real** deterministic SCORE (RT-0011),
   CONFIDENCE (RT-0012) and realized shadow success rate in the GUI — explicitly NOT a calibrated
-  probability (none is computed or claimed).
+  probability (none is computed or claimed). A **terminal UI reconstruction** (`GUI-0025..GUI-0030`,
+  TESTED locally) then did a deep redesign of the composition itself — a pure GUI-free layout contract,
+  a cohesive terminal shell (top bar, icon sidebar, instrument header, timeframe tab strip, chart-first
+  workspace, compact metric strip, slim status bar), a refined design system + vector icon set, a
+  structured financial candle renderer, and shell/Dashboard integration with staged terminal fonts.
 - Authoritative build: `AURA/CMakeLists.txt` (header-only C++17/20 + the `aura_foundation` SHA-256 TU).
   It builds the `aura` console host, 18 behavioural test executables, and installs `bin/aura` +
   headers + docs. `ctest` is 18/18 green under C++17 AND C++20. On Windows/MSVC the CRT is linked
@@ -34,8 +38,8 @@ Do not rely on any prior conversation memory.
   `aura --self-test [--keep]` (bounded offline smoke), `aura --dump-frames <file>`, `aura --recover
   <store>` (report the V2-36 decision). `--store <path>` enables file-backed persistence of
   per-timeframe progress + the shadow ledger.
-- Manifest graph: 217 tasks -- 178 `APPROVED`, 24 `TESTED` (PERSIST-0001, PERSIST-0002, BUILD-0002,
-  BUILD-0003, GUI-0002, GUI-0003, PHASE-9-MILESTONE, GUI-0007..GUI-0013, GUI-0015..GUI-0024),
+- Manifest graph: 223 tasks -- 178 `APPROVED`, 30 `TESTED` (PERSIST-0001, PERSIST-0002, BUILD-0002,
+  BUILD-0003, GUI-0002, GUI-0003, PHASE-9-MILESTONE, GUI-0007..GUI-0013, GUI-0015..GUI-0030),
   2 `IMPLEMENTED` (TASK-MANIFEST-001, GUI-0001), 11 `DEFERRED`, 2 `BLOCKED`.
 - CI: `.github/workflows/ci.yml` builds/tests Linux C++17+C++20 (blocking) with the smoke test and an
   install check, plus MSVC Windows C++17/C++20, plus a `desktop-gui` job (Dear ImGui + GLFW + Xvfb
@@ -52,6 +56,37 @@ Do not rely on any prior conversation memory.
   interactive GUI rendering is UNPROVEN (the Xvfb smoke is software-rendered on Linux), and the legacy
   Intel HD Graphics 3000 render path is UNPROVEN (`BLOCK-006`); MT5/MetaEditor is UNPROVEN. The CI
   result for the newest commits is recorded in `TEST_LOG.md` after push.
+
+### Terminal UI reconstruction deliverables (this session)
+
+Deep redesign of the desktop GUI composition/hierarchy/layout/component system/interaction model. Six
+file-level tasks (`GUI-0025..GUI-0030`), all `TESTED`; presentation-only, no runtime/persistence/protocol
+change, no new data source, no order path, shadow-only preserved, nothing fabricated.
+
+- `src/desktop/TerminalLayout.h` (new, `GUI-0025`) — pure GUI-free geometry: chrome heights, `chart_height`
+  clamp (floor 220 / ceiling 680), `panel_height` minimum, and the ordered nine-timeframe `timeframe_rows`.
+- `src/desktop/AuraTerminal.h` (new, `GUI-0026`) — the composition: `top_bar` (brand + instrument +
+  descriptor; RENDERER/DATA/TF + SHADOW ONLY pill measured and right-aligned), `sidebar` (icon nav driven
+  by the real page index), `timeframe_tabs` (nine tabs, accent underline), `market_header`, `metric_strip`,
+  `lower_panels`, `status_bar`.
+- `src/desktop/AuraIcons.h` (new, `GUI-0027`) — legacy-safe draw-list vector icon set + section mapping.
+- `src/desktop/AuraTheme.h`, `src/desktop/AuraWidgets.h` (recreated/refreshed, `GUI-0027`) — font-role
+  hierarchy (`load_fonts` + hero/title/body/small/mono helpers), denser measured style, widgets
+  (`nav_item`, `panel_begin/end` with optional scroll, `badge`, `kv_row`, `empty_state`, `state_cell`).
+- `src/desktop/CandleChartWidget.h` (rewritten, `GUI-0028`) — structured financial chart: inset canvas,
+  grid, integrated price gutter, integrated time axis, last-price marker, finished `NO CANDLE DATA` state.
+- `src/desktop/GuiPanels.h`, `tools/aura_gui.cpp`, `CMakeLists.txt` (`GUI-0029`) — chart-first
+  `draw_dashboard`, shell wired to the new chrome, and staged terminal fonts via `AURA_FONT_DIR`.
+- `src/desktop/DesktopModel.h` — additive real-field exposure only (signal closed-bar close time; risk
+  account equity / risk fraction / stop-ATR multiple).
+- `src/desktop/DesktopTests.cpp` (`GUI-0030`) — `test_terminal_layout_contract`.
+
+Verification: strict standalone header compiles clean; `DesktopTests` ALL PASS; CTest 19/19 (GUI build) and
+18/18 (GUI off); `aura_gui --self-test` PASS; Xvfb capture+OCR at four resolutions on both `MODERN_GL33`
+and `LEGACY_GL21` confirms the chrome, header, nine tabs and metric strip; SHADOW ONLY pill colour-confirmed
+in the top bar; ~2.0k (modern) / ~1.9k (legacy) green candle pixels; empty dataset shows `NO CANDLE DATA` +
+`N/A`. NOT claimed: human aesthetic review on the target machine; real historical data; any
+profitability/calibration/broker/production claim; Intel HD 3000 path still UNPROVEN (`BLOCK-006`).
 
 ### GUI visual redesign deliverables (this session)
 

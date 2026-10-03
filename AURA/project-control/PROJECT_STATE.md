@@ -505,7 +505,7 @@ See `project-control/BLOCKED.md`.
   inventing a calibrated success probability: AURA does not compute one and the GUI still does not claim
   one. `DesktopTests.test_real_metrics_projection` proves the projection equals the pipeline values,
   bounds them, and marks them unavailable when absent.
-- The manifest graph is now 217 file-level tasks (178 `APPROVED`, 24 `TESTED`, 2 `IMPLEMENTED`
+- The manifest graph is now 223 file-level tasks (178 `APPROVED`, 30 `TESTED`, 2 `IMPLEMENTED`
   [TASK-MANIFEST-001, GUI-0001], 11 `DEFERRED`, 2 `BLOCKED`). The deferred Master capabilities
   remain visible.
 - Remaining unproven items are environment/data-bound (real-Windows-desktop interactive GUI including
@@ -564,6 +564,50 @@ See `project-control/BLOCKED.md`.
   The visual quality of the redesign is verified structurally (layout, no assertions, both backends) and
   by a captured frame, not by a human aesthetic review on the target machine.
 
+## Terminal UI reconstruction verification (2026-10-03, local)
+
+- A deep redesign of the desktop GUI's visual composition, information hierarchy, layout, component
+  system and interaction model — not a cosmetic theme pass. Six file-level tasks were added and set
+  `TESTED`: `GUI-0025` (pure GUI-free layout contract), `GUI-0026` (terminal composition shell),
+  `GUI-0027` (design system + icon system), `GUI-0028` (structured financial candle renderer),
+  `GUI-0029` (shell/Dashboard integration + staged fonts), `GUI-0030` (GUI-free layout-contract test).
+- New/changed outputs: `src/desktop/TerminalLayout.h` (new), `src/desktop/AuraTerminal.h` (new),
+  `src/desktop/AuraIcons.h` (new), recreated `src/desktop/AuraTheme.h`, refreshed
+  `src/desktop/AuraWidgets.h`, rewritten `src/desktop/CandleChartWidget.h`, additively extended
+  `src/desktop/DesktopModel.h` (real signal closed-bar close time + risk inputs, no new data source),
+  recomposed `src/desktop/GuiPanels.h` `draw_dashboard`, reworked `tools/aura_gui.cpp` shell, and
+  `CMakeLists.txt` (font staging + `AURA_FONT_DIR`).
+- Composition: top terminal bar (brand + instrument + descriptor on the left; RENDERER / DATA / TF and a
+  SHADOW ONLY pill measured and right-aligned), an icon navigation sidebar driven by the real page
+  index, an instrument/market header (XAUUSD + selected-timeframe badge + real last-closed price/time +
+  stream state/quality/bars), a horizontal nine-timeframe tab strip with an accent underline, the
+  candlestick workspace as the dominant element, a compact single-row metric strip
+  (SCORE / CONFIDENCE / REALIZED SUCCESS / DATA / RISK / MODE) and a slim real-value status bar.
+  The chart is a structured financial chart: inset canvas, subtle grid, integrated right-hand price
+  gutter, integrated bottom time axis and a last-price marker.
+- Determinism / no-fabrication preserved: every value is read from the pre-built `ControlCenterReport`;
+  absent data renders as explicit `N/A` / `NOT AVAILABLE`; the chart draws only real closed bars.
+  No runtime reach-through, no new data source, no order path; shadow-only invariant unchanged.
+- Verification: standalone strict compiles of the new/changed headers
+  (`g++ -std=c++17 -Wall -Wextra -Werror -pedantic`) clean; `DesktopTests` ALL PASS including the new
+  `test_terminal_layout_contract`; full CTest **19/19** under the GUI build (`AURA_BUILD_GUI=ON`, c++17)
+  and **18/18** under the default GUI-off build; `aura_gui --self-test` PASS.
+- Interactive render verified by Xvfb captures (ImageMagick) + OCR (tesseract) at **1280x720**,
+  **1366x768**, **1600x900** and **1920x1080** under **both** `MODERN_GL33` and `LEGACY_GL21`: OCR
+  confirms the top bar (`AURA | XAUUSD | MARKET INTELLIGENCE ... RENDERER MODERN_GL33 DATA 9/9 ONLINE TF
+  M15` + the SHADOW ONLY pill), the market header (`... MARKET STREAM QUALITY BARS LAST CLOSED / ONLINE
+  VALID 30 131.800`), the nine-tab strip (`M1 M5 M15 M30 H1 H4 D1 W1 MN1`) and the metric strip
+  (`SCORE 0.98 CONFIDENCE 0.98 REALIZED SUCCESS 0% DATA LAGGING RISK PROPOSED MODE SHADOW`). The
+  SHADOW ONLY pill was additionally colour-confirmed in the top bar (orange, x≈1208–1284). Candle
+  pixels were counted (Pillow) in the chart region: ~2.0k green on MODERN and ~1.9k green on LEGACY,
+  i.e. real candles render on both backends. With no data the capture reads `NO CANDLE DATA` /
+  `MARKET STREAM NOT AVAILABLE` / `N/A` throughout — no fabricated zeros.
+- NOT claimed: human aesthetic review on the target machine; real historical XAUUSD data (the frames
+  are deterministic synthetic closed bars from the trusted encoder path, labelled as such); any
+  profitability/calibration/broker/production claim. CI proves build + tests + bounded software-GL
+  smokes, not visual quality or real-Windows rendering. The specific Intel HD Graphics 3000 path remains
+  UNPROVEN (`BLOCK-006`).
+
 ## Premium GUI overhaul verification (2026-10-03, local)
 
 - `DesktopTests` ALL PASS (g++ C++17 strict; GUI build), now including `test_real_metrics_projection`
@@ -593,10 +637,10 @@ See `project-control/BLOCKED.md`.
 
 1. Re-run the updated `aura_gui.exe` (from the new Windows x64 Release package) on the Windows 10 /
    Intel HD Graphics 3000 machine to confirm the startup line reports `renderer=LEGACY_GL21` and that the
-   redesigned control center — including the new XAUUSD candlestick chart and timeframe selector —
-   renders and shuts down cleanly; open a window large enough to see several candles and try switching
-   timeframes. Record the real result in `TEST_LOG.md` (closes BLOCK-006 and promotes the redesign + chart
-   from structurally-verified to visually VERIFIED on the target machine).
+   reconstructed terminal — including the new XAUUSD candlestick workspace, timeframe tab strip and
+   chart-first composition — renders and shuts down cleanly; open a window large enough to see several
+   candles and try switching timeframes. Record the real result in `TEST_LOG.md` (closes BLOCK-006 and
+   promotes the terminal from structurally-verified to visually VERIFIED on the target machine).
 2. When a MetaEditor/MT5 environment becomes available, run Phase 11 controlled validation
    (demo/shadow only) behind the readiness gate; record real results in `TEST_LOG.md`.
 3. Optionally have a human run `aura_gui --gui` on a real Windows desktop to promote the interactive

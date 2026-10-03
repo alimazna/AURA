@@ -47,9 +47,16 @@ current_task: 'Canonical Phases 0-13 COMPLETE and TESTED, plus Phase 9 desktop p
   by explicit identity, no fabrication), and a PREMIUM GUI OVERHAUL (GUI-0021..GUI-0024, 2026-10-03):
   refined design system + chart-first Dashboard recomposition + real deterministic SCORE (RT-0011) /
   CONFIDENCE (RT-0012) / realized shadow success-rate surfaced in the GUI (GUI-0023) - explicitly NOT a
-  calibrated probability - with a GUI-free deterministic projection test (GUI-0024). Manifest graph 217
-  tasks. Remaining are environment/data-unproven only (real-Windows-desktop interactive GUI on legacy
-  GPU, real MT5/MetaEditor round-trip, licensed XAUUSD datasets).'
+  calibrated probability - with a GUI-free deterministic projection test (GUI-0024). A TERMINAL UI
+  RECONSTRUCTION (GUI-0025..GUI-0030, 2026-10-03) then redesigned the composition: a pure GUI-free
+  layout contract (TerminalLayout.h), a cohesive terminal composition (AuraTerminal.h: top bar, icon
+  sidebar, instrument header, timeframe tabs, chart-first workspace, compact metric strip, slim status
+  bar), a refined design system + vector icon set (AuraTheme/AuraWidgets/AuraIcons), a structured
+  financial candlestick renderer (grid + integrated price gutter/time axis + last-price marker + NO
+  CANDLE DATA empty state), shell/Dashboard integration with staged terminal fonts, and a GUI-free
+  layout-contract test. Manifest graph 223 tasks. Remaining are environment/data-unproven only
+  (real-Windows-desktop interactive GUI on legacy GPU, real MT5/MetaEditor round-trip, licensed XAUUSD
+  datasets).'
 tasks:
 - id: TASK-BOOTSTRAP-001
   phase: BOOTSTRAP
@@ -3542,6 +3549,126 @@ tasks:
     deterministic, no mocks, no wall clock.
   evidence: 'DONE 2026-10-03: added test_real_metrics_projection; DesktopTests ALL PASS; full CTest 19/19
     (GUI build) and 18/18 (GUI off). See TEST_LOG.md.'
+- id: GUI-0025
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: APPLICATION_PLANE
+  authority: PROPOSED
+  status: TESTED
+  output: src/desktop/TerminalLayout.h
+  dependencies:
+  - GUI-0018
+  objective: Extract the terminal composition geometry (chrome heights, chart/panel
+    sizing, ordered nine-timeframe tab layout) into a pure, GUI-free contract so the
+    renderer and the deterministic tests consume exactly the same numbers.
+  acceptance: No ImGui/runtime/clock dependency; chart height is clamped to a floor and a
+    ceiling and the panels keep a usable minimum at every viewport; the tab layout is
+    exactly the nine canonical timeframes in V3-29 order, one per explicit identity,
+    non-overlapping and deterministic.
+  evidence: 'DONE 2026-10-03: TerminalLayout.h created (Chrome constants, chart_height,
+    panel_height, timeframe_rows); standalone strict compile clean (g++ -std=c++17
+    -Wall -Wextra -Werror -pedantic); proven by DesktopTests.test_terminal_layout_contract.'
+- id: GUI-0026
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: APPLICATION_PLANE
+  authority: PROPOSED
+  status: TESTED
+  output: src/desktop/AuraTerminal.h
+  dependencies:
+  - GUI-0018
+  - GUI-0025
+  objective: Build a cohesive professional terminal composition - top terminal bar,
+    navigation sidebar with a section icon system, instrument/market header, horizontal
+    timeframe tab strip, chart-first workspace, compact single-row metric strip and a
+    slim real-value status bar - replacing the previous ad-hoc header/status blocks.
+  acceptance: All values read from the pre-built ControlCenterReport; absent data renders
+    as explicit N/A / NOT AVAILABLE, never a fabricated zero; the SHADOW ONLY identity is
+    stated in the top bar and status bar; only fixed-function ImGui draw-list primitives
+    (renders identically on OpenGL 2.1 and 3.3); no runtime reach-through and no order path.
+  evidence: 'DONE 2026-10-03: AuraTerminal.h created (top_bar, sidebar, timeframe_tabs,
+    market_header, metric_strip, lower_panels, status_bar); wired into the window shell
+    (GUI-0029); verified by Xvfb capture + OCR at 1280x720/1366x768/1600x900/1920x1080 on
+    both MODERN_GL33 and LEGACY_GL21; the SHADOW ONLY pill was colour-confirmed in the top
+    bar; empty dataset renders NO CANDLE DATA and N/A for every absent metric.'
+- id: GUI-0027
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: APPLICATION_PLANE
+  authority: PROPOSED
+  status: TESTED
+  output: src/desktop/AuraTheme.h, src/desktop/AuraWidgets.h, src/desktop/AuraIcons.h
+  dependencies:
+  - GUI-0021
+  objective: Refine the shared design system for genuine terminal density and hierarchy -
+    a real font-role hierarchy (hero/title/body/small/mono), measured spacing rather than
+    oversized blocks, hairline borders and a vector icon system - keeping the
+    deep-navy/cyan identity and the shadow-only invariant unchanged.
+  acceptance: Font roles load from the staged AURA_FONT_DIR with a safe built-in fallback;
+    widgets expose nav_item/panel_begin/panel_end/badge/kv_row/state_cell/empty_state and a
+    section icon set; only fixed-function primitives; no data source and no order path.
+  evidence: 'DONE 2026-10-03: AuraTheme.h recreated with load_fonts/text_* role helpers and
+    denser style; AuraWidgets.h refreshed (badge/kv_row/empty_state, scrollable panels);
+    AuraIcons.h created as a legacy-safe draw-list vector icon set; standalone strict
+    compiles clean. Rendered on both GL backends.'
+- id: GUI-0028
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: APPLICATION_PLANE
+  authority: PROPOSED
+  status: TESTED
+  output: src/desktop/CandleChartWidget.h
+  dependencies:
+  - GUI-0016
+  - GUI-0027
+  objective: Render the candle workspace as a structured financial chart - inset canvas,
+    subtle grid, integrated right-hand price gutter, integrated bottom time axis and a
+    last-price marker - and give a timeframe with no real bars a finished NO CANDLE DATA
+    state instead of a bare rectangle.
+  acceptance: Draws only real closed bars projected by the pure CandleChart model; never
+    synthesizes a candle or a price; fixed-function primitives only; the empty state names
+    the instrument/timeframe and states MARKET STREAM NOT AVAILABLE.
+  evidence: 'DONE 2026-10-03: CandleChartWidget.h rewritten; Xvfb captures show real green
+    (~2.0k) and red candle pixels in the chart region on both MODERN_GL33 and LEGACY_GL21;
+    empty dataset capture reads NO CANDLE DATA / MARKET STREAM NOT AVAILABLE.'
+- id: GUI-0029
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: APPLICATION_PLANE
+  authority: PROPOSED
+  status: TESTED
+  output: src/desktop/GuiPanels.h, tools/aura_gui.cpp, CMakeLists.txt
+  dependencies:
+  - GUI-0026
+  - GUI-0028
+  objective: Integrate the terminal composition into the window shell and Dashboard -
+    chart-first draw_dashboard (instrument header, tabs, dominant chart, metric strip,
+    responsive secondary panels) and a shell that calls the new top bar / sidebar /
+    status bar - while keeping the single runtime owner and shadow-only invariant.
+  acceptance: Shell uses only safe control-plane shortcuts (pause/checkpoint/stop; no
+    order path); fonts are staged next to the binary and referenced via AURA_FONT_DIR;
+    sidebar navigation drives the real page index; panels stay on-screen at 1280x720 and
+    the chart dominates at 1920x1080; build clean under C++17 and C++20.
+  evidence: 'DONE 2026-10-03: GuiPanels draw_dashboard recomposed; aura_gui shell spliced to
+    terminal::top_bar/sidebar/status_bar and load_fonts(AURA_FONT_DIR); CMake POST_BUILD
+    stages Roboto-Medium/Cousine-Regular; GUI build 19/19 CTest, GUI-off build 18/18; OCR
+    of 1280/1366/1600/1920 captures shows the full hierarchy with no clipping.'
+- id: GUI-0030
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: OPERATING_GOVERNANCE_PLANE
+  authority: PROPOSED
+  status: TESTED
+  output: src/desktop/DesktopTests.cpp (extended)
+  dependencies:
+  - GUI-0025
+  objective: Prove the terminal layout contract deterministically and GUI-free so a layout
+    regression fails in a plain unit test, not in a screenshot.
+  acceptance: Asserts nine ordered non-overlapping timeframe tabs with distinct identities,
+    chart-height clamping to floor and ceiling, a usable panel minimum at short viewports,
+    and determinism across repeated calls; no mocks, no wall clock, no GUI.
+  evidence: 'DONE 2026-10-03: added test_terminal_layout_contract; DesktopTests ALL PASS
+    (g++ c++17 strict); full CTest 19/19 (GUI build) and 18/18 (GUI off). See TEST_LOG.md.'
 - id: MT5-REAL-0001
   phase: DEFERRED
   module: MT5_RUNTIME
