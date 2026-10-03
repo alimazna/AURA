@@ -337,6 +337,44 @@ Only explicit human decisions belong here.
 
 
 
+## 2026-10-03 — GUI visual design: original AURA design system, honesty invariants preserved
+
+- **Decision:** Rebuild the control-center presentation layer on an original AURA design system rather
+  than keep the default ImGui look. Specifically:
+  1. A single visual language in `src/desktop/AuraTheme.h` — a deep-navy palette with one cyan accent,
+     a state colour map, a spacing scale, and `apply_aura_style()`. It uses only fixed-function-friendly
+     style properties (flat colours, thin borders, no gradients/textures/shaders) so the same design
+     renders on both the OpenGL 3.3 and OpenGL 2.1 backends.
+  2. A pure, ImGui-free state classifier in `src/desktop/StateVisuals.h` (`StateCategory`,
+     `state_category`, `category_label`, `is_unknown_like`) that is the single source of truth for the
+     visual language. Hard invariant: an unrecognised or empty state maps to `UNKNOWN` and is NEVER
+     rendered as `HEALTHY`; `NOT AVAILABLE` is its own category distinct from `UNKNOWN`.
+  3. Navigation becomes a grouped catalog (`src/desktop/NavigationModel.h`:
+     Monitoring / Intelligence / Governance / System) that preserves the canonical V3-37 section
+     identity, count and order exactly. Navigation is presentation only and cannot drift from the panels.
+  4. Reusable, legacy-safe widgets (`src/desktop/AuraWidgets.h`) and a rewritten `GuiPanels.h`:
+     every section is rendered through the same primitives, absent values remain explicit `NOT
+     AVAILABLE`, and a wired-but-empty source is a distinct real empty state (never a fabricated row).
+  5. `tools/aura_gui.cpp` gains a coherent shell (top bar with `SHADOW ONLY` + actual renderer, grouped
+     sidebar, bordered content, persistent status bar) and exposes only safe control-plane shortcuts
+     (`Ctrl+P` pause/resume, `Ctrl+S` checkpoint, `Esc` bounded stop). No order path is reachable.
+- **Rationale:** The GUI worked and was safe but looked prototype-like, which undermines trust in an
+  operator surface. The redesign is presentation-only and deliberately keeps every honesty invariant:
+  it must not make unknown/absent data look healthy, and it must not add any control path. Making the
+  state classifier pure and ImGui-free is what lets the invariant be unit-tested in the default
+  (GUI-off) build.
+- **Affected tasks:** new `GUI-0009` (design system), `GUI-0010` (navigation), `GUI-0011` (widgets +
+  panels), `GUI-0012` (window shell), `GUI-0013` (real sequence + deterministic freshness) — all
+  `TESTED`; new `GUI-0014` (optional in-window menu/help) recorded as `DEFERRED`.
+- **Scope-change flag:** No new phase; a presentation/quality refinement of the already-authorized
+  Phase 9 GUI. `DesktopModel` gained two read-only derived fields (`sequence`, `freshness`), which add
+  no new data source and no lookahead.
+- **Master V3 status:** Preserved unchanged. Shadow-only upheld; live trading not enabled; no
+  profitability/calibration/broker/production-safety claim. Visual verification on the specific
+  Windows/Intel HD Graphics 3000 target remains UNPROVEN (`BLOCK-006`).
+
+
+
 ## Decision format
 
 For each future material decision record:

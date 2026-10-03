@@ -447,8 +447,25 @@ See `project-control/BLOCKED.md`.
   validation evidence, approvals, evolution graph, schedule/operating window, operating-window
   checkpoints — are shown explicitly as **`NOT AVAILABLE`**, never fabricated. The GUI exposes no
   live-order path; the shadow-only invariant is asserted in tests and self-test.
-- The manifest graph is now 201 file-level tasks (178 `APPROVED`, 9 `TESTED`, 2 `IMPLEMENTED`
-  [TASK-MANIFEST-001, GUI-0001], 10 `DEFERRED`, 2 `BLOCKED`). The 10 deferred Master capabilities
+- GUI visual redesign (GUI-0009..GUI-0013, `TESTED` 2026-10-03): the control center was visually poor
+  and prototype-like, so the presentation layer was rebuilt on an original design system. New
+  `src/desktop/StateVisuals.h` (pure, ImGui-free state classification with the invariant that
+  `UNKNOWN`/`NOT AVAILABLE` never map to healthy) and `src/desktop/AuraTheme.h` (deep-navy palette, one
+  cyan accent, state→colour map, spacing scale, `apply_aura_style()`; flat fixed-function-friendly
+  properties so the same theme renders on both backends). New `src/desktop/NavigationModel.h` groups the
+  19 canonical V3-37 sections into Monitoring / Intelligence / Governance / System with readable labels
+  while preserving section identity and order exactly. New `src/desktop/AuraWidgets.h` (bordered cards,
+  state badges, aligned key/value rows, metric blocks, explicit empty states, uniform tables) and a
+  rewritten `src/desktop/GuiPanels.h` (a Dashboard plus all 19 sections). `tools/aura_gui.cpp` now has a
+  coherent shell: top bar (brand, version, `SHADOW ONLY`, health, actual renderer), grouped sidebar,
+  bordered content area, and a persistent status bar, with safe control-plane shortcuts only
+  (`Ctrl+P` pause/resume, `Ctrl+S` checkpoint, `Esc` bounded stop) and no order path. `DesktopModel.h`
+  now exposes the real processed closed-bar `sequence` per stream and a deterministic relative
+  `freshness` (FRESH / LAGGING / UNKNOWN / NOT AVAILABLE) computed from the newest close time in the
+  snapshot — no wall clock, no lookahead. Absent values remain explicit `NOT AVAILABLE`; a wired-but-empty
+  source is a distinct real empty state.
+- The manifest graph is now 207 file-level tasks (178 `APPROVED`, 14 `TESTED`, 2 `IMPLEMENTED`
+  [TASK-MANIFEST-001, GUI-0001], 11 `DEFERRED`, 2 `BLOCKED`). The deferred Master capabilities
   remain visible.
 - Remaining unproven items are environment/data-bound (real-Windows-desktop interactive GUI including
   the legacy-GPU path, real MetaEditor/MT5 run, historical dataset campaign, and wiring sources for the
@@ -457,13 +474,20 @@ See `project-control/BLOCKED.md`.
 ## Verification (2026-10-03, local; remote CI recorded after push)
 
 - `DesktopTests` PASS under g++ `-std=c++17`/`c++20` `-Wall -Wextra -Werror -pedantic` (real code paths,
-  no mocks): section/incident/single-owner tests plus the five renderer-policy/fallback tests.
-- Default (GUI OFF) CMake build + ctest: **18/18 passed**. GUI build (`AURA_BUILD_GUI=ON`) c++17 and
-  c++20: **19/19 passed** each.
+  no mocks): section/incident/single-owner tests, the five renderer-policy/fallback tests, and the three
+  redesign tests (`test_state_category_mapping`, `test_navigation_catalog`, `test_freshness_projection`).
+- Default (GUI OFF) CMake build + ctest: **18/18 passed**. GUI build (`AURA_BUILD_GUI=ON`) c++17: **19/19
+  passed** (includes `GuiSelfTest`).
 - `aura_gui --self-test` PASS (270 frames, 9/9 streams, shadow-only, ledger+version sourced, incidents
   wired, unsourced sections `NOT AVAILABLE`, checkpoint OK, recovery CLEAN_SHUTDOWN resumable).
 - `aura_gui --gui --frames N` interactive smoke under Xvfb software OpenGL PASS: booted, cycled through
-  all 19 V3-37 sections, clean shutdown checkpoint OK.
+  all 19 V3-37 sections, clean shutdown checkpoint OK. The redesigned layout was additionally exercised
+  in a **Debug** (assert-enabled) GUI build — ImGui's own Begin/End balance and ID-stack assertions are
+  active there — cycling all 19 sections for 80 frames under both `MODERN_GL33` and `LEGACY_GL21` with a
+  clean shutdown (exit 0). A captured frame of the running app (Xvfb + ImageMagick) confirms the new
+  shell structure (top bar, grouped sidebar, four-card dashboard row, nine-timeframe table, incidents
+  table, status bar), and the modern and legacy captures are structurally identical (same design on both
+  backends).
 - Renderer smokes under Xvfb (software Mesa): `--renderer modern` -> `renderer=MODERN_GL33`; `--renderer
   legacy` -> `renderer=LEGACY_GL21`; AUTO with `MESA_GL_VERSION_OVERRIDE=2.1` (forces the modern attempt
   to fail) -> `renderer=LEGACY_GL21` with `OpenGL 3.3 unavailable` and clean shutdown; `--renderer
@@ -472,13 +496,16 @@ See `project-control/BLOCKED.md`.
   extended `desktop-gui-linux` renderer smokes.
 - NOT claimed: interactive rendering on a real Windows desktop, and specifically the Intel HD Graphics
   3000 path (UNPROVEN); any profitability, calibration, broker-validation or production-safety claim.
+  The visual quality of the redesign is verified structurally (layout, no assertions, both backends) and
+  by a captured frame, not by a human aesthetic review on the target machine.
 
 ## Next action
 
 1. Re-run the updated `aura_gui.exe` (from the new Windows x64 Release package) on the Windows 10 /
    Intel HD Graphics 3000 machine to confirm the startup line reports `renderer=LEGACY_GL21` and the
-   control center renders and shuts down cleanly; record the real result in `TEST_LOG.md` (closes
-   BLOCK-006).
+   redesigned control center renders and shuts down cleanly; record the real result in `TEST_LOG.md`
+   (closes BLOCK-006 and promotes the redesign from structurally-verified to visually VERIFIED on the
+   target machine).
 2. When a MetaEditor/MT5 environment becomes available, run Phase 11 controlled validation
    (demo/shadow only) behind the readiness gate; record real results in `TEST_LOG.md`.
 3. Optionally have a human run `aura_gui --gui` on a real Windows desktop to promote the interactive

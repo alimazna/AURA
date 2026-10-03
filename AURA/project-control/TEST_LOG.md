@@ -1,5 +1,86 @@
 # AURA — Test Log
 
+## 2026-10-03 — GUI visual redesign: design system + polished control center (GUI-0009..GUI-0013)
+
+Scope: the desktop control center rendered and behaved correctly but looked prototype-like. This wave
+rebuilds the presentation layer into a professional operator surface: an original design system, grouped
+navigation, rebuilt panels, a coherent window shell, and a more informative (still honest) Timeframes
+view. Presentation only — no runtime, persistence, protocol or MQL5/MT5 change; no live-order path;
+shadow-only preserved; nothing fabricated.
+
+Environment: Linux (g++ 14.2.0, CMake 4.4.3, Mesa software GL under Xvfb). No Intel HD 3000 GPU is
+available here, so that specific hardware path is NOT exercised (see BLOCK-006); the design was verified
+on both the OpenGL 3.3 and OpenGL 2.1 software backends.
+
+Changes under test:
+- New `src/desktop/StateVisuals.h`: pure, ImGui-free state classification (`StateCategory`,
+  `state_category`, `category_label`, `is_unknown_like`). Invariant: unrecognised/empty states map to
+  `UNKNOWN`, never `HEALTHY`; `NOT AVAILABLE` is its own category.
+- New `src/desktop/AuraTheme.h`: deep-navy palette with one cyan accent, state→colour map, spacing scale,
+  and `apply_aura_style()`. Uses only fixed-function-friendly style properties (flat colours, no
+  gradients/textures/shaders).
+- New `src/desktop/NavigationModel.h`: groups the 19 canonical V3-37 sections into
+  Monitoring / Intelligence / Governance / System with readable labels, preserving section identity and
+  order exactly (presentation only).
+- New `src/desktop/AuraWidgets.h`: bordered cards, state badges, aligned key/value rows, metric blocks,
+  explicit empty states and uniform tables — all via the ImGui draw list (legacy-safe).
+- Rewritten `src/desktop/GuiPanels.h`: a Dashboard plus all 19 section panels on the design system.
+- `tools/aura_gui.cpp`: new shell (top bar with brand/version/`SHADOW ONLY`/health/actual renderer,
+  grouped sidebar, bordered content area, persistent status bar) and safe control-plane shortcuts only
+  (`Ctrl+P` pause/resume, `Ctrl+S` checkpoint, `Esc` bounded stop); the bounded smoke now cycles
+  `navigation_count()` sections.
+- `src/desktop/DesktopModel.h`: `TimeframeRow.sequence` (real processed closed-bar sequence) and
+  `.freshness` (deterministic FRESH/LAGGING/UNKNOWN/NOT AVAILABLE from the newest close time in the
+  snapshot; no wall clock, no lookahead).
+- `src/desktop/DesktopTests.cpp`: added `test_state_category_mapping`, `test_navigation_catalog`,
+  `test_freshness_projection`.
+
+Build command: `cmake -S . -B build-gui17 -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=17
+-DAURA_BUILD_GUI=ON` then `cmake --build build-gui17 -j 4`; default build
+`cmake -S . -B build-off -DCMAKE_BUILD_TYPE=Release`; strict test compile
+`g++ -std=c++17|-std=c++20 -Wall -Wextra -Werror -Wpedantic -Isrc src/desktop/DesktopTests.cpp
+src/foundation/Hasher.cpp`.
+
+Build result: PASS. Project sources compile clean under `-Wall -Wextra -Wpedantic` (no warnings from
+`src/desktop/*` or `tools/aura_gui.cpp`).
+
+Test command: `ctest --test-dir build-off`; `ctest --test-dir build-gui17`; `/tmp/dtest17`;
+`/tmp/dtest20`; `aura_gui --self-test`; and Xvfb interactive smokes
+`aura_gui --gui --renderer auto|legacy --frames 60` plus a **Debug** (assert-enabled) build
+`aura_gui --gui --renderer auto|legacy --frames 80`.
+
+Test result: PASS.
+- `DesktopTests` ALL PASS under g++ C++17 and C++20 strict (`-Werror -pedantic`), including the three
+  new tests.
+- Default (GUI OFF) ctest: 18/18 passed. GUI ctest: 19/19 passed (includes `GuiSelfTest`).
+- `aura_gui --self-test` PASS (270 frames, 9/9 streams, shadow-only, ledger+version sourced, incidents
+  wired, unsourced sections `NOT AVAILABLE`, checkpoint OK, recovery CLEAN_SHUTDOWN resumable).
+- Interactive smokes under Xvfb: `--renderer auto` -> `renderer=MODERN_GL33`, 60 frames, clean shutdown;
+  `--renderer legacy` -> `renderer=LEGACY_GL21`, 60 frames, clean shutdown. Debug (assert-enabled)
+  builds cycled all 19 sections for 80 frames on both backends with exit 0 — this exercises ImGui's own
+  Begin/End balance and ID-stack assertions across every panel, so a malformed layout would have aborted.
+- Captured a live frame (Xvfb + ImageMagick) of the running app: confirms the new shell (top bar,
+  grouped sidebar ~17% width, four-card dashboard row, nine-timeframe table, signal/ledger cards,
+  incidents table, status bar). The modern and legacy captures are structurally identical, confirming
+  the same design renders on both backends.
+- Forced-fallback (`MESA_GL_VERSION_OVERRIDE=2.1`) -> `LEGACY_GL21` with `OpenGL 3.3 unavailable`, clean
+  shutdown; forced `--renderer modern` with Mesa capped -> exit 3 with the actionable no-renderer error.
+
+Files changed: `src/desktop/StateVisuals.h` (new), `src/desktop/AuraTheme.h` (new),
+`src/desktop/AuraWidgets.h` (new), `src/desktop/NavigationModel.h` (new), `src/desktop/GuiPanels.h`
+(rewritten), `src/desktop/DesktopModel.h`, `src/desktop/DesktopTests.cpp`, `tools/aura_gui.cpp`, and the
+control-plane files.
+
+Known failures: none.
+
+Interpretation: the control center now uses an original, consistent, legible design language, and the
+new presentation code is verified to build clean, to keep ImGui's layout invariants across all 19
+sections on both the modern and legacy backends, and to preserve every honesty invariant (absent data is
+`NOT AVAILABLE`, `UNKNOWN` never looks healthy, no fabricated rows, no live-order path). The redesign is
+verified structurally and by a captured frame; a human aesthetic review on the real Windows/Intel HD
+3000 target is still pending (BLOCK-006). No profitability, calibration, broker-validation or
+production-safety claim is made.
+
 ## 2026-10-03 — Renderer fallback for legacy GPUs (GUI-0007/GUI-0008)
 
 Scope: make the desktop control center usable on hardware without an OpenGL 3.3 context (legacy Intel

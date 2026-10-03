@@ -14,9 +14,11 @@ Do not rely on any prior conversation memory.
   (durable persistence + crash recovery + packaging/CI) and the Windows x64 Release package are
   implemented and `TESTED`. Phase 9's Desktop Control Center now includes a **real GUI**
   (`GUI-0001`, IMPLEMENTED), read-only projections for every remaining V3-37 section
-  (`GUI-0004..GUI-0006`, APPROVED), and an **OpenGL 3.3 -> OpenGL 2.1 renderer fallback** for legacy
+  (`GUI-0004..GUI-0006`, APPROVED), an **OpenGL 3.3 -> OpenGL 2.1 renderer fallback** for legacy
   GPUs (`GUI-0007..GUI-0008`, TESTED on software GL; the specific Intel HD Graphics 3000 hardware is
-  UNPROVEN, `BLOCK-006`).
+  UNPROVEN, `BLOCK-006`), and a **professional visual redesign** (`GUI-0009..GUI-0013`, TESTED): an
+  original design system, grouped navigation, rebuilt panels, a coherent window shell, and a real
+  per-stream `sequence` + deterministic relative `freshness` in the Timeframes view.
 - Authoritative build: `AURA/CMakeLists.txt` (header-only C++17/20 + the `aura_foundation` SHA-256 TU).
   It builds the `aura` console host, 18 behavioural test executables, and installs `bin/aura` +
   headers + docs. `ctest` is 18/18 green under C++17 AND C++20. On Windows/MSVC the CRT is linked
@@ -25,9 +27,9 @@ Do not rely on any prior conversation memory.
   `aura --self-test [--keep]` (bounded offline smoke), `aura --dump-frames <file>`, `aura --recover
   <store>` (report the V2-36 decision). `--store <path>` enables file-backed persistence of
   per-timeframe progress + the shadow ledger.
-- Manifest graph: 201 tasks -- 178 `APPROVED`, 9 `TESTED` (PERSIST-0001, PERSIST-0002, BUILD-0002,
-  BUILD-0003, GUI-0002, GUI-0003, PHASE-9-MILESTONE, GUI-0007, GUI-0008), 2 `IMPLEMENTED`
-  (TASK-MANIFEST-001, GUI-0001), 10 `DEFERRED`, 2 `BLOCKED`.
+- Manifest graph: 207 tasks -- 178 `APPROVED`, 14 `TESTED` (PERSIST-0001, PERSIST-0002, BUILD-0002,
+  BUILD-0003, GUI-0002, GUI-0003, PHASE-9-MILESTONE, GUI-0007, GUI-0008, GUI-0009..GUI-0013),
+  2 `IMPLEMENTED` (TASK-MANIFEST-001, GUI-0001), 11 `DEFERRED`, 2 `BLOCKED`.
 - CI: `.github/workflows/ci.yml` builds/tests Linux C++17+C++20 (blocking) with the smoke test and an
   install check, plus MSVC Windows C++17/C++20, plus a `desktop-gui` job (Dear ImGui + GLFW + Xvfb
   bounded interactive smoke), plus a `windows-x64-release-package` job that builds `aura.exe` and
@@ -43,6 +45,34 @@ Do not rely on any prior conversation memory.
   interactive GUI rendering is UNPROVEN (the Xvfb smoke is software-rendered on Linux), and the legacy
   Intel HD Graphics 3000 render path is UNPROVEN (`BLOCK-006`); MT5/MetaEditor is UNPROVEN. The CI
   result for the newest commits is recorded in `TEST_LOG.md` after push.
+
+### GUI visual redesign deliverables (this session)
+
+- `src/desktop/StateVisuals.h` (new) — pure, ImGui-free state classification (`StateCategory`,
+  `state_category`, `category_label`, `is_unknown_like`). Invariant: unrecognised/empty states map to
+  `UNKNOWN`, never `HEALTHY`; `NOT AVAILABLE` is its own category.
+- `src/desktop/AuraTheme.h` (new) — original design system: deep-navy palette, one cyan accent,
+  state→colour map, spacing scale, `apply_aura_style()`. Fixed-function-friendly (no shaders/gradients),
+  so it renders identically on OpenGL 3.3 and OpenGL 2.1.
+- `src/desktop/NavigationModel.h` (new) — groups the 19 canonical V3-37 sections into
+  Monitoring / Intelligence / Governance / System; presentation only, section identity/order preserved
+  exactly.
+- `src/desktop/AuraWidgets.h` (new) — legacy-safe ImGui primitives: bordered cards, state badges,
+  aligned key/value rows, metric blocks, explicit empty states, uniform tables.
+- `src/desktop/GuiPanels.h` (rewritten) — a polished Dashboard plus all 19 section panels on the design
+  system; absent values stay `NOT AVAILABLE`, wired-but-empty sources get a distinct real empty state.
+- `tools/aura_gui.cpp` — coherent shell: top bar (brand/version/`SHADOW ONLY`/health/actual renderer),
+  grouped sidebar, bordered content, persistent status bar; safe shortcuts only (`Ctrl+P`/`Ctrl+S`/`Esc`);
+  bounded smoke cycles `navigation_count()` sections.
+- `src/desktop/DesktopModel.h` — `TimeframeRow.sequence` (real processed closed-bar sequence) and
+  `.freshness` (deterministic FRESH/LAGGING/UNKNOWN/NOT AVAILABLE from the newest close time in the
+  snapshot; no wall clock, no lookahead).
+- `src/desktop/DesktopTests.cpp` — `test_state_category_mapping`, `test_navigation_catalog`,
+  `test_freshness_projection`.
+- Verification: DesktopTests ALL PASS c++17/c++20 strict; default 18/18, GUI 19/19; `aura_gui --self-test`
+  PASS; Debug (assert-enabled) 80-frame smokes cycle all 19 sections on MODERN_GL33 and LEGACY_GL21 with
+  exit 0; a captured live frame confirms the layout; modern and legacy captures are structurally
+  identical. Recorded in `TEST_LOG.md`.
 
 ### Phase 9 V3-37 section integration deliverables (this session)
 

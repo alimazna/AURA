@@ -7,7 +7,9 @@
 #include "desktop/ControlCenterState.h"
 #include "desktop/DashboardProjector.h"
 #include "desktop/DesktopModel.h"
+#include "desktop/NavigationModel.h"
 #include "desktop/RendererPolicy.h"
+#include "desktop/StateVisuals.h"
 #include "evolution/Candidate.h"
 #include "evolution/CandidateRegistry.h"
 #include "evolution/EvolutionGraph.h"
@@ -461,6 +463,95 @@ static void test_single_runtime_owner() {
     CHECK(s2.shell().pipeline().status().accepted == 0);
 }
 
+// The visual state map must keep UNKNOWN and NOT AVAILABLE visually distinct
+// from HEALTHY, and never classify an unrecognised/empty state as healthy. This
+// is a regression guard for the redesign: a careless refactor must not make
+// "unknown" look green.
+static void test_state_category_mapping() {
+    using desktop::theme::StateCategory;
+    using desktop::theme::state_category;
+    CHECK(state_category("ONLINE") == StateCategory::Healthy);
+    CHECK(state_category("HEALTHY") == StateCategory::Healthy);
+    CHECK(state_category("VALID") == StateCategory::Healthy);
+    CHECK(state_category("FRESH") == StateCategory::Healthy);
+    CHECK(state_category("DEGRADED") == StateCategory::Degraded);
+    CHECK(state_category("STALE") == StateCategory::Degraded);
+    CHECK(state_category("LAGGING") == StateCategory::Degraded);
+    CHECK(state_category("ERROR") == StateCategory::Critical);
+    CHECK(state_category("CORRUPTED_STATE") == StateCategory::Critical);
+    CHECK(state_category("BLOCKED") == StateCategory::Critical);
+    CHECK(state_category("PAUSED") == StateCategory::Paused);
+    CHECK(state_category("STARTING") == StateCategory::Informational);
+    CHECK(state_category("NOT AVAILABLE") == StateCategory::NotAvailable);
+    CHECK(state_category("UNKNOWN") == StateCategory::Unknown);
+    CHECK(state_category("") == StateCategory::Unknown);
+    CHECK(state_category("SOMETHING_NEW") == StateCategory::Unknown);
+    // The core safety invariant of the visual language.
+    CHECK(state_category("UNKNOWN") != StateCategory::Healthy);
+    CHECK(state_category("NOT AVAILABLE") != StateCategory::Healthy);
+    CHECK(desktop::theme::is_unknown_like("UNKNOWN"));
+    CHECK(desktop::theme::is_unknown_like("NOT AVAILABLE"));
+    CHECK(!desktop::theme::is_unknown_like("HEALTHY"));
+}
+
+// The navigation catalog must cover exactly the canonical sections, once each,
+// in the same order, so the sidebar cannot drift from the panels.
+static void test_navigation_catalog() {
+    const auto& canonical = desktop::canonical_sections();
+    const auto groups = desktop::navigation_groups();
+    CHECK(canonical.size() == 19);
+    CHECK(desktop::navigation_count() == canonical.size());
+
+    std::vector<int> seen(canonical.size(), 0);
+    for (const auto& g : groups) {
+        CHECK(!g.title.empty());
+        for (const auto& item : g.items) {
+            CHECK(!item.label.empty());
+            CHECK(item.index >= 0 && static_cast<std::size_t>(item.index) < canonical.size());
+            // The item's declared section title must match the canonical title at
+            // its index (no silent re-mapping).
+            CHECK(item.section == canonical[static_cast<std::size_t>(item.index)]);
+            CHECK(desktop::section_title_for(item.index) == item.section);
+            seen[static_cast<std::size_t>(item.index)] += 1;
+        }
+    }
+    for (std::size_t i = 0; i < seen.size(); ++i) CHECK(seen[i] == 1);
+}
+
+// Deterministic relative freshness from real snapshot data: the stream with the
+// newest close time is FRESH, older present streams are LAGGING, and absent
+// streams are NOT AVAILABLE. No wall clock is involved.
+static void test_freshness_projection() {
+    desktop::ControlCenterOptions options;  // in-memory
+    desktop::ControlCenterState state(options);
+    for (const std::string& f : frames(30)) state.shell().feed(f + "\n");
+    const auto& snap = state.refresh();
+    CHECK(snap.timeframes.rows.size() == 9);
+
+    bool any_fresh = false, any_lagging = false;
+    for (const auto& r : snap.timeframes.rows) {
+        if (!r.present) { CHECK(r.freshness == "NOT AVAILABLE"); continue; }
+        CHECK(r.freshness == "FRESH" || r.freshness == "LAGGING");
+        if (r.freshness == "FRESH") any_fresh = true;
+        if (r.freshness == "LAGGING") any_lagging = true;
+    }
+    // The canonical feed closes higher timeframes later, so both classes appear.
+    CHECK(any_fresh);
+    CHECK(any_lagging);
+
+    // Sequence is populated for present streams (real runtime progress).
+    bool any_seq = false;
+    for (const auto& r : snap.timeframes.rows)
+        if (r.sequence.available) any_seq = true;
+    CHECK(any_seq);
+
+    // Determinism: a second capture over identical state yields identical rows.
+    const auto& again = state.refresh();
+    for (std::size_t i = 0; i < snap.timeframes.rows.size(); ++i) {
+        CHECK(again.timeframes.rows[i].freshness == snap.timeframes.rows[i].freshness);
+        CHECK(again.timeframes.rows[i].sequence.value == snap.timeframes.rows[i].sequence.value);
+    }
+}
 
 static void test_renderer_policy_hints() {
     // Modern path keeps the OpenGL 3.3 core-profile request and the OpenGL3 GLSL.
@@ -605,6 +696,9 @@ int main() {
     test_section_panel_availability();
     test_incident_propagation_and_corruption();
     test_single_runtime_owner();
+    test_state_category_mapping();
+    test_navigation_catalog();
+    test_freshness_projection();
     test_renderer_policy_hints();
     test_renderer_selector_modern_success();
     test_renderer_selector_legacy_fallback();

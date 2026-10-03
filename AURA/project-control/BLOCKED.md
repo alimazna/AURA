@@ -91,9 +91,10 @@ UNPROVEN (the Xvfb software-OpenGL smoke proves the lifecycle only).
   to force the AUTO fallback) is not the same as "it renders correctly on Intel HD 3000".
 - Smallest required dependency: a re-run of the new `aura_gui.exe` (from the updated Windows release
   package) on that Windows 10 / Intel HD 3000 machine, confirming the startup line reports
-  `renderer=LEGACY_GL21` and the control center renders and shuts down cleanly.
-- Affected tasks: `GUI-0007` (fallback implementation — TESTED), `GUI-0008` (tests — TESTED);
-  Intel HD 3000 hardware compatibility remains UNPROVEN.
+  `renderer=LEGACY_GL21` and the redesigned control center renders and shuts down cleanly.
+- Affected tasks: `GUI-0007` (fallback implementation — TESTED), `GUI-0008` (tests — TESTED),
+  `GUI-0009..GUI-0013` (visual redesign — TESTED on software GL; visual review on the real hardware
+  UNPROVEN); Intel HD 3000 hardware compatibility remains UNPROVEN.
 
 ## Blocked-state rule
 

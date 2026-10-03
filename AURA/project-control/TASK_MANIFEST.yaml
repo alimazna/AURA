@@ -32,14 +32,16 @@ path_status_note: Phase 0 filenames are from V3-42 (CANONICAL decomposition). Ph
   and src/ layout are PROPOSED implementation decomposition and are subject to integration review (V3-16,
   V3-46). They must not be treated as canonical architecture.
 current_task: 'Canonical Phases 0-13 COMPLETE and TESTED, plus Phase 9 desktop productization, the
-  V3-37 control-center section integration, and the renderer-compatibility fallback. Phase 13 (durable
-  persistence + crash recovery + packaging/CI) and the Windows x64 Release package are done; Phase 9
-  includes a real desktop GUI (GUI-0001, Dear ImGui + GLFW + OpenGL) with a headless integration smoke,
-  a bounded Xvfb interactive-runtime smoke, read-only projections for every V3-37 section
-  (GUI-0004..GUI-0006: wired sections bound to live runtime data; unsourced sections explicit NOT
-  AVAILABLE), and an OpenGL 3.3 -> OpenGL 2.1 renderer fallback for legacy GPUs (GUI-0007..GUI-0008,
-  TESTED on software GL; the specific Intel HD 3000 hardware is UNPROVEN, BLOCK-006). Manifest graph
-  201 tasks. Remaining are environment/data-unproven only (real-Windows-desktop interactive GUI on
+  V3-37 control-center section integration, the renderer-compatibility fallback, and the GUI visual
+  redesign. Phase 13 (durable persistence + crash recovery + packaging/CI) and the Windows x64 Release
+  package are done; Phase 9 includes a real desktop GUI (GUI-0001, Dear ImGui + GLFW + OpenGL) with a
+  headless integration smoke, a bounded Xvfb interactive-runtime smoke, read-only projections for every
+  V3-37 section (GUI-0004..GUI-0006: wired sections bound to live runtime data; unsourced sections
+  explicit NOT AVAILABLE), an OpenGL 3.3 -> OpenGL 2.1 renderer fallback for legacy GPUs
+  (GUI-0007..GUI-0008, TESTED on software GL; the specific Intel HD 3000 hardware is UNPROVEN,
+  BLOCK-006), and a professional visual redesign (GUI-0009..GUI-0013: design system, grouped navigation,
+  rebuilt panels, window shell, real per-stream sequence + deterministic relative freshness). Manifest
+  graph 206 tasks. Remaining are environment/data-unproven only (real-Windows-desktop interactive GUI on
   legacy GPU, real MT5/MetaEditor round-trip, licensed XAUUSD datasets).'
 tasks:
 - id: TASK-BOOTSTRAP-001
@@ -3191,6 +3193,133 @@ tasks:
     test_renderer_selector_legacy_fallback, test_renderer_selector_both_fail, test_renderer_selector_pinned
     (real code paths, no mocks; deterministic, no GL/GLFW). DesktopTests ALL PASS under g++ c++17 and
     c++20 strict with -Wall -Wextra -Werror -pedantic, and via CTest in the GUI build (19/19).'
+- id: GUI-0009
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: APPLICATION_PLANE
+  authority: PROPOSED
+  status: TESTED
+  output: src/desktop/StateVisuals.h (new), src/desktop/AuraTheme.h (new)
+  dependencies:
+  - GUI-0001
+  objective: Establish an original, deterministic visual design system for the control center so the
+    desktop app reads as a professional operator surface rather than a prototype. A single deep-navy
+    palette with one cyan accent and a state colour map that keeps HEALTHY, DEGRADED, CRITICAL, PAUSED,
+    UNKNOWN and NOT AVAILABLE visually distinct; UNKNOWN and NOT AVAILABLE never render as healthy.
+    All presentation is flat rectangles/text (fixed-function draw list) so the same theme renders on the
+    OpenGL 2.1 legacy backend and the OpenGL 3.3 backend.
+  acceptance: A pure, ImGui-free state-classification unit (StateVisuals.h) with a documented invariant
+    that unrecognised/empty states map to UNKNOWN (never Healthy); a theme token module (AuraTheme.h)
+    providing colours, spacing, state->colour mapping and apply_aura_style(); style uses only
+    fixed-function-friendly properties (no gradients, no textures, no GPU effects); no fabricated or
+    decorative data.
+  evidence: 'DONE 2026-10-03: added src/desktop/StateVisuals.h (StateCategory, state_category,
+    category_label, is_unknown_like — pure, no ImGui) and src/desktop/AuraTheme.h (palette, spacing
+    scale, category_color, status_color, apply_aura_style). DesktopTests ALL PASS (g++ c++17 + c++20
+    strict). GUI builds (modern + legacy). Shadow only.'
+- id: GUI-0010
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: APPLICATION_PLANE
+  authority: PROPOSED
+  status: TESTED
+  output: src/desktop/NavigationModel.h (new), tools/aura_gui.cpp
+  dependencies:
+  - GUI-0001
+  - GUI-0009
+  objective: Replace the flat 19-item sidebar with a grouped, professional navigation catalog
+    (Monitoring / Intelligence / Governance / System) with human-readable labels, while preserving the
+    canonical V3-37 section identity and order exactly.
+  acceptance: The catalog covers every canonical section exactly once, in canonical order, with each
+    item's index and declared section title matching DesktopModel::sections(); no section is added,
+    removed, reordered or renamed; navigation is presentation only and cannot drift from the panels.
+  evidence: 'DONE 2026-10-03: added src/desktop/NavigationModel.h (canonical_sections, navigation_groups,
+    navigation_count, section_title_for). tools/aura_gui.cpp renders the grouped sidebar and cycles
+    navigation_count() sections in the bounded smoke. test_navigation_catalog verifies full, unique,
+    in-order coverage. Shadow only.'
+- id: GUI-0011
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: APPLICATION_PLANE
+  authority: PROPOSED
+  status: TESTED
+  output: src/desktop/AuraWidgets.h (new), src/desktop/GuiPanels.h (rewritten)
+  dependencies:
+  - GUI-0009
+  - GUI-0010
+  objective: Rebuild the control-center presentation layer on the design system — reusable, legacy-safe
+    widgets (bordered cards, state badges, aligned key/value rows, metric blocks, explicit empty states,
+    uniform tables) and a polished Dashboard plus all 19 section panels. Every absent value is shown as
+    NOT AVAILABLE / UNKNOWN with a reason; nothing is fabricated; the shadow-only identity is always
+    visible.
+  acceptance: Widgets use only the ImGui draw list (no shaders); a present-but-empty source is shown as
+    a real empty state distinct from NOT AVAILABLE; the Dashboard shows system health, execution mode
+    (SHADOW ONLY), persistence, recovery, the nine-timeframe summary, signal/ledger summaries, recent
+    incidents and version context; all 19 sections render through the same widgets; no live-order
+    control exists anywhere.
+  evidence: 'DONE 2026-10-03: added src/desktop/AuraWidgets.h; rewrote src/desktop/GuiPanels.h
+    (dashboard, market, timeframes, signals, risk, shadow positions, observation, research, knowledge,
+    candidates, validation, governance, evolution, incidents, schedule, recovery, health, audit,
+    configuration). Verified by Debug (assert-enabled) ImGui smokes cycling all 19 sections under both
+    MODERN_GL33 and LEGACY_GL21, 80 frames each, clean shutdown. Shadow only.'
+- id: GUI-0012
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: APPLICATION_PLANE
+  authority: PROPOSED
+  status: TESTED
+  output: tools/aura_gui.cpp
+  dependencies:
+  - GUI-0011
+  objective: Give the window a coherent shell — a top bar (brand, version, SHADOW ONLY, health, actual
+    renderer), a grouped sidebar, a bordered content area, and a persistent status bar; keep the
+    control plane safe and separate from data.
+  acceptance: The top bar and status bar name the ACTUAL renderer (never claim 3.3 after a fallback) and
+    always surface SHADOW ONLY; only safe control-plane shortcuts exist (pause/resume transport,
+    persist checkpoint, bounded stop) and no order/buy/sell action is reachable from the UI; the window
+    opens maximised to the viewport; bounded smoke still cycles every section and shuts down cleanly.
+  evidence: 'DONE 2026-10-03: rebuilt the frame in tools/aura_gui.cpp (viewport-sized root window, top
+    bar, sidebar/content body, status bar) and added Ctrl+P / Ctrl+S / Esc safe shortcuts. Verified with
+    MODERN_GL33 + LEGACY_GL21 bounded smokes (60 frames) and Debug 80-frame section-cycling smokes;
+    forced-fallback (Mesa 2.1) and forced-modern-unavailable (exit 3) still behave. Shadow only.'
+- id: GUI-0013
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: OPERATING_GOVERNANCE_PLANE
+  authority: PROPOSED
+  status: TESTED
+  output: src/desktop/DesktopModel.h (extended), src/desktop/DesktopTests.cpp (extended)
+  dependencies:
+  - GUI-0011
+  objective: Make the Timeframes view informative without inventing data — expose the real processed
+    closed-bar sequence per stream and a deterministic relative freshness derived from the newest close
+    time in the snapshot (no wall clock, no lookahead).
+  acceptance: sequence is the runtime's real TimeframeProgress sequence (absent when the stream has not
+    reported); freshness is FRESH for the newest present stream, LAGGING for older present streams,
+    UNKNOWN for a present stream with no close time, and NOT AVAILABLE for an absent stream; the
+    projection is deterministic across repeated captures; the visual state map never classifies UNKNOWN
+    or NOT AVAILABLE as healthy.
+  evidence: 'DONE 2026-10-03: extended src/desktop/DesktopModel.h (TimeframeRow.sequence, .freshness;
+    assign_freshness computed from snapshot close times). Added test_state_category_mapping,
+    test_navigation_catalog, test_freshness_projection (real runtime frames, no mocks). DesktopTests
+    ALL PASS g++ c++17 + c++20 strict -Wall -Wextra -Werror -pedantic; CTest 18/18 (GUI off) and
+    19/19 (GUI on). Shadow only.'
+- id: GUI-0014
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: OPERATING_GOVERNANCE_PLANE
+  authority: PROPOSED
+  status: DEFERRED
+  output: tools/aura_gui.cpp (menu-based control plane)
+  dependencies:
+  - GUI-0012
+  objective: Optional in-window control-plane menu (checkpoint now, pause/resume, about, keyboard
+    shortcuts help) as a discoverable alternative to keyboard shortcuts.
+  acceptance: Control-plane actions only (no order path); actions are the same safe operations already
+    exposed; documented in the operator guide.
+  evidence: 'DEFERRED 2026-10-03: the redesign replaced the top menu with a chrome-free operator layout
+    and exposes the same safe actions via keyboard shortcuts. A visible menu/help surface is a polish
+    item, not required for the current scope, and is not implemented yet.'
 - id: MT5-REAL-0001
   phase: DEFERRED
   module: MT5_RUNTIME

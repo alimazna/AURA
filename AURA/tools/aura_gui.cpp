@@ -2,10 +2,12 @@
 //
 // Single canonical entrypoint for the AURA Windows desktop application. It owns
 // exactly one runtime (ControlCenterState -> ApplicationShell) and renders the
-// human control surface with Dear ImGui + GLFW + OpenGL 3.3. It is presentation
-// over the existing runtime: it reads state, offers only safe control-plane
-// operations (pause/resume the local transport, refresh, checkpoint, bounded
-// stop, read-only recovery report), and never places an order.
+// human control surface with Dear ImGui + GLFW, preferring an OpenGL 3.3 core
+// context and falling back to OpenGL 2.1 compatibility on legacy hardware. It is
+// presentation over the existing runtime: it reads state, offers only safe
+// control-plane operations (pause/resume the local transport, refresh,
+// checkpoint, bounded stop, read-only recovery report), and never places an
+// order.
 //
 // Execution mode is SHADOW ONLY. There is no live-trading action anywhere on
 // this surface. Unknown/absent values are shown as NOT AVAILABLE / UNKNOWN, not
@@ -20,8 +22,10 @@
 // This program does not claim profitability, calibration, broker validation or
 // production safety.
 
+#include "desktop/AuraTheme.h"
 #include "desktop/ControlCenterState.h"
 #include "desktop/GuiPanels.h"
+#include "desktop/NavigationModel.h"
 #include "desktop/RendererPolicy.h"
 
 #include <imgui.h>
@@ -276,8 +280,7 @@ int run_gui(const aura::desktop::ControlCenterOptions& options, long max_frames,
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     io.IniFilename = nullptr;  // deterministic; no user-path ini file
-    ImGui::StyleColorsDark();
-    ImGui::GetStyle().FrameRounding = 3.0f;
+    aura::desktop::theme::apply_aura_style();
 
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     if (legacy) {
@@ -301,7 +304,8 @@ int run_gui(const aura::desktop::ControlCenterOptions& options, long max_frames,
                      static_cast<unsigned>(options.serve_port));
     }
 
-    std::vector<std::string> sections = aura::desktop::DesktopModel::sections();
+    const std::vector<aura::desktop::NavGroup> nav_groups =
+        aura::desktop::navigation_groups();
     int selected = 0;
 
     long rendered = 0;
@@ -321,66 +325,135 @@ int run_gui(const aura::desktop::ControlCenterOptions& options, long max_frames,
         }
         ImGui::NewFrame();
 
+        // Safe control-plane shortcuts only: pause/resume the local transport,
+        // persist a checkpoint, request a bounded stop. There is deliberately no
+        // order/buy/sell shortcut and none is reachable from the UI.
+        if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_P)) state.toggle_pause();
+        if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_S)) state.persist_checkpoint();
+        if (ImGui::IsKeyPressed(ImGuiKey_Escape)) state.request_stop();
+
         const ImGuiViewport* viewport = ImGui::GetMainViewport();
         ImGui::SetNextWindowPos(viewport->WorkPos);
         ImGui::SetNextWindowSize(viewport->WorkSize);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
         ImGui::Begin("AURA", nullptr,
                      ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove |
                          ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_MenuBar);
+        ImGui::PopStyleVar();
 
-        if (ImGui::BeginMenuBar()) {
-            if (ImGui::BeginMenu("File")) {
-                if (ImGui::MenuItem("Checkpoint now")) state.persist_checkpoint();
-                if (ImGui::MenuItem(state.paused() ? "Resume transport" : "Pause transport"))
-                    state.toggle_pause();
-                ImGui::Separator();
-                if (ImGui::MenuItem("Quit")) state.request_stop();
-                ImGui::EndMenu();
-            }
-            if (ImGui::BeginMenu("View")) {
-                ImGui::MenuItem("Shadow only (fixed)", nullptr, false, false);
-                ImGui::EndMenu();
-            }
-            if (ImGui::BeginMenu("Help")) {
-                if (ImGui::MenuItem("About")) {}
-                ImGui::EndMenu();
-            }
-            ImGui::EndMenuBar();
+        // ---- Top bar: brand / version / mode / renderer / health ------------
+        {
+            const float bar_h = aura::desktop::theme::kHeaderHeight;
+            ImGui::BeginChild("topbar", ImVec2(0.0f, bar_h), false,
+                              ImGuiWindowFlags_NoScrollbar);
+            const ImVec2 p = ImGui::GetCursorScreenPos();
+            aura::desktop::widgets::filled_rect(
+                p, ImVec2(p.x + ImGui::GetContentRegionAvail().x, p.y + bar_h),
+                aura::desktop::theme::kSurfaceRaised, 0.0f);
+
+            ImGui::SetCursorPos(ImVec2(aura::desktop::theme::kSpace3,
+                                       (bar_h - ImGui::GetTextLineHeight()) * 0.5f));
+            ImGui::TextColored(aura::desktop::theme::kAccent, "AURA");
+            ImGui::SameLine();
+            ImGui::TextColored(aura::desktop::theme::kTextSecondary, "Control Center");
+            ImGui::SameLine();
+            ImGui::TextColored(aura::desktop::theme::kTextMuted, "\u00b7 v%s",
+                               report.version.strategy_version.c_str());
+
+            // Right-aligned status chips.
+            const float chip_y = (bar_h - ImGui::GetTextLineHeightWithSpacing()) * 0.5f;
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(ImGui::GetWindowWidth() - 470.0f);
+            ImGui::SetCursorPosY(chip_y);
+            ImGui::TextColored(aura::desktop::theme::kShadow, "SHADOW ONLY");
+            ImGui::SameLine();
+            ImGui::TextColored(aura::desktop::theme::kTextMuted, "|");
+            ImGui::SameLine();
+            ImGui::TextColored(
+                aura::desktop::theme::status_color(snap.overview.healthy ? "HEALTHY"
+                                                                         : snap.overview.aggregate),
+                "%s", snap.overview.healthy ? "HEALTHY" : snap.overview.aggregate.c_str());
+            ImGui::SameLine();
+            ImGui::TextColored(aura::desktop::theme::kTextMuted, "| renderer %s",
+                               aura::desktop::to_string(rctx.profile));
+            ImGui::EndChild();
         }
 
-        // Sidebar navigation.
-        const float sidebar_w = 260.0f;
-        ImGui::BeginChild("nav", ImVec2(sidebar_w, 0), true);
-        ImGui::TextColored(ImVec4(0.70f, 0.80f, 1.0f, 1.0f), "AURA");
-        ImGui::TextColored(ImVec4(0.62f, 0.62f, 0.66f, 1.0f), "Control Center");
-        ImGui::Separator();
-        for (int i = 0; i < static_cast<int>(sections.size()); ++i) {
-            if (ImGui::Selectable(sections[static_cast<std::size_t>(i)].c_str(), selected == i))
-                selected = i;
+        // ---- Body: sidebar + content ----------------------------------------
+        const float status_h = aura::desktop::theme::kStatusBarHeight;
+        const float body_h = ImGui::GetContentRegionAvail().y - status_h;
+        ImGui::BeginChild("body", ImVec2(0.0f, body_h), false,
+                          ImGuiWindowFlags_NoScrollbar);
+
+        ImGui::BeginChild("sidebar", ImVec2(aura::desktop::theme::kSidebarWidth, 0.0f), true);
+        ImGui::TextColored(aura::desktop::theme::kTextMuted, "NAVIGATION");
+        ImGui::Spacing();
+        for (const aura::desktop::NavGroup& g : nav_groups) {
+            ImGui::Spacing();
+            ImGui::TextColored(aura::desktop::theme::kAccent, "%s", g.title.c_str());
+            ImGui::Separator();
+            for (const aura::desktop::NavItem& item : g.items) {
+                if (ImGui::Selectable(item.label.c_str(), selected == item.index))
+                    selected = item.index;
+            }
         }
         ImGui::EndChild();
 
         ImGui::SameLine();
 
-        // Content area.
-        ImGui::BeginChild("content", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()), true);
+        ImGui::BeginChild("content", ImVec2(0.0f, 0.0f), true);
         aura::desktop::draw_section(report, selected);
         ImGui::EndChild();
 
-        // Status bar.
-        ImGui::Separator();
-        ImGui::TextColored(ImVec4(0.90f, 0.55f, 0.20f, 1.0f), "SHADOW ONLY");
-        ImGui::SameLine();
-        ImGui::Text("| streams %zu/%zu | health", snap.overview.streams_healthy,
-                    snap.overview.streams_total);
-        ImGui::SameLine();
-        ImGui::TextColored(aura::desktop::status_color(snap.overview.aggregate), "%s",
-                           snap.overview.aggregate.c_str());
-        ImGui::SameLine();
-        ImGui::Text("| %s", state.paused() ? "PAUSED" : "RUNNING");
-        ImGui::SameLine();
-        // Expose the renderer actually in use (never claim OpenGL 3.3 if we fell back).
-        ImGui::Text("| renderer %s", aura::desktop::to_string(rctx.profile));
+        ImGui::EndChild();
+
+        // ---- Status bar ------------------------------------------------------
+        {
+            const ImVec2 p = ImGui::GetCursorScreenPos();
+            const float w = ImGui::GetContentRegionAvail().x;
+            aura::desktop::widgets::filled_rect(p, ImVec2(p.x + w, p.y + status_h),
+                                                aura::desktop::theme::kSurface, 0.0f);
+            ImGui::SetCursorPos(ImVec2(aura::desktop::theme::kSpace3,
+                                       ImGui::GetCursorPosY() + 6.0f));
+            ImGui::TextColored(aura::desktop::theme::kTextMuted, "Runtime");
+            ImGui::SameLine();
+            ImGui::TextColored(aura::desktop::theme::status_color(snap.overview.aggregate), "%s",
+                               snap.overview.aggregate.c_str());
+            ImGui::SameLine();
+            ImGui::TextColored(aura::desktop::theme::kTextMuted, "|");
+            ImGui::SameLine();
+            ImGui::TextColored(aura::desktop::theme::kTextMuted, "Transport");
+            ImGui::SameLine();
+            ImGui::TextColored(
+                aura::desktop::theme::status_color(snap.overview.transport_connected ? "CONNECTED"
+                                                                                     : "UNKNOWN"),
+                "%s", snap.overview.transport_connected ? "CONNECTED" : "UNKNOWN");
+            ImGui::SameLine();
+            ImGui::TextColored(aura::desktop::theme::kTextMuted, "| Persistence");
+            ImGui::SameLine();
+            ImGui::TextColored(aura::desktop::theme::status_color(snap.persistence.last_status),
+                               "%s", snap.persistence.last_status.c_str());
+            ImGui::SameLine();
+            ImGui::TextColored(aura::desktop::theme::kTextMuted, "| Recovery");
+            ImGui::SameLine();
+            ImGui::TextColored(aura::desktop::theme::status_color(snap.persistence.lifecycle),
+                               "%s", snap.persistence.lifecycle.c_str());
+            ImGui::SameLine();
+            ImGui::TextColored(aura::desktop::theme::kTextMuted, "|");
+            ImGui::SameLine();
+            ImGui::TextColored(state.paused() ? aura::desktop::theme::kPaused
+                                              : aura::desktop::theme::kHealthy,
+                               "%s", state.paused() ? "PAUSED" : "RUNNING");
+            ImGui::SameLine();
+            ImGui::TextColored(aura::desktop::theme::kTextMuted, "|");
+            ImGui::SameLine();
+            ImGui::TextColored(aura::desktop::theme::kShadow, "SHADOW ONLY");
+            ImGui::SameLine();
+            ImGui::TextColored(aura::desktop::theme::kTextMuted, "|");
+            ImGui::SameLine();
+            ImGui::TextColored(aura::desktop::theme::kTextMuted, "renderer %s",
+                               aura::desktop::to_string(rctx.profile));
+        }
 
         ImGui::End();
 
@@ -405,7 +478,7 @@ int run_gui(const aura::desktop::ControlCenterOptions& options, long max_frames,
             // Bounded smoke: cycle through every V3-37 section so each panel's
             // draw path is exercised (a real render of each section, not just the
             // default one) before the bounded loop exits.
-            selected = (selected + 1) % static_cast<int>(sections.size());
+            selected = (selected + 1) % static_cast<int>(aura::desktop::navigation_count());
         }
     }
 

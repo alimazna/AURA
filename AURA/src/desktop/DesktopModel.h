@@ -44,7 +44,9 @@ struct TimeframeRow {
     FieldValue last_close{};        // last processed closed-bar close time (ns)
     FieldValue last_bar_ohlc{};     // last retained bar "O/H/L/C"
     FieldValue provenance{};        // symbol identity of the last processed bar
+    FieldValue sequence{};          // processed closed-bar sequence for this stream
     std::string last_error{};
+    std::string freshness{"NOT AVAILABLE"};  // relative to the newest stream, or UNKNOWN
 };
 
 // The Canonical nine-frame display. Always returns exactly nine rows in V3-29
@@ -237,6 +239,7 @@ public:
             if (progress != nullptr) {
                 row.last_close = field(progress->last_close.nanoseconds() != 0,
                                        std::to_string(progress->last_close.nanoseconds()));
+                row.sequence = field(progress->sequence != 0, std::to_string(progress->sequence));
                 if (progress->last_processed.valid()) {
                     row.provenance = field(true, progress->last_processed.canonical_string());
                 }
@@ -252,6 +255,7 @@ public:
             panel.any_present = panel.any_present || row.present;
             panel.rows.push_back(std::move(row));
         }
+        assign_freshness(panel);
         return panel;
     }
 
@@ -270,6 +274,29 @@ public:
     }
 
 private:
+    // Deterministic relative freshness: each present stream is compared with the
+    // newest close time among the present streams (higher timeframe = later close
+    // in the canonical feed). This is computed from data already in the snapshot,
+    // never from a wall clock, so it is reproducible. A present stream with no
+    // close time is UNKNOWN (never silently fresh); an absent stream is NOT
+    // AVAILABLE.
+    static void assign_freshness(TimeframePanel& panel) {
+        std::int64_t newest = 0;
+        bool any = false;
+        for (const TimeframeRow& r : panel.rows) {
+            if (r.present && r.last_close.available) {
+                const std::int64_t v = std::stoll(r.last_close.value);
+                if (!any || v > newest) { newest = v; any = true; }
+            }
+        }
+        for (TimeframeRow& r : panel.rows) {
+            if (!r.present) { r.freshness = "NOT AVAILABLE"; continue; }
+            if (!r.last_close.available) { r.freshness = "UNKNOWN"; continue; }
+            const std::int64_t v = std::stoll(r.last_close.value);
+            r.freshness = (v >= newest) ? "FRESH" : "LAGGING";
+        }
+    }
+
     static std::string format_ohlc(const runtime::MarketBar& bar) {
         char buffer[128];
         std::snprintf(buffer, sizeof(buffer), "%.3f / %.3f / %.3f / %.3f", bar.open, bar.high,

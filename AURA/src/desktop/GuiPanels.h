@@ -1,6 +1,8 @@
 #ifndef AURA_DESKTOP_GUIPANELS_H
 #define AURA_DESKTOP_GUIPANELS_H
 
+#include "desktop/AuraTheme.h"
+#include "desktop/AuraWidgets.h"
 #include "desktop/ControlCenterState.h"
 #include "desktop/DesktopModel.h"
 
@@ -12,218 +14,439 @@
 namespace aura {
 namespace desktop {
 
-// ImGui rendering for the AURA control center. This translation unit contains
-// presentation only: it reads a pre-built ControlCenterSnapshot (produced by
-// DesktopModel) and draws it. It queries no runtime directly and mutates no
-// state. Unknown/absent values are shown explicitly (NOT AVAILABLE / UNKNOWN)
-// so a blank field is never mistaken for a healthy one.
+// Presentation-only rendering for the AURA control center.
+//
+// This translation unit reads a pre-built ControlCenterReport (produced by the
+// single runtime owner, ControlCenterState) and draws it through the AURA design
+// system. It queries no runtime directly and mutates no state. Unknown/absent
+// values are always shown explicitly (NOT AVAILABLE / UNKNOWN) so a blank field
+// is never mistaken for a healthy value or a zero.
 
-inline ImVec4 status_color(const std::string& state) {
-    if (state == "ONLINE" || state == "VALID" || state == "HEALTHY" || state == "OK")
-        return ImVec4(0.35f, 0.78f, 0.42f, 1.0f);
-    if (state == "DEGRADED" || state == "WARNING" || state == "STALE" || state == "RECOVERING")
-        return ImVec4(0.92f, 0.75f, 0.30f, 1.0f);
-    if (state == "OFFLINE" || state == "ERROR" || state == "CRITICAL" || state == "BLOCKED" ||
-        state == "CORRUPTED_STATE" || state == "INVALID")
-        return ImVec4(0.90f, 0.38f, 0.38f, 1.0f);
-    // UNKNOWN / NOT AVAILABLE and anything unrecognised stay neutral grey.
-    return ImVec4(0.62f, 0.62f, 0.66f, 1.0f);
+// ---- small local helpers ---------------------------------------------------
+
+// The health string for a timeframe row: the stream's own service state, or an
+// explicit NOT AVAILABLE when the stream has not reported at all.
+inline std::string row_health(const TimeframeRow& r) {
+    return r.present ? r.service_state : "NOT AVAILABLE";
 }
 
-inline void labelled_status(const char* label, const std::string& value) {
-    ImGui::TextUnformatted(label);
-    ImGui::SameLine();
-    ImGui::TextColored(status_color(value), "%s", value.c_str());
+// The last recorded signal direction for a specific stream. The runtime keeps a
+// single most-recent signal, so only the row whose explicit timeframe matches
+// its trigger timeframe can show a direction; other rows show a muted dash
+// meaning "no signal recorded for this stream" (never a fabricated value).
+inline std::string signal_for_row(const SignalPanel& s, const TimeframeRow& r) {
+    if (!s.available) return "\u2014";
+    if (s.trigger_timeframe == r.label) return s.direction;
+    return "\u2014";
 }
 
-inline void kv(const char* key, const std::string& value) {
-    ImGui::TextUnformatted(key);
-    ImGui::SameLine();
-    ImGui::TextColored(ImVec4(0.85f, 0.87f, 0.92f, 1.0f), "%s", value.c_str());
+// Counts how many of the nine rows have actually reported.
+inline int present_count(const TimeframePanel& tf) {
+    int n = 0;
+    for (const TimeframeRow& r : tf.rows)
+        if (r.present) ++n;
+    return n;
 }
 
-inline void not_available_note(const char* what) {
-    ImGui::TextColored(ImVec4(0.62f, 0.62f, 0.66f, 1.0f), "%s: NOT AVAILABLE (no data source wired yet)",
-                       what);
-}
+// ---- Dashboard -------------------------------------------------------------
 
-inline void draw_overview(const ControlCenterSnapshot& s) {
-    ImGui::TextColored(ImVec4(0.85f, 0.87f, 0.95f, 1.0f), "System Overview");
-    ImGui::Separator();
-    kv("Project", s.overview.project_name);
-    kv("Operating mode", s.overview.operating_mode + "  (no live order path)");
-    labelled_status("Aggregate service state:", s.overview.aggregate);
-    labelled_status("Transport:", s.overview.transport_connected ? "CONNECTED" : "UNKNOWN");
-    ImGui::Text("Streams healthy: %zu / %zu", s.overview.streams_healthy, s.overview.streams_total);
-    ImGui::Text("Bars accepted: %llu   rejected: %llu   malformed: %llu",
-                (unsigned long long)s.overview.accepted, (unsigned long long)s.overview.rejected,
-                (unsigned long long)s.overview.malformed);
-    if (s.overview.streams_total == 0) {
-        ImGui::Spacing();
-        not_available_note("Runtime streams");
-        ImGui::TextWrapped(
-            "The runtime has not been started with a transport yet. Start a shadow session "
-            "(a replay or the serve transport) to populate live state.");
-    }
-}
+inline void draw_dashboard(const ControlCenterReport& r) {
+    const ControlCenterSnapshot& s = r.snapshot;
+    widgets::section_header("Dashboard", "Read-only overview of the AURA shadow runtime");
 
-inline void draw_timeframes(const ControlCenterSnapshot& s) {
-    ImGui::TextColored(ImVec4(0.85f, 0.87f, 0.95f, 1.0f), "Timeframes (nine logical streams)");
-    ImGui::Separator();
-    ImGui::TextWrapped(
-        "Identity is the explicit timeframe value, never the row position. A silent stream is "
-        "shown NOT AVAILABLE and never merged into an aggregate 'healthy' status.");
+    const float avail = ImGui::GetContentRegionAvail().x;
+    const float gap = theme::kSpace3;
+    const float card_w = (avail - gap * 3.0f) / 4.0f;
+    const float card_h = 138.0f;
+
+    // --- Status row: Health / Execution mode / Persistence / Recovery --------
+    widgets::card_begin("dash_health", "SYSTEM HEALTH", ImVec2(card_w, card_h));
+    widgets::badge(s.overview.healthy ? "HEALTHY" : s.overview.aggregate.c_str(),
+                   theme::status_color(s.overview.healthy ? "HEALTHY" : s.overview.aggregate));
+    ImGui::Spacing();
+    widgets::kv_row("Streams", std::to_string(s.overview.streams_healthy) + " / " +
+                                   std::to_string(s.overview.streams_total) + " healthy");
+    widgets::kv_row("Transport", s.overview.transport_connected ? "CONNECTED" : "UNKNOWN");
+    widgets::kv_row("Aggregate", s.overview.aggregate);
+    widgets::card_end();
+
+    ImGui::SameLine(0.0f, gap);
+    widgets::card_begin("dash_mode", "EXECUTION MODE", ImVec2(card_w, card_h));
+    widgets::badge("SHADOW ONLY", theme::kShadow);
+    ImGui::Spacing();
+    widgets::kv_row("Mode", s.overview.operating_mode);
+    widgets::kv_row("Live orders", "NONE (no live path)");
+    widgets::kv_row("Invariant", s.shadow_only ? "HELD" : "VIOLATED");
+    widgets::card_end();
+
+    ImGui::SameLine(0.0f, gap);
+    widgets::card_begin("dash_persist", "PERSISTENCE", ImVec2(card_w, card_h));
+    widgets::badge(s.persistence.last_status.c_str(), theme::status_color(s.persistence.last_status));
+    ImGui::Spacing();
+    widgets::kv_row("Store", s.persistence.store_path);
+    widgets::kv_row("Records", std::to_string(s.persistence.records));
+    widgets::kv_row("Append-only", "YES");
+    widgets::card_end();
+
+    ImGui::SameLine(0.0f, gap);
+    widgets::card_begin("dash_recovery", "RECOVERY", ImVec2(card_w, card_h));
+    widgets::badge(s.persistence.lifecycle.c_str(), theme::status_color(s.persistence.lifecycle));
+    ImGui::Spacing();
+    widgets::kv_row("Resumable", s.persistence.resumable ? "YES" : "NO");
+    widgets::kv_row("Fresh start", s.persistence.fresh_start ? "yes" : "no");
+    widgets::kv_row("Known-good", s.persistence.used_known_good ? "yes" : "no");
+    widgets::card_end();
+
+    ImGui::Spacing();
     ImGui::Spacing();
 
-    const ImGuiTableFlags flags = ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg |
-                                  ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_ScrollX;
-    if (ImGui::BeginTable("tf_table", 9, flags)) {
-        ImGui::TableSetupColumn("TF");
-        ImGui::TableSetupColumn("Present");
-        ImGui::TableSetupColumn("Service");
+    // --- Nine timeframe summary ---------------------------------------------
+    widgets::card_begin("dash_tf", "NINE TIMEFRAME SUMMARY", ImVec2(0.0f, 0.0f), 268.0f);
+    ImGui::TextColored(theme::kTextMuted,
+                       "%d / 9 streams reporting  \u00b7  identity is the explicit timeframe, "
+                       "never the row position",
+                       present_count(s.timeframes));
+    ImGui::Spacing();
+    if (ImGui::BeginTable("dash_tf_table", 6, widgets::table_flags(false, false))) {
+        ImGui::TableSetupColumn("TF", ImGuiTableColumnFlags_WidthFixed, 52.0f);
+        ImGui::TableSetupColumn("Health");
         ImGui::TableSetupColumn("Quality");
-        ImGui::TableSetupColumn("Accepted");
-        ImGui::TableSetupColumn("Rejected");
-        ImGui::TableSetupColumn("Last close (ns)");
-        ImGui::TableSetupColumn("Last bar O/H/L/C");
-        ImGui::TableSetupColumn("Provenance");
+        ImGui::TableSetupColumn("Seq");
+        ImGui::TableSetupColumn("Freshness");
+        ImGui::TableSetupColumn("Signal");
         ImGui::TableHeadersRow();
-
-        for (const TimeframeRow& r : s.timeframes.rows) {
+        for (const TimeframeRow& row : s.timeframes.rows) {
             ImGui::TableNextRow();
             ImGui::TableNextColumn();
-            ImGui::TextUnformatted(r.label.c_str());
+            ImGui::TextColored(theme::kTextPrimary, "%s", row.label.c_str());
             ImGui::TableNextColumn();
-            ImGui::TextUnformatted(r.present ? "yes" : "NO");
+            widgets::state_cell(row_health(row));
             ImGui::TableNextColumn();
-            ImGui::TextColored(status_color(r.service_state), "%s", r.service_state.c_str());
+            widgets::state_cell(row.quality);
             ImGui::TableNextColumn();
-            ImGui::TextColored(status_color(r.quality), "%s", r.quality.c_str());
+            widgets::value_cell(row.sequence.available, row.sequence.value);
             ImGui::TableNextColumn();
-            ImGui::Text("%llu", (unsigned long long)r.accepted);
+            widgets::state_cell(row.freshness);
             ImGui::TableNextColumn();
-            ImGui::Text("%llu", (unsigned long long)r.rejected);
-            ImGui::TableNextColumn();
-            if (r.last_close.available) ImGui::TextUnformatted(r.last_close.value.c_str());
-            else ImGui::TextColored(status_color("NA"), "NOT AVAILABLE");
-            ImGui::TableNextColumn();
-            if (r.last_bar_ohlc.available) ImGui::TextUnformatted(r.last_bar_ohlc.value.c_str());
-            else ImGui::TextColored(status_color("NA"), "NOT AVAILABLE");
-            ImGui::TableNextColumn();
-            if (r.provenance.available) ImGui::TextUnformatted(r.provenance.value.c_str());
-            else ImGui::TextColored(status_color("NA"), "NOT AVAILABLE");
+            const std::string sig = signal_for_row(s.signal, row);
+            if (sig == "\u2014") ImGui::TextColored(theme::kTextMuted, "%s", sig.c_str());
+            else ImGui::TextColored(theme::status_color("HEALTHY"), "%s", sig.c_str());
         }
         ImGui::EndTable();
     }
+    widgets::card_end();
+
+    ImGui::Spacing();
+    ImGui::Spacing();
+
+    // --- Signal + ledger summaries ------------------------------------------
+    const float half = (avail - gap) / 2.0f;
+    widgets::card_begin("dash_signal", "SIGNAL SUMMARY", ImVec2(half, 0.0f), 168.0f);
+    if (!s.signal.available) {
+        widgets::empty_state("Signal", "no signal has been produced by the runtime yet");
+    } else {
+        widgets::badge(s.signal.direction.c_str(), theme::status_color("HEALTHY"));
+        ImGui::Spacing();
+        widgets::kv_row("Symbol", s.signal.symbol);
+        widgets::kv_row("Timeframe", s.signal.trigger_timeframe);
+        widgets::kv_row("Family", s.signal.family);
+        widgets::kv_row("Decision id", s.signal.decision_id);
+    }
+    widgets::card_end();
+
+    ImGui::SameLine(0.0f, gap);
+    widgets::card_begin("dash_ledger", "SHADOW LEDGER SUMMARY", ImVec2(half, 0.0f), 168.0f);
+    widgets::kv_row("Entries", std::to_string(r.shadow_ledger.total));
+    widgets::kv_row("Append-only", r.shadow_ledger.append_only ? "yes" : "no");
+    widgets::kv_row("Open position", s.positions.has_open_position ? "OPEN" : "NONE");
+    widgets::kv_row("Shadow fills", std::to_string(s.positions.shadow_fills));
+    if (!r.shadow_ledger.available || r.shadow_ledger.recent.empty()) {
+        widgets::empty_note("No ledger entries yet (a shadow session has not produced any).");
+    } else {
+        const LedgerEntryRow& e = r.shadow_ledger.recent.front();
+        widgets::kv_row("Latest", e.type + "  @ " + e.recorded_at);
+    }
+    widgets::card_end();
+
+    ImGui::Spacing();
+    ImGui::Spacing();
+
+    // --- Recent incidents ----------------------------------------------------
+    widgets::card_begin("dash_incidents", "RECENT INCIDENTS", ImVec2(0.0f, 0.0f), 168.0f);
+    if (!r.incidents.available) {
+        widgets::empty_state("Incidents", "no failure-detection source is wired");
+    } else if (r.incidents.rows.empty()) {
+        widgets::empty_note("No incidents detected from the current adapter stream health.");
+    } else {
+        if (ImGui::BeginTable("dash_inc_table", 4, widgets::table_flags())) {
+            ImGui::TableSetupColumn("Severity", ImGuiTableColumnFlags_WidthFixed, 96.0f);
+            ImGui::TableSetupColumn("Component");
+            ImGui::TableSetupColumn("Recovery");
+            ImGui::TableSetupColumn("Message");
+            ImGui::TableHeadersRow();
+            std::size_t shown = 0;
+            for (const IncidentRow& i : r.incidents.rows) {
+                if (shown++ >= 5) break;
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
+                widgets::state_cell(i.severity);
+                ImGui::TableNextColumn();
+                ImGui::TextUnformatted(i.component.c_str());
+                ImGui::TableNextColumn();
+                ImGui::TextUnformatted(i.recovery_action.c_str());
+                ImGui::TableNextColumn();
+                ImGui::TextWrapped("%s", i.message.c_str());
+            }
+            ImGui::EndTable();
+        }
+    }
+    widgets::card_end();
+
+    ImGui::Spacing();
+    ImGui::Spacing();
+
+    // --- Version / configuration context ------------------------------------
+    widgets::card_begin("dash_version", "VERSION / CONFIGURATION", ImVec2(0.0f, 0.0f), 150.0f);
+    widgets::kv_row("Schema", r.version.schema_version);
+    widgets::kv_row("Strategy", r.version.strategy_version);
+    widgets::kv_row("Configuration", r.version.configuration_version);
+    widgets::kv_row("Family", r.version.strategy_family);
+    widgets::kv_row("Symbol", r.version.symbol);
+    widgets::card_end();
 }
+
+// ---- Market / Data Health --------------------------------------------------
+
+inline void draw_market(const ControlCenterSnapshot& s) {
+    widgets::section_header("Market", "Transport and per-stream data quality");
+
+    const float avail = ImGui::GetContentRegionAvail().x;
+    const float gap = theme::kSpace3;
+    const float w = (avail - gap * 3.0f) / 4.0f;
+
+    widgets::card_begin("mkt_transport", "TRANSPORT", ImVec2(w, 96.0f));
+    widgets::badge(s.overview.transport_connected ? "CONNECTED" : "UNKNOWN",
+                   theme::status_color(s.overview.transport_connected ? "CONNECTED" : "UNKNOWN"));
+    ImGui::Spacing();
+    widgets::kv_row("Streams", std::to_string(s.overview.streams_healthy) + " / " +
+                                   std::to_string(s.overview.streams_total));
+    widgets::card_end();
+
+    ImGui::SameLine(0.0f, gap);
+    widgets::card_begin("mkt_accepted", "ACCEPTED", ImVec2(w, 96.0f));
+    widgets::metric_u64("Closed bars", (unsigned long long)s.overview.accepted, true);
+    widgets::card_end();
+
+    ImGui::SameLine(0.0f, gap);
+    widgets::card_begin("mkt_rejected", "REJECTED", ImVec2(w, 96.0f));
+    widgets::metric_u64("Closed bars", (unsigned long long)s.overview.rejected, true);
+    widgets::card_end();
+
+    ImGui::SameLine(0.0f, gap);
+    widgets::card_begin("mkt_malformed", "MALFORMED", ImVec2(w, 96.0f));
+    widgets::metric_u64("Frames", (unsigned long long)s.overview.malformed, true);
+    widgets::card_end();
+
+    ImGui::Spacing();
+    ImGui::Spacing();
+
+    widgets::card_begin("mkt_quality", "PER-STREAM DATA QUALITY", ImVec2(0.0f, 0.0f), 300.0f);
+    if (ImGui::BeginTable("mkt_q_table", 4, widgets::table_flags())) {
+        ImGui::TableSetupColumn("Timeframe", ImGuiTableColumnFlags_WidthFixed, 80.0f);
+        ImGui::TableSetupColumn("Health");
+        ImGui::TableSetupColumn("Quality");
+        ImGui::TableSetupColumn("Last event (ns)");
+        ImGui::TableHeadersRow();
+        for (const TimeframeRow& r : s.timeframes.rows) {
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::TextColored(theme::kTextPrimary, "%s", r.label.c_str());
+            ImGui::TableNextColumn();
+            widgets::state_cell(row_health(r));
+            ImGui::TableNextColumn();
+            widgets::state_cell(r.quality);
+            ImGui::TableNextColumn();
+            widgets::value_cell(r.last_event.available, r.last_event.value);
+        }
+        ImGui::EndTable();
+    }
+    widgets::card_end();
+}
+
+// ---- Timeframes ------------------------------------------------------------
+
+inline void draw_timeframes(const ControlCenterSnapshot& s) {
+    widgets::section_header(
+        "Timeframes", "Nine logical streams \u00b7 identity is the explicit timeframe, not the row");
+    ImGui::TextWrapped(
+        "A silent stream is shown NOT AVAILABLE and is never merged into an aggregate "
+        "'healthy' status.");
+
+    widgets::card_begin("tf_card", nullptr, ImVec2(0.0f, 0.0f), 420.0f);
+    if (ImGui::BeginTable("tf_table", 10, widgets::table_flags(false, true))) {
+        ImGui::TableSetupColumn("Timeframe", ImGuiTableColumnFlags_WidthFixed, 90.0f);
+        ImGui::TableSetupColumn("Health");
+        ImGui::TableSetupColumn("Quality");
+        ImGui::TableSetupColumn("Sequence");
+        ImGui::TableSetupColumn("Freshness");
+        ImGui::TableSetupColumn("Last Closed Bar");
+        ImGui::TableSetupColumn("Provenance");
+        ImGui::TableSetupColumn("Signal");
+        ImGui::TableSetupColumn("Accepted");
+        ImGui::TableSetupColumn("Rejected");
+        ImGui::TableHeadersRow();
+        for (const TimeframeRow& row : s.timeframes.rows) {
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::TextColored(theme::kTextPrimary, "%s", row.label.c_str());
+            ImGui::TableNextColumn();
+            widgets::state_cell(row_health(row));
+            ImGui::TableNextColumn();
+            widgets::state_cell(row.quality);
+            ImGui::TableNextColumn();
+            widgets::value_cell(row.sequence.available, row.sequence.value);
+            ImGui::TableNextColumn();
+            widgets::state_cell(row.freshness);
+            ImGui::TableNextColumn();
+            widgets::value_cell(row.last_close.available, row.last_close.value);
+            ImGui::TableNextColumn();
+            widgets::value_cell(row.provenance.available, row.provenance.value);
+            ImGui::TableNextColumn();
+            const std::string sig = signal_for_row(s.signal, row);
+            if (sig == "\u2014") ImGui::TextColored(theme::kTextMuted, "%s", sig.c_str());
+            else ImGui::TextColored(theme::status_color("HEALTHY"), "%s", sig.c_str());
+            ImGui::TableNextColumn();
+            ImGui::Text("%llu", (unsigned long long)row.accepted);
+            ImGui::TableNextColumn();
+            ImGui::Text("%llu", (unsigned long long)row.rejected);
+        }
+        ImGui::EndTable();
+    }
+    widgets::card_end();
+
+    ImGui::Spacing();
+    widgets::card_begin("tf_ohlc", "LAST BAR (O / H / L / C)", ImVec2(0.0f, 0.0f), 220.0f);
+    if (ImGui::BeginTable("tf_ohlc_table", 2, widgets::table_flags())) {
+        ImGui::TableSetupColumn("Timeframe", ImGuiTableColumnFlags_WidthFixed, 90.0f);
+        ImGui::TableSetupColumn("O / H / L / C");
+        ImGui::TableHeadersRow();
+        for (const TimeframeRow& row : s.timeframes.rows) {
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::TextColored(theme::kTextPrimary, "%s", row.label.c_str());
+            ImGui::TableNextColumn();
+            widgets::value_cell(row.last_bar_ohlc.available, row.last_bar_ohlc.value);
+        }
+        ImGui::EndTable();
+    }
+    widgets::card_end();
+}
+
+// ---- Signals ---------------------------------------------------------------
 
 inline void draw_signals(const ControlCenterSnapshot& s) {
-    ImGui::TextColored(ImVec4(0.85f, 0.87f, 0.95f, 1.0f), "Signals");
-    ImGui::Separator();
+    widgets::section_header("Signals", "Most recent decision produced by the runtime");
+
+    widgets::card_begin("sig_card", "LATEST SIGNAL", ImVec2(0.0f, 0.0f), 220.0f);
     if (!s.signal.available) {
-        not_available_note("Signals");
-        ImGui::TextWrapped("No signal has been produced by the runtime yet.");
-        return;
+        widgets::empty_state("Signal", "no signal has been produced by the runtime yet");
+    } else {
+        widgets::badge(s.signal.direction.c_str(), theme::status_color("HEALTHY"));
+        ImGui::Spacing();
+        widgets::kv_row("Direction", s.signal.direction);
+        widgets::kv_row("Strategy family", s.signal.family);
+        widgets::kv_row("Symbol", s.signal.symbol);
+        widgets::kv_row("Trigger timeframe", s.signal.trigger_timeframe);
+        widgets::kv_row("Decision id", s.signal.decision_id);
+        widgets::kv_row("Score / confidence", "NOT AVAILABLE (no calibrated probability is claimed)");
     }
-    kv("Direction", s.signal.direction);
-    kv("Strategy family", s.signal.family);
-    kv("Symbol", s.signal.symbol);
-    kv("Trigger timeframe", s.signal.trigger_timeframe);
-    kv("Decision id", s.signal.decision_id);
+    widgets::card_end();
 }
+
+// ---- Risk ------------------------------------------------------------------
 
 inline void draw_risk(const ControlCenterSnapshot& s) {
-    ImGui::TextColored(ImVec4(0.85f, 0.87f, 0.95f, 1.0f), "Risk");
-    ImGui::Separator();
-    ImGui::TextWrapped(
-        "A risk proposal is a shadow-only sizing decision. It is never an order, and no control "
-        "on this surface can place one.");
-    ImGui::Spacing();
+    widgets::section_header("Risk", "Shadow-only sizing decision \u00b7 never an order");
+
+    widgets::card_begin("risk_card", "RISK PROPOSAL", ImVec2(0.0f, 0.0f), 240.0f);
     if (!s.risk.available) {
-        not_available_note("Risk proposal");
-        return;
+        widgets::empty_state("Risk proposal", "no risk proposal has been produced yet");
+    } else {
+        widgets::badge(s.risk.direction.c_str(), theme::status_color("HEALTHY"));
+        ImGui::Spacing();
+        widgets::kv_row("Direction", s.risk.direction);
+        widgets::kv_row("Position size", std::to_string(s.risk.position_size));
+        widgets::kv_row("Stop distance", std::to_string(s.risk.stop_distance));
+        widgets::kv_row("ATR", std::to_string(s.risk.atr));
+        widgets::kv_state_row("Is live order", s.risk.is_order ? "YES (UNEXPECTED)" : "NO");
     }
-    kv("Direction", s.risk.direction);
-    ImGui::Text("Position size: %.4f", s.risk.position_size);
-    ImGui::Text("Stop distance: %.5f", s.risk.stop_distance);
-    ImGui::Text("ATR: %.5f", s.risk.atr);
-    labelled_status("Is live order:", s.risk.is_order ? "YES (UNEXPECTED)" : "NO");
+    widgets::card_end();
+
+    ImGui::Spacing();
+    widgets::card_begin("risk_gate", "GATING", ImVec2(0.0f, 0.0f), 110.0f);
+    widgets::empty_state("Risk gating state", "no risk-gate telemetry source is wired to this view");
+    widgets::card_end();
 }
+
+// ---- Shadow Positions ------------------------------------------------------
 
 inline void draw_positions(const ControlCenterSnapshot& s) {
-    ImGui::TextColored(ImVec4(0.85f, 0.87f, 0.95f, 1.0f), "Shadow Positions");
-    ImGui::Separator();
-    labelled_status("Open shadow position:", s.positions.has_open_position ? "OPEN" : "NONE");
-    ImGui::Text("Shadow fills: %llu", (unsigned long long)s.positions.shadow_fills);
-    ImGui::Text("Positions opened: %llu", (unsigned long long)s.positions.positions_opened);
-    ImGui::Text("Append-only ledger entries: %zu", s.positions.ledger_entries);
-}
+    widgets::section_header("Shadow Positions",
+                            "Simulated fills only \u00b7 there are no order controls on this surface");
 
-inline void draw_health(const ControlCenterSnapshot& s) {
-    ImGui::TextColored(ImVec4(0.85f, 0.87f, 0.95f, 1.0f), "Health / Watchdog");
-    ImGui::Separator();
-    labelled_status("Runtime health:", s.health.healthy ? "HEALTHY" : s.health.aggregate);
+    const float avail = ImGui::GetContentRegionAvail().x;
+    const float gap = theme::kSpace3;
+    const float w = (avail - gap * 2.0f) / 3.0f;
+
+    widgets::card_begin("pos_open", "OPEN POSITION", ImVec2(w, 110.0f));
+    widgets::badge(s.positions.has_open_position ? "OPEN" : "NONE",
+                   theme::status_color(s.positions.has_open_position ? "DEGRADED" : "NONE"));
     ImGui::Spacing();
-    not_available_note("Watchdog");
-}
+    widgets::kv_row("Ledger entries", std::to_string(s.positions.ledger_entries));
+    widgets::card_end();
 
-inline void draw_data_health(const ControlCenterSnapshot& s) {
-    ImGui::TextColored(ImVec4(0.85f, 0.87f, 0.95f, 1.0f), "Market / Data Health");
-    ImGui::Separator();
-    labelled_status("Transport:", s.overview.transport_connected ? "CONNECTED" : "UNKNOWN");
-    ImGui::Text("Streams healthy: %zu / %zu", s.overview.streams_healthy, s.overview.streams_total);
+    ImGui::SameLine(0.0f, gap);
+    widgets::card_begin("pos_fills", "SHADOW FILLS", ImVec2(w, 110.0f));
+    widgets::metric_u64("Simulated fills", (unsigned long long)s.positions.shadow_fills, true);
+    widgets::card_end();
+
+    ImGui::SameLine(0.0f, gap);
+    widgets::card_begin("pos_opened", "POSITIONS OPENED", ImVec2(w, 110.0f));
+    widgets::metric_u64("Simulated positions", (unsigned long long)s.positions.positions_opened, true);
+    widgets::card_end();
+
     ImGui::Spacing();
-    ImGui::TextUnformatted("Per-stream data quality:");
-    for (const TimeframeRow& r : s.timeframes.rows) {
-        ImGui::Bullet();
-        ImGui::TextUnformatted(r.label.c_str());
-        ImGui::SameLine();
-        ImGui::TextColored(status_color(r.quality), "%s", r.quality.c_str());
-    }
+    widgets::card_begin("pos_ledger", "SHADOW LEDGER", ImVec2(0.0f, 0.0f), 90.0f);
+    widgets::kv_row("Entries", std::to_string(s.positions.ledger_entries));
+    widgets::kv_row("Append-only", "yes (entries are never mutated or erased)");
+    widgets::card_end();
 }
 
-// Sections whose data source is not yet wired: shown as NOT AVAILABLE and
-// bounded, rather than fabricated. This preserves the "unknown stays unknown"
-// contract while the corresponding adapters are implemented.
-inline void draw_placeholder(const char* title, const char* detail) {
-    ImGui::TextColored(ImVec4(0.85f, 0.87f, 0.95f, 1.0f), "%s", title);
-    ImGui::Separator();
-    not_available_note(title);
-    ImGui::Spacing();
-    ImGui::TextWrapped("%s", detail);
-}
-
-// A bounded "nothing to show" note with an explanation, used by wired sections
-// whose real source is currently empty (a genuine empty state, not missing data).
-inline void empty_note(const char* detail) {
-    ImGui::TextColored(ImVec4(0.62f, 0.62f, 0.66f, 1.0f), "%s", detail);
-}
-
-inline void section_title(const char* title) {
-    ImGui::TextColored(ImVec4(0.85f, 0.87f, 0.95f, 1.0f), "%s", title);
-    ImGui::Separator();
-}
+// ---- Observation / Prediction ---------------------------------------------
 
 inline void draw_prediction(const ControlCenterReport& r) {
-    section_title("Prediction / Observation");
+    widgets::section_header("Observation", "Prediction ledger (ranking score, not a probability)");
     if (!r.predictions.available) {
-        not_available_note("Prediction ledger");
-        ImGui::TextWrapped("%s", r.predictions.note.c_str());
+        widgets::card_begin("pred_na", nullptr, ImVec2(0.0f, 0.0f), 130.0f);
+        widgets::empty_state("Prediction ledger", r.predictions.note.c_str());
+        widgets::card_end();
         return;
     }
-    ImGui::Text("Predictions: %zu", r.predictions.total);
-    if (ImGui::BeginTable("pred_table", 6, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg)) {
+    widgets::card_begin("pred_card", "PREDICTIONS", ImVec2(0.0f, 0.0f), 320.0f);
+    widgets::kv_row("Total", std::to_string(r.predictions.total));
+    ImGui::Spacing();
+    if (ImGui::BeginTable("pred_table", 6, widgets::table_flags(false, true))) {
         ImGui::TableSetupColumn("Timeframe");
         ImGui::TableSetupColumn("Direction");
         ImGui::TableSetupColumn("Symbol");
-        ImGui::TableSetupColumn("Score (ranking, not probability)");
+        ImGui::TableSetupColumn("Score (ranking)");
         ImGui::TableSetupColumn("Reference");
         ImGui::TableSetupColumn("Predicted at (ns)");
         ImGui::TableHeadersRow();
         for (const PredictionRow& p : r.predictions.rows) {
             ImGui::TableNextRow();
             ImGui::TableNextColumn(); ImGui::TextUnformatted(p.timeframe.c_str());
-            ImGui::TableNextColumn(); ImGui::TextUnformatted(p.direction.c_str());
+            ImGui::TableNextColumn(); widgets::state_cell(p.direction);
             ImGui::TableNextColumn(); ImGui::TextUnformatted(p.symbol.c_str());
             ImGui::TableNextColumn(); ImGui::Text("%.4f", p.score);
             ImGui::TableNextColumn(); ImGui::TextUnformatted(p.reference_price.c_str());
@@ -231,46 +454,23 @@ inline void draw_prediction(const ControlCenterReport& r) {
         }
         ImGui::EndTable();
     }
+    widgets::card_end();
 }
 
-inline void draw_shadow_ledger(const ControlCenterReport& r) {
-    section_title("Shadow Ledger (append-only)");
-    ImGui::TextWrapped(
-        "The persistent shadow ledger is the historical source of truth (V3-22). Entries are "
-        "appended and never mutated, reordered or erased.");
-    ImGui::Text("Entries: %zu   append-only: %s", r.shadow_ledger.total,
-                r.shadow_ledger.append_only ? "yes" : "no");
-    if (!r.shadow_ledger.available) {
-        empty_note("No ledger entries yet (a shadow session has not produced any).");
-        return;
-    }
-    if (ImGui::BeginTable("ledger_table", 4, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg |
-                                                   ImGuiTableFlags_ScrollY)) {
-        ImGui::TableSetupColumn("Type");
-        ImGui::TableSetupColumn("Decision id");
-        ImGui::TableSetupColumn("Recorded at (ns)");
-        ImGui::TableSetupColumn("Payload");
-        ImGui::TableHeadersRow();
-        for (const LedgerEntryRow& e : r.shadow_ledger.recent) {
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn(); ImGui::TextUnformatted(e.type.c_str());
-            ImGui::TableNextColumn(); ImGui::TextUnformatted(e.decision_id.c_str());
-            ImGui::TableNextColumn(); ImGui::TextUnformatted(e.recorded_at.c_str());
-            ImGui::TableNextColumn(); ImGui::TextUnformatted(e.payload.c_str());
-        }
-        ImGui::EndTable();
-    }
-}
+// ---- Research --------------------------------------------------------------
 
 inline void draw_research(const ControlCenterReport& r) {
-    section_title("Research");
+    widgets::section_header("Research", "Hypotheses and experiments (sandboxed, no runtime effect)");
     if (!r.research.available) {
-        not_available_note("Experiment ledger");
-        ImGui::TextWrapped("No experiment has been recorded in this session.");
+        widgets::card_begin("res_na", nullptr, ImVec2(0.0f, 0.0f), 130.0f);
+        widgets::empty_state("Experiment ledger", "no experiment has been recorded in this session");
+        widgets::card_end();
         return;
     }
-    ImGui::Text("Experiments: %zu", r.research.total);
-    if (ImGui::BeginTable("exp_table", 4, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg)) {
+    widgets::card_begin("res_card", "EXPERIMENTS", ImVec2(0.0f, 0.0f), 320.0f);
+    widgets::kv_row("Total", std::to_string(r.research.total));
+    ImGui::Spacing();
+    if (ImGui::BeginTable("exp_table", 4, widgets::table_flags())) {
         ImGui::TableSetupColumn("Question");
         ImGui::TableSetupColumn("Decision");
         ImGui::TableSetupColumn("Evidence zone");
@@ -279,49 +479,62 @@ inline void draw_research(const ControlCenterReport& r) {
         for (const ResearchRow& e : r.research.rows) {
             ImGui::TableNextRow();
             ImGui::TableNextColumn(); ImGui::TextWrapped("%s", e.question.c_str());
-            ImGui::TableNextColumn(); ImGui::TextUnformatted(e.decision.c_str());
+            ImGui::TableNextColumn(); widgets::state_cell(e.decision);
             ImGui::TableNextColumn(); ImGui::TextUnformatted(e.evidence_zone.c_str());
             ImGui::TableNextColumn(); ImGui::TextUnformatted(e.contamination.c_str());
         }
         ImGui::EndTable();
     }
+    widgets::card_end();
 }
 
+// ---- Knowledge -------------------------------------------------------------
+
 inline void draw_knowledge(const ControlCenterReport& r) {
-    section_title("Knowledge");
+    widgets::section_header("Knowledge", "Knowledge identities and revisions (append-only history)");
     if (!r.knowledge.available) {
-        not_available_note("Knowledge store");
-        ImGui::TextWrapped("No knowledge revision has been recorded in this session.");
+        widgets::card_begin("kn_na", nullptr, ImVec2(0.0f, 0.0f), 130.0f);
+        widgets::empty_state("Knowledge store",
+                             "no knowledge revision has been recorded in this session");
+        widgets::card_end();
         return;
     }
-    ImGui::Text("Identities: %zu   revisions: %zu", r.knowledge.identities, r.knowledge.revisions);
-    if (ImGui::BeginTable("kn_table", 4, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg)) {
+    widgets::card_begin("kn_card", "KNOWLEDGE", ImVec2(0.0f, 0.0f), 340.0f);
+    widgets::kv_row("Identities", std::to_string(r.knowledge.identities));
+    widgets::kv_row("Revisions", std::to_string(r.knowledge.revisions));
+    ImGui::Spacing();
+    if (ImGui::BeginTable("kn_table", 4, widgets::table_flags())) {
         ImGui::TableSetupColumn("Status");
-        ImGui::TableSetupColumn("Rev");
+        ImGui::TableSetupColumn("Rev", ImGuiTableColumnFlags_WidthFixed, 48.0f);
         ImGui::TableSetupColumn("Scope");
         ImGui::TableSetupColumn("Observation");
         ImGui::TableHeadersRow();
         for (const KnowledgeRow& k : r.knowledge.rows) {
             ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-            ImGui::TextColored(status_color(k.status), "%s", k.status.c_str());
+            ImGui::TableNextColumn(); widgets::state_cell(k.status);
             ImGui::TableNextColumn(); ImGui::Text("%u", (unsigned)k.revision);
             ImGui::TableNextColumn(); ImGui::TextUnformatted(k.validity_scope.c_str());
             ImGui::TableNextColumn(); ImGui::TextWrapped("%s", k.observation.c_str());
         }
         ImGui::EndTable();
     }
+    widgets::card_end();
 }
 
+// ---- Candidates ------------------------------------------------------------
+
 inline void draw_candidates(const ControlCenterReport& r) {
-    section_title("Candidates");
+    widgets::section_header("Candidates", "Candidate registry (proposals, not promoted versions)");
     if (!r.candidates.available) {
-        not_available_note("Candidate registry");
-        ImGui::TextWrapped("No candidate has been registered in this session.");
+        widgets::card_begin("cand_na", nullptr, ImVec2(0.0f, 0.0f), 130.0f);
+        widgets::empty_state("Candidate registry", "no candidate has been registered in this session");
+        widgets::card_end();
         return;
     }
-    ImGui::Text("Population: %zu", r.candidates.population);
-    if (ImGui::BeginTable("cand_table", 4, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg)) {
+    widgets::card_begin("cand_card", "CANDIDATES", ImVec2(0.0f, 0.0f), 340.0f);
+    widgets::kv_row("Population", std::to_string(r.candidates.population));
+    ImGui::Spacing();
+    if (ImGui::BeginTable("cand_table", 4, widgets::table_flags())) {
         ImGui::TableSetupColumn("Candidate");
         ImGui::TableSetupColumn("Parent");
         ImGui::TableSetupColumn("Change");
@@ -332,192 +545,246 @@ inline void draw_candidates(const ControlCenterReport& r) {
             ImGui::TableNextColumn(); ImGui::TextUnformatted(c.candidate_id.c_str());
             ImGui::TableNextColumn(); ImGui::TextUnformatted(c.parent_version.c_str());
             ImGui::TableNextColumn(); ImGui::TextUnformatted(c.change_type.c_str());
-            ImGui::TableNextColumn();
-            ImGui::TextColored(status_color(c.state), "%s", c.state.c_str());
+            ImGui::TableNextColumn(); widgets::state_cell(c.state);
         }
         ImGui::EndTable();
     }
+    widgets::card_end();
 }
+
+// ---- Validation ------------------------------------------------------------
 
 inline void draw_validation(const ControlCenterReport& r) {
-    section_title("Validation Evidence");
+    widgets::section_header("Validation", "Out-of-sample evidence firewall (Phase 6)");
+    widgets::card_begin("val_card", "VALIDATION EVIDENCE", ImVec2(0.0f, 0.0f), 200.0f);
     if (!r.validation.available) {
-        not_available_note("Validation evidence");
-        ImGui::TextWrapped(
-            "No validation campaign source is wired. A missing campaign is NOT a pass "
-            "(Phase 6: absent evidence is never treated as validation). No profitability or "
-            "calibration claim is made here.");
-        return;
-    }
-}
-
-inline void draw_approvals(const ControlCenterReport& r) {
-    section_title("Approval Center");
-    ImGui::TextWrapped(
-        "Human decisions are recorded immutably; automated actors cannot record an accepted "
-        "human decision (Phase 7).");
-    if (!r.approvals.available) {
-        empty_note("No human decision has been recorded in this session.");
-        return;
-    }
-    ImGui::Text("Decisions: %zu", r.approvals.total);
-    if (ImGui::BeginTable("appr_table", 4, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg)) {
-        ImGui::TableSetupColumn("Decision");
-        ImGui::TableSetupColumn("Status");
-        ImGui::TableSetupColumn("Actor");
-        ImGui::TableSetupColumn("Question");
-        ImGui::TableHeadersRow();
-        for (const ApprovalRow& a : r.approvals.rows) {
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn(); ImGui::TextUnformatted(a.decision_id.c_str());
-            ImGui::TableNextColumn();
-            ImGui::TextColored(status_color(a.status), "%s", a.status.c_str());
-            ImGui::TableNextColumn(); ImGui::TextUnformatted(a.actor.c_str());
-            ImGui::TableNextColumn(); ImGui::TextWrapped("%s", a.question.c_str());
-        }
-        ImGui::EndTable();
-    }
-}
-
-inline void draw_evolution(const ControlCenterReport& r) {
-    section_title("Evolution Graph");
-    if (!r.evolution.available) {
-        not_available_note("Evolution graph");
-        ImGui::TextWrapped("No version lineage has been recorded in this session.");
-        return;
-    }
-    ImGui::Text("Nodes: %zu   edges: %zu", r.evolution.nodes, r.evolution.edges.size());
-    for (const EvolutionEdgeRow& e : r.evolution.edges) {
-        ImGui::Bullet();
-        ImGui::Text("%s -> %s", e.parent_version.c_str(), e.child_version.c_str());
-    }
-}
-
-inline void draw_schedule(const ControlCenterReport& r) {
-    section_title("Schedule / Operating Window");
-    if (!r.schedule.available) {
-        not_available_note("Operating window");
-        ImGui::TextWrapped("%s", r.schedule.note.c_str());
-        ImGui::TextWrapped(
-            "The window is human-bounded and cannot self-extend (Phase 8). This view is not "
-            "wired to an accepted schedule yet, so it is shown NOT AVAILABLE rather than as an "
-            "invented ACTIVE window.");
-        return;
-    }
-}
-
-inline void draw_incidents(const ControlCenterReport& r) {
-    section_title("Incidents");
-    if (!r.incidents.available) {
-        not_available_note("Incident source");
-        ImGui::TextWrapped("No failure detection source is wired.");
-        return;
-    }
-    ImGui::Text("Detected incidents: %zu", r.incidents.count);
-    if (r.incidents.rows.empty()) {
-        empty_note("No incidents detected from the current adapter stream health.");
-        return;
-    }
-    if (ImGui::BeginTable("inc_table", 5, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg)) {
-        ImGui::TableSetupColumn("Severity");
-        ImGui::TableSetupColumn("Component");
-        ImGui::TableSetupColumn("State");
-        ImGui::TableSetupColumn("Recovery");
-        ImGui::TableSetupColumn("Message");
-        ImGui::TableHeadersRow();
-        for (const IncidentRow& i : r.incidents.rows) {
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-            ImGui::TextColored(status_color(i.severity), "%s", i.severity.c_str());
-            ImGui::TableNextColumn(); ImGui::TextUnformatted(i.component.c_str());
-            ImGui::TableNextColumn(); ImGui::TextUnformatted(i.state.c_str());
-            ImGui::TableNextColumn(); ImGui::TextUnformatted(i.recovery_action.c_str());
-            ImGui::TableNextColumn(); ImGui::TextWrapped("%s", i.message.c_str());
-        }
-        ImGui::EndTable();
-    }
-}
-
-inline void draw_checkpoints(const ControlCenterReport& r) {
-    section_title("Checkpoints / Recovery");
-    // Persistence/recovery decision (V2-36) — always sourced from the live shell.
-    const PersistencePanel& s = r.snapshot.persistence;
-    kv("Store", s.store_path);
-    ImGui::Text("Persisted records: %zu", s.records);
-    labelled_status("Last persist status:", s.last_status);
-    labelled_status("Lifecycle state:", s.lifecycle);
-    labelled_status("Resumable:", s.resumable ? "YES" : "NO");
-    ImGui::Text("Fresh start: %s   Known-good: %s", s.fresh_start ? "yes" : "no",
-                s.used_known_good ? "yes" : "no");
-    ImGui::TextWrapped("Reason: %s", s.reason.c_str());
-    if (s.lifecycle == "CORRUPTED_STATE") {
-        ImGui::TextColored(status_color("CORRUPTED_STATE"),
-                           "Recovery is REFUSED for corrupted state; the GUI will not resume it.");
+        widgets::empty_state("Validation evidence",
+                             "no validation campaign source is wired. A missing campaign is NOT a "
+                             "pass: absent evidence is never treated as validation.");
     }
     ImGui::Spacing();
-    ImGui::TextUnformatted("Operating-window checkpoints:");
-    if (!r.checkpoints.available) {
-        ImGui::TextColored(ImVec4(0.62f, 0.62f, 0.66f, 1.0f),
-                           "NOT AVAILABLE (no operating-window checkpoint source wired)");
-        return;
-    }
-    ImGui::Text("Checkpoints: %zu", r.checkpoints.total);
-    if (ImGui::BeginTable("cp_table", 3, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg)) {
-        ImGui::TableSetupColumn("Checkpoint");
-        ImGui::TableSetupColumn("Validity");
-        ImGui::TableSetupColumn("Schema");
-        ImGui::TableHeadersRow();
-        for (const CheckpointRow& c : r.checkpoints.recent) {
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn(); ImGui::TextUnformatted(c.checkpoint_id.c_str());
-            ImGui::TableNextColumn();
-            ImGui::TextColored(status_color(c.validity), "%s", c.validity.c_str());
-            ImGui::TableNextColumn(); ImGui::TextUnformatted(c.schema_version.c_str());
-        }
-        ImGui::EndTable();
-    }
+    ImGui::TextColored(theme::kTextMuted,
+                       "No profitability or calibration claim is made on this surface.");
+    widgets::card_end();
 }
+
+// ---- Governance / Approvals -----------------------------------------------
+
+inline void draw_approvals(const ControlCenterReport& r) {
+    widgets::section_header("Governance", "Human decisions (automated actors cannot self-approve)");
+    widgets::card_begin("gov_card", "APPROVAL CENTER", ImVec2(0.0f, 0.0f), 340.0f);
+    if (!r.approvals.available) {
+        widgets::empty_note("No human decision has been recorded in this session.");
+    } else {
+        widgets::kv_row("Decisions", std::to_string(r.approvals.total));
+        ImGui::Spacing();
+        if (ImGui::BeginTable("appr_table", 4, widgets::table_flags())) {
+            ImGui::TableSetupColumn("Decision");
+            ImGui::TableSetupColumn("Status");
+            ImGui::TableSetupColumn("Actor");
+            ImGui::TableSetupColumn("Question");
+            ImGui::TableHeadersRow();
+            for (const ApprovalRow& a : r.approvals.rows) {
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn(); ImGui::TextUnformatted(a.decision_id.c_str());
+                ImGui::TableNextColumn(); widgets::state_cell(a.status);
+                ImGui::TableNextColumn(); ImGui::TextUnformatted(a.actor.c_str());
+                ImGui::TableNextColumn(); ImGui::TextWrapped("%s", a.question.c_str());
+            }
+            ImGui::EndTable();
+        }
+    }
+    widgets::card_end();
+}
+
+// ---- Evolution -------------------------------------------------------------
+
+inline void draw_evolution(const ControlCenterReport& r) {
+    widgets::section_header("Evolution", "Version lineage (parent \u2192 child)");
+    widgets::card_begin("evo_card", "EVOLUTION GRAPH", ImVec2(0.0f, 0.0f), 340.0f);
+    if (!r.evolution.available) {
+        widgets::empty_state("Evolution graph", "no version lineage has been recorded in this session");
+    } else {
+        widgets::kv_row("Nodes", std::to_string(r.evolution.nodes));
+        widgets::kv_row("Edges", std::to_string(r.evolution.edges.size()));
+        ImGui::Spacing();
+        if (ImGui::BeginTable("evo_table", 2, widgets::table_flags())) {
+            ImGui::TableSetupColumn("Parent");
+            ImGui::TableSetupColumn("Child");
+            ImGui::TableHeadersRow();
+            for (const EvolutionEdgeRow& e : r.evolution.edges) {
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn(); ImGui::TextUnformatted(e.parent_version.c_str());
+                ImGui::TableNextColumn(); ImGui::TextUnformatted(e.child_version.c_str());
+            }
+            ImGui::EndTable();
+        }
+    }
+    widgets::card_end();
+}
+
+// ---- Incidents -------------------------------------------------------------
+
+inline void draw_incidents(const ControlCenterReport& r) {
+    widgets::section_header("Incidents", "Failure records detected from live adapter health");
+    widgets::card_begin("inc_card", "INCIDENTS", ImVec2(0.0f, 0.0f), 340.0f);
+    if (!r.incidents.available) {
+        widgets::empty_state("Incident source", "no failure-detection source is wired");
+    } else if (r.incidents.rows.empty()) {
+        widgets::empty_note("No incidents detected from the current adapter stream health.");
+    } else {
+        widgets::kv_row("Detected", std::to_string(r.incidents.count));
+        ImGui::Spacing();
+        if (ImGui::BeginTable("inc_table", 5, widgets::table_flags())) {
+            ImGui::TableSetupColumn("Severity", ImGuiTableColumnFlags_WidthFixed, 96.0f);
+            ImGui::TableSetupColumn("Component");
+            ImGui::TableSetupColumn("State");
+            ImGui::TableSetupColumn("Recovery");
+            ImGui::TableSetupColumn("Message");
+            ImGui::TableHeadersRow();
+            for (const IncidentRow& i : r.incidents.rows) {
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn(); widgets::state_cell(i.severity);
+                ImGui::TableNextColumn(); ImGui::TextUnformatted(i.component.c_str());
+                ImGui::TableNextColumn(); widgets::state_cell(i.state);
+                ImGui::TableNextColumn(); ImGui::TextUnformatted(i.recovery_action.c_str());
+                ImGui::TableNextColumn(); ImGui::TextWrapped("%s", i.message.c_str());
+            }
+            ImGui::EndTable();
+        }
+    }
+    widgets::card_end();
+}
+
+// ---- Schedule --------------------------------------------------------------
+
+inline void draw_schedule(const ControlCenterReport& r) {
+    widgets::section_header("Schedule", "Human-bounded operating window (cannot self-extend)");
+    widgets::card_begin("sch_card", "OPERATING WINDOW", ImVec2(0.0f, 0.0f), 180.0f);
+    if (!r.schedule.available) {
+        widgets::empty_state("Operating window", r.schedule.note.c_str());
+        ImGui::Spacing();
+        ImGui::TextWrapped(
+            "This view is not wired to an accepted schedule yet, so it is shown NOT AVAILABLE "
+            "rather than as an invented ACTIVE window.");
+    }
+    widgets::card_end();
+}
+
+// ---- Recovery / Checkpoints -----------------------------------------------
+
+inline void draw_checkpoints(const ControlCenterReport& r) {
+    widgets::section_header("Recovery", "Persistence and crash-recovery decision (report-only)");
+    const PersistencePanel& s = r.snapshot.persistence;
+
+    widgets::card_begin("rec_card", "RECOVERY DECISION", ImVec2(0.0f, 0.0f), 220.0f);
+    widgets::badge(s.lifecycle.c_str(), theme::status_color(s.lifecycle));
+    ImGui::Spacing();
+    widgets::kv_row("Store", s.store_path);
+    widgets::kv_row("Persisted records", std::to_string(s.records));
+    widgets::kv_state_row("Last persist status", s.last_status);
+    widgets::kv_row("Resumable", s.resumable ? "YES" : "NO");
+    widgets::kv_row("Fresh start", s.fresh_start ? "yes" : "no");
+    widgets::kv_row("Known-good", s.used_known_good ? "yes" : "no");
+    ImGui::Spacing();
+    ImGui::TextWrapped("Reason: %s", s.reason.c_str());
+    if (s.lifecycle == "CORRUPTED_STATE") {
+        ImGui::Spacing();
+        ImGui::TextColored(theme::kCritical,
+                           "Recovery is REFUSED for corrupted state; the GUI will not resume it.");
+    }
+    widgets::card_end();
+
+    ImGui::Spacing();
+    widgets::card_begin("cp_card", "OPERATING-WINDOW CHECKPOINTS", ImVec2(0.0f, 0.0f), 260.0f);
+    if (!r.checkpoints.available) {
+        widgets::empty_state("Operating-window checkpoints",
+                             "no operating-window checkpoint source is wired");
+    } else {
+        widgets::kv_row("Checkpoints", std::to_string(r.checkpoints.total));
+        ImGui::Spacing();
+        if (ImGui::BeginTable("cp_table", 3, widgets::table_flags())) {
+            ImGui::TableSetupColumn("Checkpoint");
+            ImGui::TableSetupColumn("Validity");
+            ImGui::TableSetupColumn("Schema");
+            ImGui::TableHeadersRow();
+            for (const CheckpointRow& c : r.checkpoints.recent) {
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn(); ImGui::TextUnformatted(c.checkpoint_id.c_str());
+                ImGui::TableNextColumn(); widgets::state_cell(c.validity);
+                ImGui::TableNextColumn(); ImGui::TextUnformatted(c.schema_version.c_str());
+            }
+            ImGui::EndTable();
+        }
+    }
+    widgets::card_end();
+}
+
+// ---- Health / Watchdog -----------------------------------------------------
+
+inline void draw_health(const ControlCenterSnapshot& s) {
+    widgets::section_header("Health", "Runtime health and watchdog status");
+    widgets::card_begin("hl_card", "RUNTIME HEALTH", ImVec2(0.0f, 0.0f), 180.0f);
+    widgets::badge(s.health.healthy ? "HEALTHY" : s.health.aggregate.c_str(),
+                   theme::status_color(s.health.healthy ? "HEALTHY" : s.health.aggregate));
+    ImGui::Spacing();
+    widgets::kv_row("Aggregate", s.health.aggregate);
+    widgets::kv_row("Streams", std::to_string(s.overview.streams_healthy) + " / " +
+                                   std::to_string(s.overview.streams_total));
+    ImGui::Spacing();
+    widgets::empty_state("Watchdog", "no watchdog telemetry source is wired to this view");
+    widgets::card_end();
+}
+
+// ---- Audit -----------------------------------------------------------------
 
 inline void draw_audit(const ControlCenterReport& r) {
-    section_title("Audit");
-    ImGui::TextWrapped("The audit ledger is append-only; history is never edited or deleted.");
+    widgets::section_header("Audit", "Append-only history (never edited or deleted)");
+    widgets::card_begin("aud_card", "AUDIT LEDGER", ImVec2(0.0f, 0.0f), 340.0f);
     if (!r.audit.available) {
-        empty_note("No audit record has been appended in this session.");
-        return;
-    }
-    ImGui::Text("Records: %zu", r.audit.total);
-    if (ImGui::BeginTable("audit_table", 4, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg)) {
-        ImGui::TableSetupColumn("Category"); ImGui::TableSetupColumn("Actor");
-        ImGui::TableSetupColumn("Action"); ImGui::TableSetupColumn("Recorded at (ns)");
-        ImGui::TableHeadersRow();
-        for (const AuditRow& a : r.audit.rows) {
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn(); ImGui::TextUnformatted(a.category.c_str());
-            ImGui::TableNextColumn(); ImGui::TextUnformatted(a.actor.c_str());
-            ImGui::TableNextColumn(); ImGui::TextUnformatted(a.action.c_str());
-            ImGui::TableNextColumn(); ImGui::TextUnformatted(a.recorded_at.c_str());
+        widgets::empty_note("No audit record has been appended in this session.");
+    } else {
+        widgets::kv_row("Records", std::to_string(r.audit.total));
+        ImGui::Spacing();
+        if (ImGui::BeginTable("audit_table", 4, widgets::table_flags())) {
+            ImGui::TableSetupColumn("Category");
+            ImGui::TableSetupColumn("Actor");
+            ImGui::TableSetupColumn("Action");
+            ImGui::TableSetupColumn("Recorded at (ns)");
+            ImGui::TableHeadersRow();
+            for (const AuditRow& a : r.audit.rows) {
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn(); ImGui::TextUnformatted(a.category.c_str());
+                ImGui::TableNextColumn(); ImGui::TextUnformatted(a.actor.c_str());
+                ImGui::TableNextColumn(); ImGui::TextUnformatted(a.action.c_str());
+                ImGui::TableNextColumn(); ImGui::TextUnformatted(a.recorded_at.c_str());
+            }
+            ImGui::EndTable();
         }
-        ImGui::EndTable();
     }
+    widgets::card_end();
 }
 
+// ---- Configuration / Version ----------------------------------------------
+
 inline void draw_version(const ControlCenterReport& r) {
-    section_title("Configuration / Version Context");
-    kv("Schema version", r.version.schema_version);
-    kv("Strategy version", r.version.strategy_version);
-    kv("Configuration version", r.version.configuration_version);
-    kv("Strategy family", r.version.strategy_family);
-    kv("Symbol", r.version.symbol);
-    ImGui::TextWrapped(
-        "Version identity is verified before any resume; an incompatible persisted state is "
-        "refused rather than mis-resumed.");
+    widgets::section_header("Configuration", "Version identity verified before any resume");
+    widgets::card_begin("ver_card", "VERSION CONTEXT", ImVec2(0.0f, 0.0f), 220.0f);
+    widgets::kv_row("Schema version", r.version.schema_version);
+    widgets::kv_row("Strategy version", r.version.strategy_version);
+    widgets::kv_row("Configuration version", r.version.configuration_version);
+    widgets::kv_row("Strategy family", r.version.strategy_family);
+    widgets::kv_row("Symbol", r.version.symbol);
+    ImGui::Spacing();
+    ImGui::TextWrapped("An incompatible persisted state is refused rather than mis-resumed.");
+    widgets::card_end();
 }
 
 // Draws the content area for the selected section index (see DesktopModel::sections()).
 inline void draw_section(const ControlCenterReport& r, int section) {
     switch (section) {
-        case 0:  draw_overview(r.snapshot); break;
-        case 1:  draw_data_health(r.snapshot); break;
+        case 0:  draw_dashboard(r); break;
+        case 1:  draw_market(r.snapshot); break;
         case 2:  draw_timeframes(r.snapshot); break;
         case 3:  draw_signals(r.snapshot); break;
         case 4:  draw_risk(r.snapshot); break;
@@ -535,13 +802,16 @@ inline void draw_section(const ControlCenterReport& r, int section) {
         case 16: draw_health(r.snapshot); break;
         case 17: draw_audit(r); break;
         case 18: draw_version(r); break;
-        default:
-            draw_placeholder(
-                DesktopModel::sections().at(static_cast<std::size_t>(section)).c_str(),
-                "This control-center area is defined by the Master (V3-37) but is not yet "
-                "backed by a wired read-only adapter. It is shown as NOT AVAILABLE rather than "
-                "with fabricated values.");
+        default: {
+            widgets::section_header("Section", "Master (V3-37) control-center area");
+            widgets::card_begin("def_card", nullptr, ImVec2(0.0f, 0.0f), 140.0f);
+            widgets::empty_state(
+                "This section",
+                "is defined by the Master (V3-37) but is not yet backed by a wired read-only "
+                "adapter. It is shown as NOT AVAILABLE rather than with fabricated values.");
+            widgets::card_end();
             break;
+        }
     }
 }
 
