@@ -554,6 +554,32 @@ Interpretation: Phases 5-7 satisfy their V3-40 capability sets to the statically
 behaviourally tested level. No live path; no profitability/calibration claim; governance cannot
 self-promote or mutate runtime.
 
+
+## 2026-10-02 - Canonical Phases 8-11 (Operating Window, Desktop, Telegram, Real-World Validation)
+
+Toolchain: g++ 14.2.0, -std=c++17/-std=c++20, -Wall -Wextra -Werror -pedantic.
+Phase 8 (src/operatingwindow/): OperatingWindow, Checkpoint, ResourceBudget, WindowOrchestrator,
+OperatingWindowTests -> PASS c++17/c++20. Proven: human-bounded 3-8h window with self-extension
+refused; automated sub-minimum schedule refused; phase transitions ACTIVE/DRAINING/OFFLINE;
+recovery prefers a valid compatible checkpoint else known-good and never guesses; corrupt/incompatible
+checkpoints unusable; no partial resource spend; uncheckpointed resumable work refused, not discarded.
+Phase 9 (src/desktop/): ControlCenterViewModels, DashboardProjector, DesktopTests -> PASS
+c++17/c++20. Proven: read-only projections from trusted layers; source values unchanged after
+projection; an UNKNOWN tile is surfaced as unknown, never fabricated as healthy; deterministic
+explicit-order graph projection. Headless, no GUI toolkit.
+Phase 10 (src/telegram/): TelegramConfig, TelegramMessage, ApprovalRequest, TelegramGateway,
+NotificationPolicy, TelegramTests -> PASS c++17/c++20. Proven: config is secret-free (no embedded
+token, not configured until a human sets it); a disabled gateway is a safe no-op and is never a core
+dependency; informational messages only; the approval pipeline enforces all six verification steps
+and any failure stops before promotion; ERROR/INCIDENT/ROLLBACK/APPROVAL_NEEDED notifications cannot
+be suppressed.
+Phase 11 (src/realworld/): RealWorldValidation, ValidationRegistry, RealWorldTests -> PASS
+c++17/c++20. Proven: all readiness gates required (missing = unmet, never assumed); never automatic;
+explicitly makes no profitability/production-safety claim; append-only validation-run registry.
+Full-suite regression: all 16 test suites PASS under both c++17 and c++20.
+Interpretation: Phase 11 is a gate/registry only. No live trading path is enabled; real MT5
+execution readiness remains UNPROVEN in this environment (no MetaEditor/MT5 on Linux).
+
 ## Future test entry format
 
 - Date

@@ -267,20 +267,58 @@ This is the human-readable snapshot of where the project currently stands.
   `LearningTests.cpp` and `ResearchTests.cpp` PASS under both standards.
 - No live path, no profitability/calibration claim, and research cannot mutate runtime behaviour.
 
+## Canonical Phases 5–11 — Evolution through Controlled Real-World Validation (2026-10-02)
+
+- Phase 5 (Evolution) COMPLETE and `APPROVED`: `src/evolution/` — `Candidate.h`,
+  `CandidateRegistry.h`, `EvolutionGraph.h`, `CandidateComparison.h`, `EvolutionTests.cpp`
+  (`EVOL-0001`..`EVOL-0005`). Explicit candidate lifecycle, no auto-promotion, acyclic graph,
+  constraints treated as vetoes.
+- Phase 6 (Validation) COMPLETE and `APPROVED`: `src/validation/` — `ValidationFirewall.h`,
+  `EvidenceFirewall.h`, `EvaluatorFirewall.h`, `RewardHackingDefense.h`, `StatisticalControls.h`,
+  `ValidationTests.cpp` (`VALID-0001`..`VALID-0006`). Missing check is NOT_RUN not PASS; monotone
+  contamination; evaluator firewall; holdout budget; no profitability claim.
+- Phase 7 (Governance) COMPLETE and `APPROVED`: `src/governance/` — `PolicyEngine.h`,
+  `ForbiddenBehavior.h`, `PromotionGate.h`, `HumanDecision.h`, `AuditLedger.h`,
+  `GovernanceTests.cpp` (`GOV-0001`..`GOV-0006`). Policy-by-change-type; hard-forbidden boundary;
+  promotion requires every gate incl. human approval and shadow state; append-only audit; no
+  self-promotion.
+- Phase 8 (Operating Window & Recovery) COMPLETE and `APPROVED`: `src/operatingwindow/` —
+  `OperatingWindow.h`, `Checkpoint.h`, `ResourceBudget.h`, `WindowOrchestrator.h`,
+  `OperatingWindowTests.cpp` (`WIN-0001`..`WIN-0005`). Human-bounded 3–8h window with no
+  self-extension; recovery prefers valid checkpoint/known-good and never guesses; controlled drain.
+- Phase 9 (Desktop Control Center) COMPLETE and `APPROVED` as headless deterministic view-models:
+  `src/desktop/` — `ControlCenterViewModels.h`, `DashboardProjector.h`, `DesktopTests.cpp`
+  (`DESK-0001`..`DESK-0003`). No GUI toolkit; read-only projections; unknown never fabricated.
+- Phase 10 (Auxiliary Telegram) COMPLETE and `APPROVED`, secret-free: `src/telegram/` —
+  `TelegramConfig.h`, `TelegramMessage.h`, `ApprovalRequest.h`, `TelegramGateway.h`,
+  `NotificationPolicy.h`, `TelegramTests.cpp` (`TG-0001`..`TG-0006`). No embedded token; disabled
+  gateway is a safe no-op; bounded approval pipeline; failure notifications never suppressed.
+- Phase 11 (Controlled Real-World Validation) COMPLETE and `APPROVED` as a gate/registry, NOT a
+  live path: `src/realworld/` — `RealWorldValidation.h`, `ValidationRegistry.h`,
+  `RealWorldTests.cpp` (`RW-0001`..`RW-0003`). All readiness gates required; never automatic; no
+  profitability/safety claim; execution remains a separate human action.
+
+- Verification: every new header self-contained + combined TU under c++17/c++20 strict; all 16 test
+  suites PASS under both standards (`LearningTests`, `ResearchTests`, `EvolutionTests`,
+  `ValidationTests`, `GovernanceTests`, `OperatingWindowTests`, `DesktopTests`, `TelegramTests`,
+  `RealWorldTests`, plus the pre-existing suites).
+- Manifest now 172 tasks; Phases 0–11 are all decomposed into file-level tasks with acceptance
+  criteria and evidence.
+
 ## Current task
 
-- Phases 0, 0.5, 1 and 2 are COMPLETE and `APPROVED`. Conceptual Phase 3/4/5 verification and the
-  MT5 one-EA/nine-stream boundary are done. Canonical Phases 3–4 are now COMPLETE and `APPROVED`.
-- Canonical Phases 5–11 (Evolution, Validation, Governance, Operating Window & Recovery, Desktop
-  Control Center, Telegram, Controlled Real-World Validation) are promoted and in progress.
-- Real MT5 terminal validation remains the final step and is environment-limited (no MetaEditor/MT5
-  on Linux).
+- All canonical Phases 0–11 are COMPLETE and `APPROVED` at the statically-verified, behaviourally
+  tested level. Phase 11 is deliberately gated: real MT5 execution readiness is UNPROVEN in this
+  environment and no unattended live trading is enabled.
+- Real MT5 terminal validation remains the final gated step and is environment-limited (no
+  MetaEditor/MT5 on Linux).
 
 ## Next action
 
-1. Implement canonical Phases 5–11 sequentially with real tests, updating the control plane per wave.
-2. Preserve implementation + state in Git after each wave.
-3. Perform final MT5 validation last (demo/shadow only) if a MetaEditor/MT5 environment is available.
+1. When a MetaEditor/MT5 environment becomes available, run Phase 11 controlled validation
+   (demo/shadow only) behind the readiness gate; record real results in `TEST_LOG.md`.
+2. Keep the control plane and manifest updated per wave; preserve state in Git.
+3. Do not enable unattended live trading or make profitability/safety claims without evidence.
 
 ## Update rule
 

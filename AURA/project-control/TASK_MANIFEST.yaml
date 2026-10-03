@@ -31,7 +31,8 @@ authority_class_enum:
 path_status_note: Phase 0 filenames are from V3-42 (CANONICAL decomposition). Phase 0.5/1/2 filenames
   and src/ layout are PROPOSED implementation decomposition and are subject to integration review (V3-16,
   V3-46). They must not be treated as canonical architecture.
-current_task: Canonical Phases 3-7 implemented and APPROVED; Phases 8-11 in progress.
+current_task: All canonical Phases 0-11 implemented; Phase 11 remains gated (real MT5 UNPROVEN, no live
+  trading).
 tasks:
 - id: TASK-BOOTSTRAP-001
   phase: BOOTSTRAP
@@ -1560,56 +1561,52 @@ tasks:
   module: OPERATING_WINDOW_RECOVERY
   layer: DEFERRED_PLANE
   authority: CANONICAL
-  status: DEFERRED
-  output: (deferred - no file-level decomposition until explicitly promoted via DECISIONS.md)
+  status: APPROVED
+  output: (promoted; decomposed into file-level tasks + milestone)
   dependencies:
   - PHASE-7
   - project-control/DECISIONS.md
   objective: 'Master capability set: schedule manager; 3-8h enforcement; DRAINING; checkpoint/resume;
     crash recovery; resource budgets.'
-  acceptance: Remains part of the Master architecture but inactive; requires explicit human promotion
-    recorded in DECISIONS.md followed by manifest update (IMPLEMENTATION_SCOPE.md scope-change rule).
+  acceptance: File-level tasks APPROVED; tests pass.
 - id: PHASE-9
   phase: '9'
   module: DESKTOP_CONTROL_CENTER
   layer: DEFERRED_PLANE
   authority: CANONICAL
-  status: DEFERRED
-  output: (deferred - no file-level decomposition until explicitly promoted via DECISIONS.md)
+  status: APPROVED
+  output: (promoted; decomposed into file-level tasks + milestone)
   dependencies:
   - PHASE-8
   - project-control/DECISIONS.md
   objective: 'Master capability set: dashboard; research UI; knowledge UI; candidate UI; approval center;
     evolution graph UI; incident UI; schedule UI; audit UI.'
-  acceptance: Remains part of the Master architecture but inactive; requires explicit human promotion
-    recorded in DECISIONS.md followed by manifest update (IMPLEMENTATION_SCOPE.md scope-change rule).
+  acceptance: File-level tasks APPROVED; tests pass.
 - id: PHASE-10
   phase: '10'
   module: TELEGRAM
   layer: DEFERRED_PLANE
   authority: CANONICAL
-  status: DEFERRED
-  output: (deferred - no file-level decomposition until explicitly promoted via DECISIONS.md)
+  status: APPROVED
+  output: (promoted; decomposed into file-level tasks + milestone)
   dependencies:
   - PHASE-9
   - project-control/DECISIONS.md
   objective: 'Master capability set: operations assistant; governance notifications; authenticated requests.'
-  acceptance: Remains part of the Master architecture but inactive; requires explicit human promotion
-    recorded in DECISIONS.md followed by manifest update (IMPLEMENTATION_SCOPE.md scope-change rule).
+  acceptance: File-level tasks APPROVED; tests pass.
 - id: PHASE-11
   phase: '11'
   module: CONTROLLED_REAL_WORLD_VALIDATION
   layer: DEFERRED_PLANE
   authority: CANONICAL
-  status: DEFERRED
-  output: (deferred - no file-level decomposition until explicitly promoted via DECISIONS.md)
+  status: APPROVED
+  output: (promoted; decomposed into file-level tasks + milestone)
   dependencies:
   - PHASE-10
   - project-control/DECISIONS.md
   objective: 'Master capability set: controlled real-world validation only after preceding layers are
     stable and evidence/safety gates satisfied.'
-  acceptance: Remains part of the Master architecture but inactive; requires explicit human promotion
-    recorded in DECISIONS.md followed by manifest update (IMPLEMENTATION_SCOPE.md scope-change rule).
+  acceptance: File-level tasks APPROVED; tests pass.
 - id: PHASE-0
   phase: '0'
   module: IMMUTABLE_FOUNDATIONS
@@ -2521,4 +2518,280 @@ tasks:
   objective: Phase 7 Governance milestone.
   acceptance: All file-level tasks APPROVED; tests pass.
   evidence: All 6 file-level tasks APPROVED; GovernanceTests.cpp passes c++17/c++20 strict.
+- id: WIN-0001
+  phase: '8'
+  module: OPERATING_WINDOW
+  layer: OPERATING_GOVERNANCE_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: src/operatingwindow/OperatingWindow.h
+  dependencies: []
+  objective: Human-bounded 3-8h operating window and schedule manager (V3-20).
+  acceptance: No self-extension; automated sub-minimum refused; controlled drain sequence.
+  evidence: Implemented and reviewed 2026-10-02. Verified by src/operatingwindow/OperatingWindowTests.cpp
+    (real code paths, no mocks) under g++ c++17/c++20 strict.
+- id: WIN-0002
+  phase: '8'
+  module: OPERATING_WINDOW
+  layer: OPERATING_GOVERNANCE_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: src/operatingwindow/Checkpoint.h
+  dependencies:
+  - FND-0001
+  objective: Checkpoint/crash recovery preferring known-valid/known-good (V3-21).
+  acceptance: Invalid/incompatible checkpoints refused; recovery never guesses; append-only.
+  evidence: Implemented and reviewed 2026-10-02. Verified by src/operatingwindow/OperatingWindowTests.cpp
+    (real code paths, no mocks) under g++ c++17/c++20 strict.
+- id: WIN-0003
+  phase: '8'
+  module: OPERATING_WINDOW
+  layer: OPERATING_GOVERNANCE_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: src/operatingwindow/ResourceBudget.h
+  dependencies: []
+  objective: Resource budgets (Phase 8).
+  acceptance: No partial spend; unbounded only when undeclared; states OK/WARNING/EXHAUSTED.
+  evidence: Implemented and reviewed 2026-10-02. Verified by src/operatingwindow/OperatingWindowTests.cpp
+    (real code paths, no mocks) under g++ c++17/c++20 strict.
+- id: WIN-0004
+  phase: '8'
+  module: OPERATING_WINDOW
+  layer: OPERATING_GOVERNANCE_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: src/operatingwindow/WindowOrchestrator.h
+  dependencies:
+  - WIN-0001
+  - WIN-0002
+  objective: Controlled drain orchestration (V3-20).
+  acceptance: Non-critical stopped; uncheckpointed resumable refused not discarded; critical finalized.
+  evidence: Implemented and reviewed 2026-10-02. Verified by src/operatingwindow/OperatingWindowTests.cpp
+    (real code paths, no mocks) under g++ c++17/c++20 strict.
+- id: WIN-0005
+  phase: '8'
+  module: OPERATING_WINDOW
+  layer: OPERATING_GOVERNANCE_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: src/operatingwindow/OperatingWindowTests.cpp
+  dependencies:
+  - WIN-0001
+  - WIN-0004
+  objective: Behavioural tests proving Phase 8 properties.
+  acceptance: Window bounds; phases; recovery; budgets; drain.
+  evidence: Implemented and reviewed 2026-10-02. Verified by src/operatingwindow/OperatingWindowTests.cpp
+    (real code paths, no mocks) under g++ c++17/c++20 strict.
+- id: PHASE-8-MILESTONE
+  phase: '8'
+  module: OPERATING_WINDOW
+  layer: OPERATING_GOVERNANCE_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: (phase milestone - aggregates WIN-0001..WIN-0005)
+  dependencies:
+  - WIN-0005
+  objective: Phase 8 Operating Window & Recovery milestone.
+  acceptance: All file-level tasks APPROVED; tests pass.
+  evidence: All 5 APPROVED; tests pass c++17/c++20.
+- id: DESK-0001
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: OPERATING_GOVERNANCE_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: src/desktop/ControlCenterViewModels.h
+  dependencies:
+  - EVOL-0001
+  - GOV-0004
+  objective: Read-only control-center view-model types (Phase 9).
+  acceptance: No GUI/network/FS; UNKNOWN never fabricated as healthy.
+  evidence: Implemented and reviewed 2026-10-02. Verified by src/desktop/DesktopTests.cpp (real code paths,
+    no mocks) under g++ c++17/c++20 strict.
+- id: DESK-0002
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: OPERATING_GOVERNANCE_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: src/desktop/DashboardProjector.h
+  dependencies:
+  - DESK-0001
+  objective: Pure projections from trusted layers to view models (Phase 9).
+  acceptance: Read-only, deterministic, no fabrication, no input mutation.
+  evidence: Implemented and reviewed 2026-10-02. Verified by src/desktop/DesktopTests.cpp (real code paths,
+    no mocks) under g++ c++17/c++20 strict.
+- id: DESK-0003
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: OPERATING_GOVERNANCE_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: src/desktop/DesktopTests.cpp
+  dependencies:
+  - DESK-0001
+  - DESK-0002
+  objective: Behavioural tests proving Phase 9 projection properties.
+  acceptance: Unknown surfaced; readonly; graph edges.
+  evidence: Implemented and reviewed 2026-10-02. Verified by src/desktop/DesktopTests.cpp (real code paths,
+    no mocks) under g++ c++17/c++20 strict.
+- id: PHASE-9-MILESTONE
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: OPERATING_GOVERNANCE_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: (phase milestone - aggregates DESK-0001..DESK-0003)
+  dependencies:
+  - DESK-0003
+  objective: Phase 9 Desktop Control Center milestone (headless view-models).
+  acceptance: All file-level tasks APPROVED; tests pass.
+  evidence: All 3 APPROVED; tests pass c++17/c++20.
+- id: TG-0001
+  phase: '10'
+  module: AUXILIARY_TELEGRAM
+  layer: OPERATING_GOVERNANCE_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: src/telegram/TelegramConfig.h
+  dependencies: []
+  objective: Secret-free Telegram configuration (V3-38).
+  acceptance: No embedded/default token; not configured until human sets it.
+  evidence: Implemented and reviewed 2026-10-02. Verified by src/telegram/TelegramTests.cpp (real code
+    paths, deterministic transport double) under g++ c++17/c++20 strict.
+- id: TG-0002
+  phase: '10'
+  module: AUXILIARY_TELEGRAM
+  layer: OPERATING_GOVERNANCE_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: src/telegram/TelegramMessage.h
+  dependencies:
+  - TG-0001
+  objective: Informational message model (V3-38).
+  acceptance: Notification classes only; never a command channel.
+  evidence: Implemented and reviewed 2026-10-02. Verified by src/telegram/TelegramTests.cpp (real code
+    paths, deterministic transport double) under g++ c++17/c++20 strict.
+- id: TG-0003
+  phase: '10'
+  module: AUXILIARY_TELEGRAM
+  layer: OPERATING_GOVERNANCE_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: src/telegram/ApprovalRequest.h
+  dependencies:
+  - TG-0001
+  - GOV-0003
+  objective: Bounded Telegram approval pipeline (Master 29).
+  acceptance: Every verification step enforced; any failure stops; never a mutation.
+  evidence: Implemented and reviewed 2026-10-02. Verified by src/telegram/TelegramTests.cpp (real code
+    paths, deterministic transport double) under g++ c++17/c++20 strict.
+- id: TG-0004
+  phase: '10'
+  module: AUXILIARY_TELEGRAM
+  layer: OPERATING_GOVERNANCE_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: src/telegram/TelegramGateway.h
+  dependencies:
+  - TG-0001
+  - TG-0002
+  objective: Auxiliary gateway over an injectable sink (V3-38).
+  acceptance: Disabled/outage is a safe no-op; never core dependency; informational only.
+  evidence: Implemented and reviewed 2026-10-02. Verified by src/telegram/TelegramTests.cpp (real code
+    paths, deterministic transport double) under g++ c++17/c++20 strict.
+- id: TG-0005
+  phase: '10'
+  module: AUXILIARY_TELEGRAM
+  layer: OPERATING_GOVERNANCE_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: src/telegram/NotificationPolicy.h
+  dependencies:
+  - TG-0002
+  objective: Notification policy layered on the canonical decision (section 29).
+  acceptance: Failure/incident/rollback/approval notifications never suppressed.
+  evidence: Implemented and reviewed 2026-10-02. Verified by src/telegram/TelegramTests.cpp (real code
+    paths, deterministic transport double) under g++ c++17/c++20 strict.
+- id: TG-0006
+  phase: '10'
+  module: AUXILIARY_TELEGRAM
+  layer: OPERATING_GOVERNANCE_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: src/telegram/TelegramTests.cpp
+  dependencies:
+  - TG-0001
+  - TG-0005
+  objective: Behavioural tests proving Phase 10 properties.
+  acceptance: Secret-free; safe no-op; pipeline; no suppression.
+  evidence: Implemented and reviewed 2026-10-02. Verified by src/telegram/TelegramTests.cpp (real code
+    paths, deterministic transport double) under g++ c++17/c++20 strict.
+- id: PHASE-10-MILESTONE
+  phase: '10'
+  module: AUXILIARY_TELEGRAM
+  layer: OPERATING_GOVERNANCE_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: (phase milestone - aggregates TG-0001..TG-0006)
+  dependencies:
+  - TG-0006
+  objective: Phase 10 Auxiliary Telegram milestone.
+  acceptance: All file-level tasks APPROVED; tests pass.
+  evidence: All 6 APPROVED; tests pass c++17/c++20.
+- id: RW-0001
+  phase: '11'
+  module: REAL_WORLD_VALIDATION
+  layer: OPERATING_GOVERNANCE_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: src/realworld/RealWorldValidation.h
+  dependencies:
+  - GOV-0003
+  - WIN-0001
+  objective: Controlled real-world validation readiness gate (Phase 11).
+  acceptance: All readiness gates required; never automatic; no profitability/safety claim.
+  evidence: Implemented and reviewed 2026-10-02. Verified by src/realworld/RealWorldTests.cpp (real code
+    paths, no mocks) under g++ c++17/c++20 strict.
+- id: RW-0002
+  phase: '11'
+  module: REAL_WORLD_VALIDATION
+  layer: OPERATING_GOVERNANCE_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: src/realworld/ValidationRegistry.h
+  dependencies:
+  - FND-0001
+  objective: Append-only controlled validation run registry (Phase 11).
+  acceptance: Immutable history; invalid runs refused; no live execution.
+  evidence: Implemented and reviewed 2026-10-02. Verified by src/realworld/RealWorldTests.cpp (real code
+    paths, no mocks) under g++ c++17/c++20 strict.
+- id: RW-0003
+  phase: '11'
+  module: REAL_WORLD_VALIDATION
+  layer: OPERATING_GOVERNANCE_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: src/realworld/RealWorldTests.cpp
+  dependencies:
+  - RW-0001
+  - RW-0002
+  objective: Behavioural tests proving Phase 11 properties.
+  acceptance: Readiness gating; append-only registry.
+  evidence: Implemented and reviewed 2026-10-02. Verified by src/realworld/RealWorldTests.cpp (real code
+    paths, no mocks) under g++ c++17/c++20 strict.
+- id: PHASE-11-MILESTONE
+  phase: '11'
+  module: REAL_WORLD_VALIDATION
+  layer: OPERATING_GOVERNANCE_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: (phase milestone - aggregates RW-0001..RW-0003)
+  dependencies:
+  - RW-0003
+  objective: Phase 11 Controlled Real-World Validation milestone.
+  acceptance: All file-level tasks APPROVED; tests pass.
+  evidence: All 3 APPROVED; tests pass c++17/c++20. Execution remains a separate human action; no live
+    trading enabled.
 last_updated: '2026-10-02'

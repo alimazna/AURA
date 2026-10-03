@@ -91,6 +91,28 @@ Date: 2026-10-02
   explicit `DECISIONS.md` entry.
 - Pushed to `origin/main`; remote URL is token-free and no credential is persisted anywhere.
 
+### Session end state (2026-10-02, canonical Phases 8-11)
+
+- Phase 8 (Operating Window & Recovery) COMPLETE and `APPROVED`: `src/operatingwindow/` --
+  `OperatingWindow`, `Checkpoint`, `ResourceBudget`, `WindowOrchestrator`, `OperatingWindowTests.cpp`
+  (`WIN-0001`..`WIN-0005`). Human-bounded 3-8h window, no self-extension; recovery prefers a valid
+  checkpoint/known-good and never guesses; controlled drain.
+- Phase 9 (Desktop Control Center) COMPLETE and `APPROVED` as headless deterministic view-models:
+  `src/desktop/` -- `ControlCenterViewModels`, `DashboardProjector`, `DesktopTests.cpp`
+  (`DESK-0001`..`DESK-0003`). No GUI toolkit; read-only projections; unknown never fabricated.
+- Phase 10 (Auxiliary Telegram) COMPLETE and `APPROVED`, secret-free: `src/telegram/` --
+  `TelegramConfig`, `TelegramMessage`, `ApprovalRequest`, `TelegramGateway`, `NotificationPolicy`,
+  `TelegramTests.cpp` (`TG-0001`..`TG-0006`). No embedded token; disabled gateway is a safe no-op;
+  bounded approval pipeline; failure notifications never suppressed.
+- Phase 11 (Controlled Real-World Validation) COMPLETE and `APPROVED` as a gate/registry, NOT a live
+  path: `src/realworld/` -- `RealWorldValidation`, `ValidationRegistry`, `RealWorldTests.cpp`
+  (`RW-0001`..`RW-0003`). All readiness gates required; never automatic; no profitability/safety claim.
+- Verification: all Phase 8/9/10/11 headers self-contained + combined TU under c++17/c++20 strict; all
+  16 test suites PASS under both standards. No live trading path; Phase 11 execution remains a
+  separate, gated human action; real MT5 readiness still UNPROVEN.
+- Manifest now 172 tasks; Phases 0-11 all decomposed with acceptance criteria + evidence.
+
+
 ### Session end state (2026-10-02, canonical Phases 5–7)
 
 - Phase 5 (Evolution) COMPLETE and `APPROVED`: `src/evolution/` — `Candidate`, `CandidateRegistry`,

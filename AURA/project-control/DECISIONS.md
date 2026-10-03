@@ -198,6 +198,31 @@ Only explicit human decisions belong here.
 - **Scope-change flag:** No. Implements the Phase 9 capability set at the projection layer.
 - **Master V3 status:** Preserved unchanged.
 
+## 2026-10-02 — Phases 5–11 completion; Telegram secret-free; Phase 11 gated, no live trading
+
+- **Date:** 2026-10-02
+- **Decision:**
+  1. Canonical Phases 5–7 (Evolution, Validation, Governance), Phase 8 (Operating Window & Recovery),
+     Phase 9 (Desktop Control Center, headless view-models per the earlier decision), Phase 10
+     (Auxiliary Telegram) and Phase 11 (Controlled Real-World Validation) are implemented at the
+     statically-verified, behaviourally-tested level and marked `APPROVED`.
+  2. **Telegram remains secret-free.** No bot token is embedded in source, no default token is
+     invented, and the gateway is not configured until a human operator supplies the token and
+     authorized user ids out-of-band. A disabled/unconfigured gateway is a safe no-op and is never a
+     core dependency.
+  3. **Phase 11 is a gate and registry only, not a live path.** It decides whether readiness
+     preconditions are satisfied and records controlled runs immutably. It never enables unattended
+     live trading, never executes automatically, and makes no profitability, calibrated-probability,
+     broker-validation or production-safety claim. Real MT5 execution readiness remains UNPROVEN in
+     this environment (no MetaEditor/MT5 on Linux); execution remains a separate, gated human action.
+- **Rationale:** V3-38 makes Telegram auxiliary and forbids it from becoming source of truth or
+  required for core safety; V3-40 Phase 11 is explicitly "only after the preceding layers are stable
+  and the applicable evidence/safety gates have been satisfied". Recording these as explicit
+  decisions preserves the safety model rather than silently authorising a live path.
+- **Affected tasks:** `EVOL-*`, `VALID-*`, `GOV-*`, `WIN-*`, `DESK-*`, `TG-*`, `RW-*`; Phases 5–11.
+- **Scope-change flag:** No. Implements the promoted scope; execution authority is unchanged.
+- **Master V3 status:** Preserved unchanged.
+
 ## Decision format
 
 For each future material decision record:
