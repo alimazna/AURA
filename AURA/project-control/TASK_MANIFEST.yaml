@@ -39,15 +39,17 @@ current_task: 'Canonical Phases 0-13 COMPLETE and TESTED, plus Phase 9 desktop p
   V3-37 section (GUI-0004..GUI-0006: wired sections bound to live runtime data; unsourced sections
   explicit NOT AVAILABLE), an OpenGL 3.3 -> OpenGL 2.1 renderer fallback for legacy GPUs
   (GUI-0007..GUI-0008, TESTED on software GL; the specific Intel HD 3000 hardware is UNPROVEN,
-  BLOCK-006), and a professional visual redesign (GUI-0009..GUI-0013: design system, grouped navigation,
-  rebuilt panels, window shell, real per-stream sequence + deterministic relative freshness). Manifest
-  graph 213 tasks. NEW (2026-10-03): the XAUUSD candlestick chart with a horizontal timeframe selector
-  (GUI-0015..GUI-0020) is implemented and locally TESTED — a pure, ImGui-free chart model
-  (CandleChart.h) projected from the closed bars the runtime actually retained, rendered above-chart by a
-  fixed-function widget (CandleChartWidget.h), M15 default, all nine timeframes selectable by explicit
-  identity, no fabrication (NO CANDLE DATA, non-finite/non-closed bars dropped). Remaining are
-  environment/data-unproven only (real-Windows-desktop interactive GUI on legacy GPU, real
-  MT5/MetaEditor round-trip, licensed XAUUSD datasets).'
+  BLOCK-006), a professional visual redesign (GUI-0009..GUI-0013: design system, grouped navigation,
+  rebuilt panels, window shell, real per-stream sequence + deterministic relative freshness), an XAUUSD
+  candlestick chart with a horizontal timeframe selector (GUI-0015..GUI-0020: a pure, ImGui-free chart
+  model CandleChart.h projected from the closed bars the runtime actually retained, rendered
+  above-chart by a fixed-function widget CandleChartWidget.h, M15 default, all nine timeframes selectable
+  by explicit identity, no fabrication), and a PREMIUM GUI OVERHAUL (GUI-0021..GUI-0024, 2026-10-03):
+  refined design system + chart-first Dashboard recomposition + real deterministic SCORE (RT-0011) /
+  CONFIDENCE (RT-0012) / realized shadow success-rate surfaced in the GUI (GUI-0023) - explicitly NOT a
+  calibrated probability - with a GUI-free deterministic projection test (GUI-0024). Manifest graph 217
+  tasks. Remaining are environment/data-unproven only (real-Windows-desktop interactive GUI on legacy
+  GPU, real MT5/MetaEditor round-trip, licensed XAUUSD datasets).'
 tasks:
 - id: TASK-BOOTSTRAP-001
   phase: BOOTSTRAP
@@ -3446,6 +3448,100 @@ tasks:
     formatter; all deterministic, no mocks, no wall clock.
   evidence: 'DONE 2026-10-03: added seven chart tests; DesktopTests ALL PASS (g++ c++17 strict); full
     CTest 19/19 under the GUI build. See TEST_LOG.md.'
+- id: GUI-0021
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: APPLICATION_PLANE
+  authority: PROPOSED
+  status: TESTED
+  output: src/desktop/AuraTheme.h, src/desktop/AuraWidgets.h, tools/aura_gui.cpp
+  dependencies:
+  - GUI-0013
+  - GUI-0018
+  objective: Premium terminal visual overhaul of the shared design system and window shell - refined
+    typography, spacing, radii and a chart-first hierarchy - while keeping the deep-navy/cyan identity,
+    the single-runtime owner and the shadow-only invariant unchanged.
+  acceptance: The theme applies an elevated, consistent style (comfortable type scale, hairline borders,
+    measured region spacing, deeper panel separation) built only from fixed-function ImGui/OpenGL
+    primitives so it renders identically on OpenGL 2.1 and 3.3; the header presents brand/instrument on
+    the left and real status (TF, shadow-only, market health, renderer) measured and right-aligned rather
+    than offset by a hard-coded pixel count; the sidebar uses custom nav rows with an accent selection
+    bar driven by the real page index; the status bar is a slim strip of real values. No new data source
+    and no order path.
+  evidence: 'DONE 2026-10-03: apply_aura_style refined (ChildRounding 8, FrameRounding 5, FrameBorderSize
+    0, WindowPadding 16/12, CellPadding 12/6, ItemSpacing 12/10, ScrollbarSize 10); io.FontGlobalScale
+    1.10; kSidebarWidth 232->200, kStatusBarHeight 30->24; added widgets::nav_item, status_item,
+    metric_block, success_meter; aura_gui top bar and status bar rebuilt with measured right-alignment.
+    Verified by Xvfb captures at 1600x900 and 1280x720 under MODERN_GL33 and LEGACY_GL21; OCR confirms the
+    header renders AURA | XAUUSD | MARKET INTELLIGENCE ... TF M15 SHADOW ONLY MARKET HEALTHY RENDERER
+    MODERN_GL33 on a single line on both backends. Build clean; CTest unaffected.'
+- id: GUI-0022
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: APPLICATION_PLANE
+  authority: PROPOSED
+  status: TESTED
+  output: src/desktop/GuiPanels.h (draw_dashboard, draw_market_strip, draw_main_chart)
+  dependencies:
+  - GUI-0021
+  objective: Recompose the Dashboard from card-heavy blocks into a premium, chart-first terminal layout -
+    a market information strip, the large candlestick chart as the dominant workspace element, a compact
+    real-value status strip, and supporting analytics - without fabricating any value.
+  acceptance: The Dashboard leads with a market strip (symbol, selected timeframe, real last closed price
+    and close time, stream state, data quality, bar count) and a chart whose height adapts to the viewport
+    (min 320, max 660 px) so it dominates at 1600x900 and still renders at 1280x720; the six-value status
+    strip is a single aligned row (SYSTEM / DATA STREAMS / SCORE / SIGNAL / RISK / MODE); the timeframe
+    selector remains above the chart; absent values show N/A / NOT AVAILABLE. Presentation only; no runtime
+    reach-through and no order path.
+  evidence: 'DONE 2026-10-03: replaced the four oversized status cards and the nine-timeframe summary card
+    in the Dashboard with draw_market_strip + a full-width draw_main_chart + a six-column 116px status
+    strip (later a borderless table to fix column alignment) + a three-card success-metrics row. Verified
+    by Xvfb captures at 1600x900 and 1280x720 under MODERN and LEGACY: chart spans the workspace; OCR of
+    the strip reads SYSTEM HEALTHY | DATA STREAMS 9/9 | SCORE 0.97 | SIGNAL LONG | RISK PROPOSED | MODE
+    SHADOW with no vertical cascade and no overlap.'
+- id: GUI-0023
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: APPLICATION_PLANE
+  authority: PROPOSED
+  status: TESTED
+  output: src/runtime/ApplicationPipeline.h, src/desktop/DesktopModel.h, src/desktop/GuiPanels.h
+  dependencies:
+  - GUI-0022
+  objective: Surface AURA real deterministic score (RT-0011) and confidence (RT-0012), plus realized
+    shadow outcomes, in the GUI - without inventing a calibrated success probability that AURA does not
+    compute.
+  acceptance: The pipeline exposes last_score()/last_confidence() and cumulative realized outcome counts
+    (positions_closed, wins) derived incrementally from the shadow simulator; DesktopModel projects them;
+    the GUI shows score and confidence bounded to [0,1] and a realized shadow success rate (wins/closed)
+    only once a position has closed, each labelled as NOT a probability / NOT calibrated. When no signal
+    or no close exists the fields are marked NOT AVAILABLE / N/A, never a fabricated 0%; wins can never
+    exceed closed positions.
+  evidence: 'DONE 2026-10-03: ApplicationPipeline gained last_score_/last_confidence_ members and accessors
+    and EngineStatus.positions_closed/wins (win = net realised P&L > 0 on a full close, deterministic, no
+    clock); DesktopModel SignalPanel gained score/confidence/outcome fields copied verbatim from the
+    pipeline; Dashboard shows SCORE/CONFIDENCE/REALIZED SHADOW RATE meters and the Signals panel shows
+    real score/confidence. Verified: DesktopTests test_real_metrics_projection PASS (empty -> unavailable;
+    fed -> score/confidence present, bounded, equal to pipeline values; wins <= closed; deterministic).
+    Live capture shows SCORE 0.97, CONFIDENCE 97%, success rate from 37 closed / 8 up. No probability
+    claimed.'
+- id: GUI-0024
+  phase: '9'
+  module: DESKTOP_CONTROL_CENTER
+  layer: OPERATING_GOVERNANCE_PLANE
+  authority: PROPOSED
+  status: TESTED
+  output: src/desktop/DesktopTests.cpp (extended)
+  dependencies:
+  - GUI-0023
+  objective: Prove the new real-metric projection and the no-fabrication contract deterministically and
+    GUI-free, so correctness is not inferred from compilation or a screenshot alone.
+  acceptance: Tests assert score/confidence are absent with no signal and present, bounded and equal to the
+    pipeline values after a real run; realized outcomes are consistent (wins <= closed) and marked
+    unavailable until a close; a second capture is identical; the shadow-only invariant holds. All
+    deterministic, no mocks, no wall clock.
+  evidence: 'DONE 2026-10-03: added test_real_metrics_projection; DesktopTests ALL PASS; full CTest 19/19
+    (GUI build) and 18/18 (GUI off). See TEST_LOG.md.'
 - id: MT5-REAL-0001
   phase: DEFERRED
   module: MT5_RUNTIME

@@ -851,6 +851,59 @@ static void test_chart_utc_formatter() {
     CHECK(desktop::format_utc_minute(foundation::Timestamp::from_seconds(0)) == "01-01 00:00");
 }
 
+static void test_real_metrics_projection() {
+    // The desktop projection must surface AURA's REAL deterministic score and
+    // confidence (RT-0011/RT-0012) computed by the pipeline, plus the realized
+    // shadow outcomes. It must never fabricate a value: with no signal there is
+    // no score/confidence, and with no closed position the realized counts are
+    // zero and marked unavailable.
+    desktop::ControlCenterOptions empty_opts;
+    desktop::ControlCenterState empty_state(empty_opts);
+    const auto& empty_snap = empty_state.refresh();
+    CHECK(!empty_snap.signal.score_available);
+    CHECK(!empty_snap.signal.confidence_available);
+    CHECK(!empty_snap.signal.outcomes_available);
+    CHECK(empty_snap.signal.positions_closed == 0);
+
+    // After a real run, score/confidence are present and bounded to [0,1], and
+    // they originate from the pipeline (not the desktop layer).
+    desktop::ControlCenterOptions options;  // in-memory
+    desktop::ControlCenterState state(options);
+    for (const std::string& f : frames(40)) state.shell().feed(f + "\n");
+    const auto& snap = state.refresh();
+
+    CHECK(snap.signal.available);
+    CHECK(snap.signal.score_available);
+    CHECK(snap.signal.score >= 0.0 && snap.signal.score <= 1.0);
+    CHECK(snap.signal.confidence_available);
+    CHECK(snap.signal.confidence >= 0.0 && snap.signal.confidence <= 1.0);
+
+    // The projected values equal the pipeline's own values (read-only copy).
+    const auto& pscore = state.shell().pipeline().last_score();
+    const auto& pconf = state.shell().pipeline().last_confidence();
+    CHECK(pscore.valid);
+    CHECK(pscore.score == snap.signal.score);
+    CHECK(pconf.valid);
+    CHECK(pconf.confidence == snap.signal.confidence);
+
+    // Realized outcomes are historical counts of closed shadow positions. Wins
+    // can never exceed closed positions.
+    CHECK(snap.positions.wins <= snap.positions.positions_closed);
+    CHECK(snap.signal.wins == snap.positions.wins);
+    CHECK(snap.signal.positions_closed == snap.positions.positions_closed);
+    CHECK(snap.signal.outcomes_available == (snap.positions.positions_closed > 0));
+
+    // Determinism: a second capture over identical state yields identical values.
+    const auto& again = state.refresh();
+    CHECK(again.signal.score == snap.signal.score);
+    CHECK(again.signal.confidence == snap.signal.confidence);
+    CHECK(again.signal.positions_closed == snap.signal.positions_closed);
+
+    // Shadow-only invariant unchanged by the projection.
+    CHECK(snap.shadow_only);
+    CHECK(snap.risk.is_order == false);
+}
+
 int main() {
     test_dashboard_no_fabrication();
     test_knowledge_projection_readonly();
@@ -877,6 +930,7 @@ int main() {
     test_chart_series_from_real_runtime();
     test_chart_empty_state_no_fake_candles();
     test_chart_utc_formatter();
+    test_real_metrics_projection();
     if (g_failures == 0) {
         std::printf("DesktopTests: ALL PASS\n");
         return 0;

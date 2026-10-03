@@ -6,10 +6,13 @@
 #include "desktop/CandleChartWidget.h"
 #include "desktop/ControlCenterState.h"
 #include "desktop/DesktopModel.h"
+#include "runtime/PositionSimulator.h"
+#include "runtime/SignalEngine.h"
 
 #include <imgui.h>
 
 #include <cstddef>
+#include <cstdio>
 #include <string>
 
 namespace aura {
@@ -24,6 +27,23 @@ namespace desktop {
 // is never mistaken for a healthy value or a zero.
 
 // ---- small local helpers ---------------------------------------------------
+
+// A human-readable direction label. LONG/SHORT are the real AURA signal/proposal
+// directions (SignalDirection in SignalEngine.h); they are never invented here.
+inline const char* direction_label(const std::string& d) {
+    if (d == runtime::to_string(runtime::SignalDirection::LONG)) return "LONG (bullish)";
+    if (d == runtime::to_string(runtime::SignalDirection::SHORT)) return "SHORT (bearish)";
+    if (d == runtime::to_string(runtime::SignalDirection::NONE)) return "NONE";
+    return d.c_str();
+}
+
+// Colour for a realized net P&L: green when positive, red when negative, neutral
+// otherwise. Purely presentational; the value is the real simulator output.
+inline ImVec4 pnl_color(double net) {
+    if (net > 0.0) return theme::kHealthy;
+    if (net < 0.0) return theme::kCritical;
+    return theme::kNeutral;
+}
 
 // The health string for a timeframe row: the stream's own service state, or an
 // explicit NOT AVAILABLE when the stream has not reported at all.
@@ -59,170 +79,171 @@ inline const TimeframeRow* find_timeframe_row(const TimeframePanel& panel,
     return nullptr;
 }
 
-// The XAUUSD market area: the primary visual element of the dashboard. It shows a
-// real OHLC candlestick chart for the selected timeframe, a timeframe selector,
-// and chart metadata sourced from the runtime. It never fabricates candles: a
-// timeframe with no real closed bars shows an explicit NO CANDLE DATA state, and
-// the metadata fields fall back to NOT AVAILABLE rather than a fake value.
-inline void draw_market_chart(const ControlCenterReport& r, ControlCenterState& state) {
+// Compact market information strip above the chart: symbol identity, selected
+// timeframe, the real last closed price and close time, stream state and data
+// quality for the selected stream. Every value comes from the real runtime; an
+// absent value is shown as N/A / NOT AVAILABLE, never fabricated.
+inline void draw_market_strip(const ControlCenterReport& r) {
     const CandleSeries& series = r.chart;
     const TimeframeRow* row = find_timeframe_row(r.snapshot.timeframes, series.timeframe);
 
-    widgets::card_begin("chart_card", nullptr, ImVec2(0.0f, 0.0f), 566.0f);
-
-    // Title strip with the symbol identity and the selected timeframe.
     ImGui::TextColored(theme::kTextPrimary, "XAUUSD");
-    ImGui::SameLine();
-    ImGui::TextColored(theme::kTextMuted, "\u00b7");
-    ImGui::SameLine();
+    ImGui::SameLine(0.0f, theme::kSpace2);
     ImGui::TextColored(theme::kAccent, "%s", series.label.c_str());
-    ImGui::SameLine();
-    ImGui::TextColored(theme::kTextMuted, "\u00b7 SHADOW ONLY");
+    ImGui::SameLine(0.0f, theme::kSpace2);
+    ImGui::TextColored(theme::kTextMuted, "\u00b7");
+    ImGui::SameLine(0.0f, theme::kSpace2);
+    ImGui::TextColored(theme::kTextSecondary, "MARKET INTELLIGENCE");
+    ImGui::SameLine(0.0f, theme::kSpace3);
+    ImGui::TextColored(theme::kShadow, "\u00b7 SHADOW ONLY");
 
-    // Timeframe selector: clicking switches the displayed candle stream.
-    ImGui::Spacing();
-    chart::timeframe_selector(state.timeframe_selection());
-    ImGui::Spacing();
-
-    // Chart metadata / context for the selected timeframe.
-    {
-        const int bars = static_cast<int>(series.candles.size());
-        ImGui::TextColored(theme::kTextMuted, "Closed bars");
-        ImGui::SameLine();
-        if (series.available) ImGui::TextColored(theme::kTextPrimary, "%d", bars);
-        else ImGui::TextColored(theme::kNotAvailable, "NOT AVAILABLE");
-
-        ImGui::SameLine();
-        ImGui::TextColored(theme::kTextMuted, "  |  Sequence");
-        ImGui::SameLine();
-        if (row != nullptr) widgets::value_cell(row->sequence.available, row->sequence.value);
-        else ImGui::TextColored(theme::kNotAvailable, "NOT AVAILABLE");
-
-        ImGui::SameLine();
-        ImGui::TextColored(theme::kTextMuted, "  |  Freshness");
-        ImGui::SameLine();
-        if (row != nullptr) widgets::state_cell(row->freshness);
-        else ImGui::TextColored(theme::kNotAvailable, "NOT AVAILABLE");
-
-        ImGui::SameLine();
-        ImGui::TextColored(theme::kTextMuted, "  |  Stream");
-        ImGui::SameLine();
-        if (row != nullptr) widgets::state_cell(row_health(*row));
-        else ImGui::TextColored(theme::kNotAvailable, "NOT AVAILABLE");
-    }
+    // Real values, right-aligned where available.
+    ImGui::TextColored(theme::kTextMuted, "LAST CLOSED");
+    ImGui::SameLine(0.0f, 6.0f);
     if (series.available) {
-        ImGui::TextColored(theme::kTextMuted, "Range");
-        ImGui::SameLine();
-        ImGui::TextColored(theme::kTextSecondary, "%.3f \u2013 %.3f", series.low, series.high);
-        ImGui::SameLine();
-        ImGui::TextColored(theme::kTextMuted, "  |  Last closed");
-        ImGui::SameLine();
-        ImGui::TextColored(theme::kTextSecondary, "%s",
-                           format_utc_minute(series.last_close).c_str());
+        ImGui::TextColored(theme::kTextPrimary, "%.3f", series.candles.back().close);
+        ImGui::SameLine(0.0f, theme::kSpace3);
+        ImGui::TextColored(theme::kTextMuted, "AT");
+        ImGui::SameLine(0.0f, 6.0f);
+        ImGui::TextColored(theme::kTextSecondary, "%s", format_utc_minute(series.last_close).c_str());
+    } else {
+        ImGui::TextColored(theme::kNotAvailable, "N/A");
     }
+    ImGui::SameLine(0.0f, theme::kSpace3);
+    ImGui::TextColored(theme::kTextMuted, "STREAM");
+    ImGui::SameLine(0.0f, 6.0f);
+    if (row != nullptr) widgets::state_cell(row_health(*row));
+    else ImGui::TextColored(theme::kNotAvailable, "NOT AVAILABLE");
+    ImGui::SameLine(0.0f, theme::kSpace3);
+    ImGui::TextColored(theme::kTextMuted, "QUALITY");
+    ImGui::SameLine(0.0f, 6.0f);
+    if (row != nullptr) widgets::state_cell(row->quality);
+    else ImGui::TextColored(theme::kNotAvailable, "NOT AVAILABLE");
+    ImGui::SameLine(0.0f, theme::kSpace3);
+    ImGui::TextColored(theme::kTextMuted, "BARS");
+    ImGui::SameLine(0.0f, 6.0f);
+    if (series.available)
+        ImGui::TextColored(theme::kTextPrimary, "%d", static_cast<int>(series.candles.size()));
+    else
+        ImGui::TextColored(theme::kNotAvailable, "N/A");
+}
 
-    ImGui::Spacing();
-    chart::candlestick_chart(series, 380.0f);
-    widgets::card_end();
+// The real XAUUSD candlestick chart, drawn full-width as the dominant workspace
+// element (no surrounding card box). `chart_h` is the caller-computed height.
+inline void draw_main_chart(const ControlCenterReport& r, float chart_h) {
+    const CandleSeries& series = r.chart;
+    if (!series.available) {
+        chart::no_candle_data(series, chart_h);
+        return;
+    }
+    chart::candlestick_chart(series, chart_h);
 }
 
 inline void draw_dashboard(const ControlCenterReport& r, ControlCenterState& state) {
     const ControlCenterSnapshot& s = r.snapshot;
-    widgets::section_header("Dashboard", "Read-only overview of the AURA shadow runtime");
 
-    // Primary element: the XAUUSD candlestick market area with timeframe selector.
-    draw_market_chart(r, state);
+    // ---- Market header: symbol / selected timeframe / real last close --------
+    draw_market_strip(r);
+
+    // ---- Timeframe / chart controls ------------------------------------------
+    ImGui::Spacing();
+    chart::timeframe_selector(state.timeframe_selection());
+    ImGui::Spacing();
+
+    // ---- Large candlestick chart: the dominant workspace element -------------
+    // Height is derived from available space so the chart dominates without
+    // clipping on smaller viewports (1280x720) or leaving empty zones on large
+    // ones. The supporting analytics below are reachable by scrolling.
+    {
+        const float reserved_below = 360.0f;  // space for strip + supporting cards
+        float chart_h = ImGui::GetContentRegionAvail().y - reserved_below;
+        if (chart_h < 320.0f) chart_h = 320.0f;
+        if (chart_h > 660.0f) chart_h = 660.0f;
+        draw_main_chart(r, chart_h);
+    }
+
+    ImGui::Spacing();
+    ImGui::Spacing();
+
+    // ---- Compact information / status strip ----------------------------------
+    // A single dense row of real values. Rendered as a borderless table so the
+    // columns align deterministically (a manual SameLine offset cascades and
+    // misaligns multi-line cells).
+    {
+        widgets::card_begin("dash_strip", nullptr, ImVec2(0.0f, 0.0f), 96.0f);
+        char score_buf[16];
+        score_buf[0] = '\0';
+        if (s.signal.score_available)
+            std::snprintf(score_buf, sizeof(score_buf), "%.2f", s.signal.score);
+        const std::string sig = s.signal.available ? s.signal.direction : std::string();
+
+        if (ImGui::BeginTable("dash_strip_table", 6,
+                              ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_NoBordersInBody)) {
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            widgets::metric_block("SYSTEM",
+                                  s.overview.healthy ? "HEALTHY" : s.overview.aggregate, true);
+            ImGui::TableNextColumn();
+            widgets::metric_block("DATA STREAMS",
+                                  std::to_string(s.overview.streams_healthy) + " / " +
+                                      std::to_string(s.overview.streams_total),
+                                  s.overview.streams_total > 0);
+            ImGui::TableNextColumn();
+            // Real deterministic score (RT-0011); a ranking value, not a probability.
+            widgets::metric_block("SCORE", score_buf, s.signal.score_available, "no signal");
+            ImGui::TableNextColumn();
+            widgets::metric_block("SIGNAL", sig, s.signal.available, "none yet");
+            ImGui::TableNextColumn();
+            widgets::metric_block("RISK", s.risk.available ? "PROPOSED" : "", s.risk.available,
+                                  "none yet");
+            ImGui::TableNextColumn();
+            widgets::metric_block("MODE", s.shadow_only ? "SHADOW" : "VIOLATED", true);
+            ImGui::EndTable();
+        }
+        widgets::card_end();
+    }
+
     ImGui::Spacing();
     ImGui::Spacing();
 
     const float avail = ImGui::GetContentRegionAvail().x;
     const float gap = theme::kSpace3;
-    const float card_w = (avail - gap * 3.0f) / 4.0f;
-    const float card_h = 138.0f;
 
-    // --- Status row: Health / Execution mode / Persistence / Recovery --------
-    widgets::card_begin("dash_health", "SYSTEM HEALTH", ImVec2(card_w, card_h));
-    widgets::badge(s.overview.healthy ? "HEALTHY" : s.overview.aggregate.c_str(),
-                   theme::status_color(s.overview.healthy ? "HEALTHY" : s.overview.aggregate));
-    ImGui::Spacing();
-    widgets::kv_row("Streams", std::to_string(s.overview.streams_healthy) + " / " +
-                                   std::to_string(s.overview.streams_total) + " healthy");
-    widgets::kv_row("Transport", s.overview.transport_connected ? "CONNECTED" : "UNKNOWN");
-    widgets::kv_row("Aggregate", s.overview.aggregate);
-    widgets::card_end();
+    // ---- Success metrics: real score / confidence / realized success rate ----
+    {
+        const float third = (avail - gap * 2.0f) / 3.0f;
+        widgets::card_begin("dash_score", "SCORE", ImVec2(third, 118.0f));
+        widgets::success_meter("SIGNAL SCORE", "deterministic ranking, not a probability",
+                               s.signal.score_available, s.signal.score, theme::kAccent);
+        widgets::card_end();
 
-    ImGui::SameLine(0.0f, gap);
-    widgets::card_begin("dash_mode", "EXECUTION MODE", ImVec2(card_w, card_h));
-    widgets::badge("SHADOW ONLY", theme::kShadow);
-    ImGui::Spacing();
-    widgets::kv_row("Mode", s.overview.operating_mode);
-    widgets::kv_row("Live orders", "NONE (no live path)");
-    widgets::kv_row("Invariant", s.shadow_only ? "HELD" : "VIOLATED");
-    widgets::card_end();
+        ImGui::SameLine(0.0f, gap);
+        widgets::card_begin("dash_conf", "CONFIDENCE", ImVec2(third, 118.0f));
+        widgets::success_meter("CONFIDENCE", "derived; not calibrated",
+                               s.signal.confidence_available, s.signal.confidence, theme::kHealthy);
+        widgets::card_end();
 
-    ImGui::SameLine(0.0f, gap);
-    widgets::card_begin("dash_persist", "PERSISTENCE", ImVec2(card_w, card_h));
-    widgets::badge(s.persistence.last_status.c_str(), theme::status_color(s.persistence.last_status));
-    ImGui::Spacing();
-    widgets::kv_row("Store", s.persistence.store_path);
-    widgets::kv_row("Records", std::to_string(s.persistence.records));
-    widgets::kv_row("Append-only", "YES");
-    widgets::card_end();
-
-    ImGui::SameLine(0.0f, gap);
-    widgets::card_begin("dash_recovery", "RECOVERY", ImVec2(card_w, card_h));
-    widgets::badge(s.persistence.lifecycle.c_str(), theme::status_color(s.persistence.lifecycle));
-    ImGui::Spacing();
-    widgets::kv_row("Resumable", s.persistence.resumable ? "YES" : "NO");
-    widgets::kv_row("Fresh start", s.persistence.fresh_start ? "yes" : "no");
-    widgets::kv_row("Known-good", s.persistence.used_known_good ? "yes" : "no");
-    widgets::card_end();
-
-    ImGui::Spacing();
-    ImGui::Spacing();
-
-    // --- Nine timeframe summary ---------------------------------------------
-    widgets::card_begin("dash_tf", "NINE TIMEFRAME SUMMARY", ImVec2(0.0f, 0.0f), 268.0f);
-    ImGui::TextColored(theme::kTextMuted,
-                       "%d / 9 streams reporting  \u00b7  identity is the explicit timeframe, "
-                       "never the row position",
-                       present_count(s.timeframes));
-    ImGui::Spacing();
-    if (ImGui::BeginTable("dash_tf_table", 6, widgets::table_flags(false, false))) {
-        ImGui::TableSetupColumn("TF", ImGuiTableColumnFlags_WidthFixed, 52.0f);
-        ImGui::TableSetupColumn("Health");
-        ImGui::TableSetupColumn("Quality");
-        ImGui::TableSetupColumn("Seq");
-        ImGui::TableSetupColumn("Freshness");
-        ImGui::TableSetupColumn("Signal");
-        ImGui::TableHeadersRow();
-        for (const TimeframeRow& row : s.timeframes.rows) {
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-            ImGui::TextColored(theme::kTextPrimary, "%s", row.label.c_str());
-            ImGui::TableNextColumn();
-            widgets::state_cell(row_health(row));
-            ImGui::TableNextColumn();
-            widgets::state_cell(row.quality);
-            ImGui::TableNextColumn();
-            widgets::value_cell(row.sequence.available, row.sequence.value);
-            ImGui::TableNextColumn();
-            widgets::state_cell(row.freshness);
-            ImGui::TableNextColumn();
-            const std::string sig = signal_for_row(s.signal, row);
-            if (sig == "\u2014") ImGui::TextColored(theme::kTextMuted, "%s", sig.c_str());
-            else ImGui::TextColored(theme::status_color("HEALTHY"), "%s", sig.c_str());
+        ImGui::SameLine(0.0f, gap);
+        widgets::card_begin("dash_success", "SUCCESS RATE", ImVec2(third, 118.0f));
+        {
+            const double rate = s.signal.positions_closed > 0
+                                    ? static_cast<double>(s.signal.wins) /
+                                          static_cast<double>(s.signal.positions_closed)
+                                    : 0.0;
+            std::string sub = "closed " + std::to_string(s.signal.positions_closed) + " \u00b7 " +
+                              std::to_string(s.signal.wins) + " up";
+            widgets::success_meter("REALIZED SHADOW RATE", sub.c_str(),
+                                   s.signal.outcomes_available, rate, theme::kHealthy);
         }
-        ImGui::EndTable();
+        widgets::card_end();
     }
-    widgets::card_end();
 
     ImGui::Spacing();
     ImGui::Spacing();
 
     // --- Signal + ledger summaries ------------------------------------------
     const float half = (avail - gap) / 2.0f;
-    widgets::card_begin("dash_signal", "SIGNAL SUMMARY", ImVec2(half, 0.0f), 168.0f);
+    widgets::card_begin("dash_signal", "SIGNAL SUMMARY", ImVec2(half, 0.0f), 178.0f);
     if (!s.signal.available) {
         widgets::empty_state("Signal", "no signal has been produced by the runtime yet");
     } else {
@@ -432,15 +453,37 @@ inline void draw_signals(const ControlCenterSnapshot& s) {
     if (!s.signal.available) {
         widgets::empty_state("Signal", "no signal has been produced by the runtime yet");
     } else {
-        widgets::badge(s.signal.direction.c_str(), theme::status_color("HEALTHY"));
+        const ImVec4 dir_col =
+            s.signal.direction == runtime::to_string(runtime::SignalDirection::SHORT)
+                ? theme::kCritical
+                : theme::kHealthy;
+        widgets::badge(s.signal.direction.c_str(), dir_col);
         ImGui::Spacing();
-        widgets::kv_row("Direction", s.signal.direction);
+        widgets::kv_row("Direction", direction_label(s.signal.direction));
         widgets::kv_row("Strategy family", s.signal.family);
         widgets::kv_row("Symbol", s.signal.symbol);
         widgets::kv_row("Trigger timeframe", s.signal.trigger_timeframe);
         widgets::kv_row("Decision id", s.signal.decision_id);
-        widgets::kv_row("Score / confidence", "NOT AVAILABLE (no calibrated probability is claimed)");
     }
+    widgets::card_end();
+
+    ImGui::Spacing();
+
+    // Real deterministic metrics. Score (RT-0011) is a ranking value; confidence
+    // (RT-0012) is derived from it and data quality. Neither is a probability:
+    // AURA emits no calibrated success probability, so none is shown.
+    const float avail = ImGui::GetContentRegionAvail().x;
+    const float gap = theme::kSpace3;
+    const float w = (avail - gap) / 2.0f;
+
+    widgets::card_begin("sig_score", "SIGNAL SCORE", ImVec2(w, 118.0f));
+    widgets::success_meter("SCORE (0\u20131)", "deterministic ranking \u00b7 not a probability",
+                           s.signal.score_available, s.signal.score, theme::kAccent);
+    widgets::card_end();
+    ImGui::SameLine(0.0f, gap);
+    widgets::card_begin("sig_conf", "CONFIDENCE", ImVec2(w, 118.0f));
+    widgets::success_meter("CONFIDENCE (0\u20131)", "derived \u00b7 not calibrated",
+                           s.signal.confidence_available, s.signal.confidence, theme::kHealthy);
     widgets::card_end();
 }
 
@@ -453,9 +496,13 @@ inline void draw_risk(const ControlCenterSnapshot& s) {
     if (!s.risk.available) {
         widgets::empty_state("Risk proposal", "no risk proposal has been produced yet");
     } else {
-        widgets::badge(s.risk.direction.c_str(), theme::status_color("HEALTHY"));
+        const ImVec4 dir_col =
+            s.risk.direction == runtime::to_string(runtime::SignalDirection::SHORT)
+                ? theme::kCritical
+                : theme::kHealthy;
+        widgets::badge(s.risk.direction.c_str(), dir_col);
         ImGui::Spacing();
-        widgets::kv_row("Direction", s.risk.direction);
+        widgets::kv_row("Direction", direction_label(s.risk.direction));
         widgets::kv_row("Position size", std::to_string(s.risk.position_size));
         widgets::kv_row("Stop distance", std::to_string(s.risk.stop_distance));
         widgets::kv_row("ATR", std::to_string(s.risk.atr));
@@ -489,11 +536,24 @@ inline void draw_positions(const ControlCenterSnapshot& s) {
     ImGui::SameLine(0.0f, gap);
     widgets::card_begin("pos_fills", "SHADOW FILLS", ImVec2(w, 110.0f));
     widgets::metric_u64("Simulated fills", (unsigned long long)s.positions.shadow_fills, true);
+    widgets::kv_row("Positions opened", std::to_string(s.positions.positions_opened));
     widgets::card_end();
 
     ImGui::SameLine(0.0f, gap);
-    widgets::card_begin("pos_opened", "POSITIONS OPENED", ImVec2(w, 110.0f));
-    widgets::metric_u64("Simulated positions", (unsigned long long)s.positions.positions_opened, true);
+    widgets::card_begin("pos_opened", "REALIZED (CLOSED)", ImVec2(w, 110.0f));
+    {
+        const bool avail_out = s.positions.positions_closed > 0;
+        widgets::metric_u64("Closed positions", (unsigned long long)s.positions.positions_closed,
+                            avail_out, "no position has closed yet");
+        if (avail_out) {
+            char rate[16];
+            std::snprintf(rate, sizeof(rate), "%.0f%%",
+                          static_cast<double>(s.positions.wins) /
+                              static_cast<double>(s.positions.positions_closed) * 100.0);
+            widgets::kv_row("Success rate", std::string(rate) + "  (" +
+                                                 std::to_string(s.positions.wins) + " up)");
+        }
+    }
     widgets::card_end();
 
     ImGui::Spacing();

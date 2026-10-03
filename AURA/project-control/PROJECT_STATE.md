@@ -478,7 +478,34 @@ See `project-control/BLOCKED.md`.
   `LEGACY_GL21`; the active timeframe is drawn with the AURA accent. The read-only projection uses a new
   const `ApplicationPipeline::bar_series(Timeframe)` accessor (`GUI-0015`); the report carries the
   selected `CandleSeries` (`GUI-0017`). No order path, no lookahead, no repaint, shadow-only.
-- The manifest graph is now 213 file-level tasks (178 `APPROVED`, 20 `TESTED`, 2 `IMPLEMENTED`
+- Premium GUI overhaul (GUI-0021..GUI-0024, `TESTED` 2026-10-03): the control center was transformed
+  from a card-heavy prototype into a premium, chart-first financial terminal, preserving the AURA
+  architecture (single runtime owner, read-only projections), the deep-navy/cyan identity and the
+  shadow-only invariant. `apply_aura_style()` was refined (rounder panels, hairline child borders,
+  no frame borders, more generous `WindowPadding`/`CellPadding`, tighter scrollbars) and the type scale
+  raised via `io.FontGlobalScale = 1.10`; `kSidebarWidth` 232→200 and `kStatusBarHeight` 30→24. New
+  reusable primitives were added to `AuraWidgets.h`: `nav_item` (custom navigation row with an accent
+  selection bar driven by the real page index), `status_item`, `metric_block`, and `success_meter`
+  (labelled 0–100% bar that renders `N/A` rather than a fake percentage). `tools/aura_gui.cpp` gained a
+  measured, right-aligned header (brand/instrument left; `TF`/`SHADOW ONLY`/market-health/renderer right —
+  no hard-coded pixel offset) and a slim real-value status bar. The Dashboard was recomposed in
+  `GuiPanels.h`: a market information strip (real last closed price, close time, stream state, quality,
+  bar count) above a full-width, viewport-adaptive chart (min 320 / max 660 px) that is now the dominant
+  workspace element; a six-column aligned status strip (`SYSTEM / DATA STREAMS / SCORE / SIGNAL / RISK /
+  MODE`); and a three-card success-metrics row.
+- Real metrics surfaced, no fabricated probability (GUI-0023, `TESTED` 2026-10-03): the GUI now shows
+  AURA's **real** deterministic `SCORE` (RT-0011) and `CONFIDENCE` (RT-0012) — computed by the pipeline
+  and previously hidden behind a `NOT AVAILABLE (no calibrated probability is claimed)` placeholder — plus
+  a **realized shadow success rate** (`wins / closed positions`). `ApplicationPipeline` exposes
+  `last_score()`/`last_confidence()` and cumulative `EngineStatus.positions_closed`/`wins` (a win is a
+  full close with net realised P&L > 0, derived incrementally by the shadow simulator — deterministic, no
+  clock, no lookahead). `DesktopModel` copies them verbatim; the GUI renders score and confidence bounded
+  to `[0,1]`, each explicitly labelled "not a probability" / "not calibrated", and shows the success rate
+  only once a position has closed (otherwise `N/A`). This closes a real presentation gap **without**
+  inventing a calibrated success probability: AURA does not compute one and the GUI still does not claim
+  one. `DesktopTests.test_real_metrics_projection` proves the projection equals the pipeline values,
+  bounds them, and marks them unavailable when absent.
+- The manifest graph is now 217 file-level tasks (178 `APPROVED`, 24 `TESTED`, 2 `IMPLEMENTED`
   [TASK-MANIFEST-001, GUI-0001], 11 `DEFERRED`, 2 `BLOCKED`). The deferred Master capabilities
   remain visible.
 - Remaining unproven items are environment/data-bound (real-Windows-desktop interactive GUI including
@@ -536,6 +563,31 @@ See `project-control/BLOCKED.md`.
   3000 path (UNPROVEN); any profitability, calibration, broker-validation or production-safety claim.
   The visual quality of the redesign is verified structurally (layout, no assertions, both backends) and
   by a captured frame, not by a human aesthetic review on the target machine.
+
+## Premium GUI overhaul verification (2026-10-03, local)
+
+- `DesktopTests` ALL PASS (g++ C++17 strict; GUI build), now including `test_real_metrics_projection`
+  (score/confidence absent when no signal, present and bounded to `[0,1]` and equal to the pipeline's
+  own `last_score()`/`last_confidence()` after a real run, realized outcomes consistent with
+  `wins <= positions_closed`, unavailable until a close, second capture identical, shadow-only invariant
+  held).
+- Full CTest: **19/19 passed** under the GUI build (`AURA_BUILD_GUI=ON`, c++17) and **18/18** under the
+  default GUI-OFF build. `aura_gui --self-test` PASS (270 frames, 9/9 streams, chart nine timeframes OK,
+  checkpoint OK, recovery CLEAN_SHUTDOWN resumable).
+- Interactive render verified by Xvfb captures (ImageMagick) + OCR (tesseract) at **1600x900** and
+  **1280x720** under **both** `MODERN_GL33` and `LEGACY_GL21`. OCR of the header reads
+  `AURA XAUUSD MARKET INTELLIGENCE ... TF M15 SHADOW ONLY MARKET HEALTHY RENDERER MODERN_GL33` on one
+  line on both backends; OCR of the market strip reads `LAST CLOSED 141.808 AT 01-12 15:43 STREAM ONLINE
+  QUALITY VALID BARS 32`; OCR of the six-column status strip reads `SYSTEM HEALTHY | DATA STREAMS 9/9 |
+  SCORE 0.97 | SIGNAL LONG | RISK PROPOSED | MODE SHADOW` aligned in a single row (a first cut that used
+  manual `SameLine` offsets cascaded vertically and was replaced by a borderless table; the misalignment
+  was caught by the OCR pass, not assumed away). The Dashboard success row reads `SIGNAL SCORE 97% |
+  CONFIDENCE 97% | REALIZED SHADOW RATE` over the real `closed 37 / 8 up` counts. This is the real score
+  and confidence the pipeline computes; no calibrated probability is shown or claimed.
+- NOT claimed: human aesthetic review on the target machine; the values shown are from deterministic
+  synthetic closed bars (produced by the trusted encoder path, labelled as such), not licensed historical
+  XAUUSD data; any profitability/calibration/broker/production claim. CI proves build + tests + bounded
+  software-GL smokes, not visual quality or real-Windows rendering.
 
 ## Next action
 

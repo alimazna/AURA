@@ -22,6 +22,10 @@ Do not rely on any prior conversation memory.
   candlestick chart with an above-chart timeframe selector** (`GUI-0015..GUI-0020`, TESTED locally):
   a pure chart model projected from the runtime's real retained **closed** bars, M15 default, all nine
   timeframes selectable by explicit identity, no fabrication, identical rendering on both GL backends.
+  A **premium GUI overhaul** (`GUI-0021..GUI-0024`, TESTED locally) refined the design system, recomposed
+  the Dashboard into a chart-first terminal, and surfaced AURA's **real** deterministic SCORE (RT-0011),
+  CONFIDENCE (RT-0012) and realized shadow success rate in the GUI — explicitly NOT a calibrated
+  probability (none is computed or claimed).
 - Authoritative build: `AURA/CMakeLists.txt` (header-only C++17/20 + the `aura_foundation` SHA-256 TU).
   It builds the `aura` console host, 18 behavioural test executables, and installs `bin/aura` +
   headers + docs. `ctest` is 18/18 green under C++17 AND C++20. On Windows/MSVC the CRT is linked
@@ -30,8 +34,8 @@ Do not rely on any prior conversation memory.
   `aura --self-test [--keep]` (bounded offline smoke), `aura --dump-frames <file>`, `aura --recover
   <store>` (report the V2-36 decision). `--store <path>` enables file-backed persistence of
   per-timeframe progress + the shadow ledger.
-- Manifest graph: 213 tasks -- 178 `APPROVED`, 20 `TESTED` (PERSIST-0001, PERSIST-0002, BUILD-0002,
-  BUILD-0003, GUI-0002, GUI-0003, PHASE-9-MILESTONE, GUI-0007..GUI-0013, GUI-0015..GUI-0020),
+- Manifest graph: 217 tasks -- 178 `APPROVED`, 24 `TESTED` (PERSIST-0001, PERSIST-0002, BUILD-0002,
+  BUILD-0003, GUI-0002, GUI-0003, PHASE-9-MILESTONE, GUI-0007..GUI-0013, GUI-0015..GUI-0024),
   2 `IMPLEMENTED` (TASK-MANIFEST-001, GUI-0001), 11 `DEFERRED`, 2 `BLOCKED`.
 - CI: `.github/workflows/ci.yml` builds/tests Linux C++17+C++20 (blocking) with the smoke test and an
   install check, plus MSVC Windows C++17/C++20, plus a `desktop-gui` job (Dear ImGui + GLFW + Xvfb
@@ -108,6 +112,36 @@ Do not rely on any prior conversation memory.
   (`chart nine timeframes OK, default M15, each stream has real candles`); Xvfb captures under both
   `MODERN_GL33` and `LEGACY_GL21` show real green/red candle pixels (~5.4k green for the all-bullish
   builtin set; ~12k green + ~13k red for an alternating M15 series). Recorded in `TEST_LOG.md`.
+
+### Premium GUI overhaul deliverables (this session)
+
+- `src/desktop/AuraTheme.h` — refined `apply_aura_style()` (ChildRounding 8, FrameRounding 5,
+  FrameBorderSize 0, WindowPadding 16/12, CellPadding 12/6, ItemSpacing 12/10, ScrollbarSize 10);
+  `kSidebarWidth` 232→200, `kStatusBarHeight` 30→24.
+- `src/desktop/AuraWidgets.h` — new reusable primitives: `nav_item` (custom sidebar row with an accent
+  selection bar driven by the real page index), `status_item`, `metric_block`, `success_meter`
+  (labelled 0–100% bar that renders `N/A`, never a fake percentage).
+- `tools/aura_gui.cpp` — `io.FontGlobalScale = 1.10`; measured, right-aligned header (brand/instrument
+  left; `TF`/`SHADOW ONLY`/market health/actual renderer right, no hard-coded pixel offset); custom
+  sidebar nav rows; slim real-value status bar.
+- `src/desktop/GuiPanels.h` — Dashboard recomposed into a chart-first terminal: `draw_market_strip`
+  (real last closed price, close time, stream state, quality, bar count), full-width `draw_main_chart`
+  with viewport-adaptive height (min 320 / max 660 px), a six-column aligned status strip
+  (`SYSTEM / DATA STREAMS / SCORE / SIGNAL / RISK / MODE`, a borderless table), and a three-card
+  success-metrics row; `draw_signals`/`draw_risk`/`draw_positions` now show the real values.
+- `src/runtime/ApplicationPipeline.h` — exposes `last_score()`/`last_confidence()` and cumulative
+  `EngineStatus.positions_closed`/`wins` (a win = a full close with net realised P&L > 0, derived
+  incrementally by the shadow simulator; deterministic, no clock, no lookahead).
+- `src/desktop/DesktopModel.h` — `SignalPanel` gains `score`/`confidence`/outcome fields copied
+  verbatim from the pipeline; `PositionPanel` gains `positions_closed`/`wins`.
+- `src/desktop/DesktopTests.cpp` — `test_real_metrics_projection` (empty → unavailable; fed → bounded,
+  equal to the pipeline values; `wins <= closed`; deterministic; shadow-only held).
+- Verification: DesktopTests ALL PASS; CTest 19/19 (GUI) / 18/18 (GUI off); `aura_gui --self-test` PASS;
+  Xvfb captures + OCR at 1600x900 and 1280x720 under both renderers confirm the header, market strip and
+  six-column status strip read correctly and align (a manual `SameLine` first cut cascaded vertically
+  and was replaced after the OCR pass caught it). No calibrated probability is shown or claimed — the
+  displayed SCORE (RT-0011) and CONFIDENCE (RT-0012) are explicitly labelled as ranking/derived values,
+  not probabilities. Recorded in `TEST_LOG.md`.
 
 ### Phase 9 V3-37 section integration deliverables (this session)
 
@@ -187,8 +221,9 @@ Do not rely on any prior conversation memory.
 ### Next actions
 
 1. Remaining work is environment/data-unproven only: real-Windows-desktop interactive GUI (UNPROVEN —
-   have a human run `aura_gui --gui` on Windows to promote it, and confirm the XAUUSD chart + timeframe
-   selector render there), real MetaEditor/MT5 round-trip
+   have a human run `aura_gui --gui` on Windows to promote it, and confirm the premium chart-first
+   Dashboard, the XAUUSD chart + timeframe selector, and the real SCORE/CONFIDENCE/success-rate
+   presentation render there), real MetaEditor/MT5 round-trip
    (`MT5-REAL-0001`), and the historical XAUUSD validation campaign (`VAL-EVID-0001`). See
    `BLOCKED.md`. Do not invent datasets/toolchains.
 2. Wire the still-`NOT AVAILABLE` panels (prediction/observation, knowledge, research, candidates,

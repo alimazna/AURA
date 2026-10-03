@@ -323,6 +323,7 @@ int run_gui(const aura::desktop::ControlCenterOptions& options, long max_frames,
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     io.IniFilename = nullptr;  // deterministic; no user-path ini file
+    io.FontGlobalScale = 1.10f;  // comfortable terminal-density type
     aura::desktop::theme::apply_aura_style();
 
     ImGui_ImplGlfw_InitForOpenGL(window, true);
@@ -393,41 +394,63 @@ int run_gui(const aura::desktop::ControlCenterOptions& options, long max_frames,
                          ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_MenuBar);
         ImGui::PopStyleVar();
 
-        // ---- Top bar: brand / version / mode / renderer / health ------------
+        // ---- Top bar: brand block (left) / real status (right) --------------
         {
             const float bar_h = aura::desktop::theme::kHeaderHeight;
             ImGui::BeginChild("topbar", ImVec2(0.0f, bar_h), false,
                               ImGuiWindowFlags_NoScrollbar);
             const ImVec2 p = ImGui::GetCursorScreenPos();
+            const float full_w = ImGui::GetWindowWidth();
             aura::desktop::widgets::filled_rect(
-                p, ImVec2(p.x + ImGui::GetContentRegionAvail().x, p.y + bar_h),
+                p, ImVec2(p.x + full_w, p.y + bar_h),
                 aura::desktop::theme::kSurfaceRaised, 0.0f);
+            // A single accent underline separates the header from the workspace.
+            aura::desktop::widgets::filled_rect(
+                ImVec2(p.x, p.y + bar_h - 1.0f), ImVec2(p.x + full_w, p.y + bar_h),
+                aura::desktop::theme::kAccent, 0.0f);
 
+            // Left: brand / instrument / descriptor.
             ImGui::SetCursorPos(ImVec2(aura::desktop::theme::kSpace3,
                                        (bar_h - ImGui::GetTextLineHeight()) * 0.5f));
             ImGui::TextColored(aura::desktop::theme::kAccent, "AURA");
-            ImGui::SameLine();
-            ImGui::TextColored(aura::desktop::theme::kTextSecondary, "Control Center");
-            ImGui::SameLine();
-            ImGui::TextColored(aura::desktop::theme::kTextMuted, "\u00b7 v%s",
-                               report.version.strategy_version.c_str());
+            ImGui::SameLine(0.0f, aura::desktop::theme::kSpace2);
+            ImGui::TextColored(aura::desktop::theme::kTextPrimary, "XAUUSD");
+            ImGui::SameLine(0.0f, aura::desktop::theme::kSpace2);
+            ImGui::TextColored(aura::desktop::theme::kTextMuted, "MARKET INTELLIGENCE");
 
-            // Right-aligned status chips.
-            const float chip_y = (bar_h - ImGui::GetTextLineHeightWithSpacing()) * 0.5f;
-            ImGui::SameLine();
-            ImGui::SetCursorPosX(ImGui::GetWindowWidth() - 470.0f);
-            ImGui::SetCursorPosY(chip_y);
+            // Right: real, right-aligned status. Widths are measured, not offset
+            // by a hard-coded pixel count.
+            const std::string tf = state.timeframe_selection().selected_label();
+            const std::string market = snap.overview.healthy ? "HEALTHY" : snap.overview.aggregate;
+            const std::string renderer = std::string(aura::desktop::to_string(rctx.profile));
+            const char* sep = "   ";
+            const float w_sep = ImGui::CalcTextSize(sep).x;
+            const float total = ImGui::CalcTextSize("TF").x + 6.0f + ImGui::CalcTextSize(tf.c_str()).x +
+                                w_sep * 4.0f +
+                                ImGui::CalcTextSize("SHADOW ONLY").x + w_sep +
+                                ImGui::CalcTextSize("MARKET").x + 6.0f +
+                                ImGui::CalcTextSize(market.c_str()).x + w_sep +
+                                ImGui::CalcTextSize("RENDERER").x + 6.0f +
+                                ImGui::CalcTextSize(renderer.c_str()).x;
+            const float right_x = full_w - total - aura::desktop::theme::kSpace3;
+            ImGui::SetCursorPosX(right_x > 0.0f ? right_x : full_w * 0.4f);
+            ImGui::SetCursorPosY((bar_h - ImGui::GetTextLineHeight()) * 0.5f);
+            ImGui::TextColored(aura::desktop::theme::kTextMuted, "TF");
+            ImGui::SameLine(0.0f, 6.0f);
+            ImGui::TextColored(aura::desktop::theme::kAccent, "%s", tf.c_str());
+            ImGui::SameLine(0.0f, aura::desktop::theme::kSpace3);
             ImGui::TextColored(aura::desktop::theme::kShadow, "SHADOW ONLY");
-            ImGui::SameLine();
-            ImGui::TextColored(aura::desktop::theme::kTextMuted, "|");
-            ImGui::SameLine();
+            ImGui::SameLine(0.0f, aura::desktop::theme::kSpace3);
+            ImGui::TextColored(aura::desktop::theme::kTextMuted, "MARKET");
+            ImGui::SameLine(0.0f, 6.0f);
             ImGui::TextColored(
                 aura::desktop::theme::status_color(snap.overview.healthy ? "HEALTHY"
                                                                          : snap.overview.aggregate),
-                "%s", snap.overview.healthy ? "HEALTHY" : snap.overview.aggregate.c_str());
-            ImGui::SameLine();
-            ImGui::TextColored(aura::desktop::theme::kTextMuted, "| renderer %s",
-                               aura::desktop::to_string(rctx.profile));
+                "%s", market.c_str());
+            ImGui::SameLine(0.0f, aura::desktop::theme::kSpace3);
+            ImGui::TextColored(aura::desktop::theme::kTextMuted, "RENDERER");
+            ImGui::SameLine(0.0f, 6.0f);
+            ImGui::TextColored(aura::desktop::theme::kTextSecondary, "%s", renderer.c_str());
             ImGui::EndChild();
         }
 
@@ -438,14 +461,13 @@ int run_gui(const aura::desktop::ControlCenterOptions& options, long max_frames,
                           ImGuiWindowFlags_NoScrollbar);
 
         ImGui::BeginChild("sidebar", ImVec2(aura::desktop::theme::kSidebarWidth, 0.0f), true);
-        ImGui::TextColored(aura::desktop::theme::kTextMuted, "NAVIGATION");
-        ImGui::Spacing();
+        const float nav_w = ImGui::GetContentRegionAvail().x;
         for (const aura::desktop::NavGroup& g : nav_groups) {
             ImGui::Spacing();
-            ImGui::TextColored(aura::desktop::theme::kAccent, "%s", g.title.c_str());
-            ImGui::Separator();
+            ImGui::TextColored(aura::desktop::theme::kTextMuted, "%s", g.title.c_str());
+            ImGui::Spacing();
             for (const aura::desktop::NavItem& item : g.items) {
-                if (ImGui::Selectable(item.label.c_str(), selected == item.index))
+                if (aura::desktop::widgets::nav_item(item.label.c_str(), selected == item.index, nav_w))
                     selected = item.index;
             }
         }
@@ -459,51 +481,43 @@ int run_gui(const aura::desktop::ControlCenterOptions& options, long max_frames,
 
         ImGui::EndChild();
 
-        // ---- Status bar ------------------------------------------------------
+        // ---- Status bar: slim, real values only ----------------------------
         {
             const ImVec2 p = ImGui::GetCursorScreenPos();
             const float w = ImGui::GetContentRegionAvail().x;
             aura::desktop::widgets::filled_rect(p, ImVec2(p.x + w, p.y + status_h),
-                                                aura::desktop::theme::kSurface, 0.0f);
+                                                aura::desktop::theme::kSurfaceRaised, 0.0f);
+            aura::desktop::widgets::filled_rect(
+                ImVec2(p.x, p.y), ImVec2(p.x + w, p.y + 1.0f),
+                aura::desktop::theme::kBorder, 0.0f);
             ImGui::SetCursorPos(ImVec2(aura::desktop::theme::kSpace3,
-                                       ImGui::GetCursorPosY() + 6.0f));
-            ImGui::TextColored(aura::desktop::theme::kTextMuted, "Runtime");
-            ImGui::SameLine();
-            ImGui::TextColored(aura::desktop::theme::status_color(snap.overview.aggregate), "%s",
-                               snap.overview.aggregate.c_str());
-            ImGui::SameLine();
-            ImGui::TextColored(aura::desktop::theme::kTextMuted, "|");
-            ImGui::SameLine();
-            ImGui::TextColored(aura::desktop::theme::kTextMuted, "Transport");
-            ImGui::SameLine();
-            ImGui::TextColored(
-                aura::desktop::theme::status_color(snap.overview.transport_connected ? "CONNECTED"
-                                                                                     : "UNKNOWN"),
-                "%s", snap.overview.transport_connected ? "CONNECTED" : "UNKNOWN");
-            ImGui::SameLine();
-            ImGui::TextColored(aura::desktop::theme::kTextMuted, "| Persistence");
-            ImGui::SameLine();
-            ImGui::TextColored(aura::desktop::theme::status_color(snap.persistence.last_status),
-                               "%s", snap.persistence.last_status.c_str());
-            ImGui::SameLine();
-            ImGui::TextColored(aura::desktop::theme::kTextMuted, "| Recovery");
-            ImGui::SameLine();
-            ImGui::TextColored(aura::desktop::theme::status_color(snap.persistence.lifecycle),
-                               "%s", snap.persistence.lifecycle.c_str());
-            ImGui::SameLine();
-            ImGui::TextColored(aura::desktop::theme::kTextMuted, "|");
-            ImGui::SameLine();
+                                       (status_h - ImGui::GetTextLineHeight()) * 0.5f));
+            ImGui::TextColored(aura::desktop::theme::kTextMuted, "RUNTIME");
+            ImGui::SameLine(0.0f, 5.0f);
             ImGui::TextColored(state.paused() ? aura::desktop::theme::kPaused
                                               : aura::desktop::theme::kHealthy,
                                "%s", state.paused() ? "PAUSED" : "RUNNING");
-            ImGui::SameLine();
-            ImGui::TextColored(aura::desktop::theme::kTextMuted, "|");
-            ImGui::SameLine();
+            ImGui::SameLine(0.0f, aura::desktop::theme::kSpace3);
+            ImGui::TextColored(aura::desktop::theme::kTextMuted, "DATA");
+            ImGui::SameLine(0.0f, 5.0f);
+            ImGui::TextColored(aura::desktop::theme::status_color(snap.overview.aggregate), "%s",
+                               snap.overview.aggregate.c_str());
+            ImGui::SameLine(0.0f, aura::desktop::theme::kSpace3);
+            ImGui::TextColored(aura::desktop::theme::kTextMuted, "PERSISTENCE");
+            ImGui::SameLine(0.0f, 5.0f);
+            ImGui::TextColored(aura::desktop::theme::status_color(snap.persistence.last_status),
+                               "%s", snap.persistence.last_status.c_str());
+            ImGui::SameLine(0.0f, aura::desktop::theme::kSpace3);
+            ImGui::TextColored(aura::desktop::theme::kTextMuted, "RECOVERY");
+            ImGui::SameLine(0.0f, 5.0f);
+            ImGui::TextColored(aura::desktop::theme::status_color(snap.persistence.lifecycle),
+                               "%s", snap.persistence.lifecycle.c_str());
+            ImGui::SameLine(0.0f, aura::desktop::theme::kSpace3);
             ImGui::TextColored(aura::desktop::theme::kShadow, "SHADOW ONLY");
-            ImGui::SameLine();
-            ImGui::TextColored(aura::desktop::theme::kTextMuted, "|");
-            ImGui::SameLine();
-            ImGui::TextColored(aura::desktop::theme::kTextMuted, "renderer %s",
+            ImGui::SameLine(0.0f, aura::desktop::theme::kSpace3);
+            ImGui::TextColored(aura::desktop::theme::kTextMuted, "RENDERER");
+            ImGui::SameLine(0.0f, 5.0f);
+            ImGui::TextColored(aura::desktop::theme::kTextSecondary, "%s",
                                aura::desktop::to_string(rctx.profile));
         }
 

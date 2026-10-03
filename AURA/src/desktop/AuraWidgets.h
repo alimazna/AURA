@@ -15,6 +15,7 @@
 #include <imgui.h>
 
 #include <cstddef>
+#include <cstdio>
 #include <string>
 
 namespace aura {
@@ -156,6 +157,90 @@ inline void state_cell(const std::string& value) {
 inline void value_cell(bool available, const std::string& value) {
     if (available) ImGui::TextColored(theme::kTextPrimary, "%s", value.c_str());
     else ImGui::TextColored(theme::kNotAvailable, "NOT AVAILABLE");
+}
+
+// ---- Compact metric strip items -------------------------------------------
+
+// One cell of a compact information strip: a muted caption above a strong value.
+// Unavailable values are an explicit N/A marker, never a fabricated zero.
+inline void metric_block(const char* label, const std::string& value, bool available,
+                         const char* reason = nullptr) {
+    ImGui::TextColored(theme::kTextMuted, "%s", label);
+    if (available) {
+        ImGui::TextColored(theme::kTextPrimary, "%s", value.c_str());
+    } else {
+        ImGui::TextColored(theme::kNotAvailable, "N/A");
+        if (reason != nullptr && reason[0] != '\0')
+            ImGui::TextColored(theme::kTextMuted, "%s", reason);
+    }
+}
+
+// ---- Success meter ---------------------------------------------------------
+// A labelled 0..100% meter with a horizontal bar. `value` is a fraction in [0,1].
+// This renders AURA's real deterministic score/confidence (RT-0011/RT-0012) or a
+// realized shadow success rate. None of these is a calibrated probability, and
+// when the value is absent the meter shows N/A rather than a fake percentage.
+inline void success_meter(const char* label, const char* sublabel, bool available, double value,
+                          ImVec4 color) {
+    ImGui::TextColored(theme::kTextMuted, "%s", label);
+    if (!available) {
+        ImGui::TextColored(theme::kNotAvailable, "N/A");
+        if (sublabel != nullptr && sublabel[0] != '\0')
+            ImGui::TextColored(theme::kTextMuted, "%s", sublabel);
+        return;
+    }
+    double clamped = value < 0.0 ? 0.0 : (value > 1.0 ? 1.0 : value);
+    char buf[16];
+    std::snprintf(buf, sizeof(buf), "%.0f%%", clamped * 100.0);
+    ImGui::TextColored(color, "%s", buf);
+
+    const float w = ImGui::GetContentRegionAvail().x;
+    const float h = 5.0f;
+    const ImVec2 p = ImGui::GetCursorScreenPos();
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    dl->AddRectFilled(p, ImVec2(p.x + w, p.y + h), ImGui::GetColorU32(theme::kSurfaceRaised), 2.0f);
+    dl->AddRectFilled(p, ImVec2(p.x + w * static_cast<float>(clamped), p.y + h),
+                      ImGui::GetColorU32(color), 2.0f);
+    ImGui::Dummy(ImVec2(w, h));
+    if (sublabel != nullptr && sublabel[0] != '\0')
+        ImGui::TextColored(theme::kTextMuted, "%s", sublabel);
+}
+
+// ---- Shell chrome items ----------------------------------------------------
+
+// A compact "LABEL value" status item for the top header / status bar. The label
+// is muted, the value carries the state colour. Returns the width consumed so
+// callers can lay items out responsively instead of at fixed pixel offsets.
+inline float status_item(const char* label, const std::string& value, ImVec4 color) {
+    const float x0 = ImGui::GetCursorPosX();
+    ImGui::TextColored(theme::kTextMuted, "%s", label);
+    ImGui::SameLine(0.0f, 5.0f);
+    ImGui::TextColored(color, "%s", value.c_str());
+    return ImGui::GetCursorPosX() - x0;
+}
+
+// A full-width sidebar navigation row. The selected row gets a left accent bar and
+// a subtle raised background; hover gets a restrained highlight. Returns true when
+// clicked. Selection is driven by the caller's real page state, never by string
+// comparison.
+inline bool nav_item(const char* label, bool selected, float width) {
+    const float h = 24.0f;
+    const ImVec2 p = ImGui::GetCursorScreenPos();
+    const bool clicked = ImGui::InvisibleButton(label, ImVec2(width, h));
+    const bool hovered = ImGui::IsItemHovered();
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    if (selected) {
+        dl->AddRectFilled(p, ImVec2(p.x + width, p.y + h),
+                          ImGui::GetColorU32(ImVec4(0.157f, 0.196f, 0.243f, 1.0f)), 4.0f);
+        dl->AddRectFilled(p, ImVec2(p.x + 3.0f, p.y + h), ImGui::GetColorU32(theme::kAccent), 2.0f);
+    } else if (hovered) {
+        dl->AddRectFilled(p, ImVec2(p.x + width, p.y + h),
+                          ImGui::GetColorU32(ImVec4(1.0f, 1.0f, 1.0f, 0.04f)), 4.0f);
+    }
+    const ImVec2 ts = ImGui::CalcTextSize(label);
+    dl->AddText(ImVec2(p.x + theme::kSpace3, p.y + (h - ts.y) * 0.5f),
+                ImGui::GetColorU32(selected ? theme::kTextPrimary : theme::kTextSecondary), label);
+    return clicked;
 }
 
 }  // namespace widgets

@@ -1032,6 +1032,44 @@ safety, or live-trading readiness.
   build + tests + bounded software-GL smokes; it does **not** prove visual quality or real-Windows /
   Intel HD 3000 rendering.
 
+## 2026-10-03 — Premium GUI overhaul (GUI-0021..GUI-0024)
+
+- Date: 2026-10-03
+- Commit: (recorded at commit time; this entry is part of the same commit)
+- Task/Phase: Phase 9 / `GUI-0021` (design system + shell), `GUI-0022` (chart-first Dashboard),
+  `GUI-0023` (real score/confidence/outcome projection), `GUI-0024` (deterministic projection test).
+- Build command: `cmake --build build-gui17 -j4` (GUI ON, c++17) and `cmake --build build-off -j4`
+  (GUI OFF); header-only C++17.
+- Build result: clean (no errors; only pre-existing warnings, if any).
+- Test command: `./build-gui17/DesktopTests`; `ctest --test-dir build-gui17`; `ctest --test-dir
+  build-off`; `aura_gui --self-test`; Xvfb captures via ImageMagick `import` + OCR via `tesseract`.
+- Test result:
+  - `DesktopTests: ALL PASS` (includes the new `test_real_metrics_projection`).
+  - GUI build `ctest`: **19/19 passed** (2.35 s). GUI-OFF build `ctest`: **18/18 passed**.
+  - `aura_gui --self-test` PASS (270 frames, 9/9 streams, `chart nine timeframes OK, default M15,
+    each stream has real candles`, checkpoint OK, recovery CLEAN_SHUTDOWN resumable).
+  - Xvfb captures at **1600x900** and **1280x720** under **MODERN_GL33** and **LEGACY_GL21**; OCR reads
+    the header (`AURA XAUUSD MARKET INTELLIGENCE ... TF M15 SHADOW ONLY MARKET HEALTHY RENDERER
+    MODERN_GL33`), the market strip (`LAST CLOSED 141.808 AT 01-12 15:43 STREAM ONLINE QUALITY VALID
+    BARS 32`) and the six-column status strip (`SYSTEM HEALTHY | DATA STREAMS 9/9 | SCORE 0.97 |
+    SIGNAL LONG | RISK PROPOSED | MODE SHADOW`) in one aligned row on both backends.
+- Files changed: `src/desktop/AuraTheme.h`, `src/desktop/AuraWidgets.h`, `src/desktop/GuiPanels.h`,
+  `src/runtime/ApplicationPipeline.h`, `src/desktop/DesktopModel.h`, `src/desktop/DesktopTests.cpp`,
+  `tools/aura_gui.cpp`; control plane (`PROJECT_STATE.md`, `TASK_MANIFEST.yaml`, `TEST_LOG.md`,
+  `HANDOFF.md`).
+- Known failures: none. One defect was found and fixed during this work: the first six-column status
+  strip used manual `SameLine` offsets that cascaded vertically (values rendered as a diagonal), caught
+  by the OCR pass; replaced with a borderless `ImGui::BeginTable` (verified aligned afterwards).
+- Interpretation: the control center is now a chart-first premium terminal and shows AURA's **real**
+  deterministic SCORE (RT-0011) and CONFIDENCE (RT-0012) plus the realized shadow success rate. These
+  are ranking/derived values, explicitly labelled "not a probability" / "not calibrated"; AURA computes
+  no calibrated probability and the GUI claims none. `test_real_metrics_projection` proves the projected
+  values equal the pipeline's own values, are bounded to `[0,1]`, and are marked unavailable when absent
+  (never a fabricated 0%). Shadow-only invariant and no-order-path invariant unchanged. Visual quality is
+  verified structurally + by capture/OCR under both GL backends, **not** by a human aesthetic review on
+  the target Windows/Intel HD 3000 machine (still UNPROVEN, `BLOCK-006`). No profitability/calibration/
+  broker/production claim.
+
 ## Future test entry format
 
 - Date

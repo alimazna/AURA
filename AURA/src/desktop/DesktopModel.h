@@ -77,6 +77,18 @@ struct SignalPanel {
     std::string symbol{"NOT AVAILABLE"};
     std::string trigger_timeframe{"NOT AVAILABLE"};
     std::string decision_id{"NOT AVAILABLE"};
+    // Deterministic score (RT-0011) and confidence (RT-0012). These are AURA's
+    // real ranking/confidence values. Neither is a probability: AURA explicitly
+    // does not emit a calibrated success probability, so none is displayed.
+    bool score_available{false};
+    double score{0.0};
+    bool confidence_available{false};
+    double confidence{0.0};
+    // Realized shadow outcomes (historical counts, not a prediction). Available
+    // once at least one shadow position has closed.
+    bool outcomes_available{false};
+    std::uint64_t positions_closed{0};
+    std::uint64_t wins{0};
 };
 
 struct RiskPanel {
@@ -94,6 +106,8 @@ struct PositionPanel {
     std::size_t ledger_entries{0};
     std::uint64_t shadow_fills{0};
     std::uint64_t positions_opened{0};
+    std::uint64_t positions_closed{0};
+    std::uint64_t wins{0};
 };
 
 struct PersistencePanel {
@@ -165,6 +179,24 @@ public:
             s.signal.decision_id = sig.decision_id.to_hex();
         }
 
+        // Real deterministic score/confidence of the latest signal. Shown only
+        // when the pipeline actually produced them; never fabricated.
+        const runtime::SignalScore& score = pipeline.last_score();
+        if (sig.valid && score.valid) {
+            s.signal.score_available = true;
+            s.signal.score = score.score;
+        }
+        const runtime::ConfidenceValue& confidence = pipeline.last_confidence();
+        if (sig.valid && confidence.valid) {
+            s.signal.confidence_available = true;
+            s.signal.confidence = confidence.confidence;
+        }
+        // Realized shadow outcomes (historical). Counts of closed simulated
+        // positions, not a prediction or probability.
+        s.signal.positions_closed = st.positions_closed;
+        s.signal.wins = st.wins;
+        s.signal.outcomes_available = st.positions_closed > 0;
+
         const runtime::RiskProposal& prop = pipeline.last_proposal();
         if (prop.valid) {
             s.risk.available = true;
@@ -179,6 +211,8 @@ public:
         s.positions.ledger_entries = pipeline.ledger().size();
         s.positions.shadow_fills = st.fills;
         s.positions.positions_opened = st.positions;
+        s.positions.positions_closed = st.positions_closed;
+        s.positions.wins = st.wins;
 
         s.persistence.store_path = shell.store().path().empty() ? "(in-memory)" : shell.store().path();
         s.persistence.records = shell.store().size();

@@ -59,9 +59,9 @@ constexpr float kSpace3 = 12.0f;
 constexpr float kSpace4 = 16.0f;
 constexpr float kSpace5 = 24.0f;
 
-constexpr float kSidebarWidth = 232.0f;
+constexpr float kSidebarWidth = 200.0f;
 constexpr float kHeaderHeight = 46.0f;
-constexpr float kStatusBarHeight = 30.0f;
+constexpr float kStatusBarHeight = 24.0f;
 
 // ---- State classification --------------------------------------------------
 // state_category(), category_label() and is_unknown_like() live in StateVisuals.h
@@ -94,26 +94,26 @@ inline void apply_aura_style() {
     ImGuiStyle& style = ImGui::GetStyle();
 
     style.WindowRounding = 0.0f;
-    style.ChildRounding = 6.0f;
-    style.FrameRounding = 4.0f;
-    style.PopupRounding = 6.0f;
+    style.ChildRounding = 8.0f;
+    style.FrameRounding = 5.0f;
+    style.PopupRounding = 8.0f;
     style.ScrollbarRounding = 6.0f;
-    style.GrabRounding = 4.0f;
-    style.TabRounding = 4.0f;
+    style.GrabRounding = 5.0f;
+    style.TabRounding = 5.0f;
 
     style.WindowBorderSize = 0.0f;
     style.ChildBorderSize = 1.0f;
-    style.FrameBorderSize = 1.0f;
+    style.FrameBorderSize = 0.0f;
     style.PopupBorderSize = 1.0f;
 
-    style.WindowPadding = ImVec2(kSpace3, kSpace3);
-    style.FramePadding = ImVec2(kSpace2, 5.0f);
-    style.CellPadding = ImVec2(kSpace2, 5.0f);
-    style.ItemSpacing = ImVec2(kSpace2, kSpace2);
+    style.WindowPadding = ImVec2(kSpace4, kSpace3);
+    style.FramePadding = ImVec2(kSpace2 + 2.0f, 6.0f);
+    style.CellPadding = ImVec2(kSpace3, 6.0f);
+    style.ItemSpacing = ImVec2(kSpace3, kSpace2 + 2.0f);
     style.ItemInnerSpacing = ImVec2(6.0f, 5.0f);
     style.IndentSpacing = 18.0f;
-    style.ScrollbarSize = 12.0f;
-    style.GrabMinSize = 10.0f;
+    style.ScrollbarSize = 10.0f;
+    style.GrabMinSize = 12.0f;
 
     style.WindowTitleAlign = ImVec2(0.0f, 0.5f);
     style.ButtonTextAlign = ImVec2(0.5f, 0.5f);

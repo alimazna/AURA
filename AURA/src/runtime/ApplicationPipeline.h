@@ -58,6 +58,11 @@ struct EngineStatus {
     std::uint64_t proposals{0};
     std::uint64_t fills{0};
     std::uint64_t positions{0};
+    // Realized shadow-position outcomes (never a prediction, never a probability).
+    // A close with net realised P&L > 0 is a win. Derived incrementally from the
+    // shadow simulator; no wall clock and no lookahead.
+    std::uint64_t positions_closed{0};
+    std::uint64_t wins{0};
     bool healthy{false};
     foundation::ServiceState aggregate{foundation::ServiceState::STARTING};
     bool has_open_position{false};
@@ -197,6 +202,14 @@ public:
     // Most recent risk proposal (invalid when none).
     const RiskProposal& last_proposal() const noexcept { return last_proposal_; }
 
+    // Deterministic score of the most recent signal (RT-0011). A bounded ranking
+    // value in [0,1]; explicitly NOT a probability. valid=false when no signal has
+    // been scored yet.
+    const SignalScore& last_score() const noexcept { return last_score_; }
+    // Deterministic confidence derived from the score and data quality (RT-0012).
+    // Explicitly NOT a calibrated probability. valid=false when unavailable.
+    const ConfidenceValue& last_confidence() const noexcept { return last_confidence_; }
+
 private:
     void retain_bar(const MarketBar& bar) {
         std::vector<MarketBar>& v = bars_[bar.timeframe];
@@ -214,6 +227,10 @@ private:
             if (closed.valid) ledger_.record_position(closed, m15_bar.close_time);
             open_position_ = closed;
             status_.has_open_position = open_position_.state != PositionState::CLOSED;
+            if (closed.valid && closed.state == PositionState::CLOSED) {
+                ++status_.positions_closed;
+                if (PositionSimulator::net_pnl(closed) > 0.0) ++status_.wins;
+            }
         }
 
         // H4 structural authority -> regime.
@@ -242,7 +259,9 @@ private:
         ledger_.record_signal(signal, m15_bar.close_time);
 
         const SignalScore score = scorer_.score_with_direction(signal, regime, m15_features);
+        last_score_ = score;
         const ConfidenceValue confidence = confidence_.evaluate(score, quality);
+        last_confidence_ = confidence;
         const MarketQualityVerdict market_quality = market_quality_.evaluate(adapters_);
 
         const RiskProposal proposal = risk_engine_.propose(signal, confidence, market_quality,
@@ -294,6 +313,8 @@ private:
     SimulatedPosition open_position_{};
     Signal last_signal_{};
     RiskProposal last_proposal_{};
+    SignalScore last_score_{};
+    ConfidenceValue last_confidence_{};
     foundation::Timestamp last_observation_{};
     EngineStatus status_{};
 };
