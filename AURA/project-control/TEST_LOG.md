@@ -1023,6 +1023,15 @@ safety, or live-trading readiness.
   XAUUSD data). Interactive rendering on a real Windows desktop / Intel HD 3000 remains UNPROVEN
   (BLOCK-006). No live-order path; shadow only. No profitability/calibration/broker/production claim.
 
+### Remote CI for this work
+
+- Run `37131254459` (commit `02d3d5b`, chart + control-plane updates): **ALL GREEN 6/6** —
+  `ubuntu-latest / c++17 / gcc`, `ubuntu-latest / c++20 / gcc`, `windows-latest / c++17 / msvc`,
+  `windows-latest / c++20 / msvc`, `desktop-gui-linux (Dear ImGui + Xvfb)`, and
+  `windows-x64-release-package` (builds/packages `aura_gui.exe` with the chart). Note: CI verifies
+  build + tests + bounded software-GL smokes; it does **not** prove visual quality or real-Windows /
+  Intel HD 3000 rendering.
+
 ## Future test entry format
 
 - Date

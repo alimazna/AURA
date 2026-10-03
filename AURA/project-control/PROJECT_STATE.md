@@ -529,6 +529,9 @@ See `project-control/BLOCKED.md`.
 - NOT claimed: human aesthetic review on the target machine; real historical XAUUSD data (the frames are
   deterministic synthetic closed bars produced by the trusted encoder path, labelled as such); any
   profitability/calibration/broker/production claim.
+- Remote CI run `37131254459` (commit `02d3d5b`) for this work is **ALL GREEN 6/6** (ubuntu c++17/c++20,
+  windows msvc c++17/c++20, `desktop-gui-linux`, `windows-x64-release-package` including the chart GUI).
+  CI proves build + tests + bounded software-GL smokes, not visual quality or real-Windows rendering.
 - NOT claimed: interactive rendering on a real Windows desktop, and specifically the Intel HD Graphics
   3000 path (UNPROVEN); any profitability, calibration, broker-validation or production-safety claim.
   The visual quality of the redesign is verified structurally (layout, no assertions, both backends) and
