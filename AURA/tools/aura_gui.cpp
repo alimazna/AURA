@@ -28,6 +28,12 @@
 #include "desktop/NavigationModel.h"
 #include "desktop/RendererPolicy.h"
 
+// Windows headers (pulled in transitively by GLFW) define `min`/`max` macros
+// that collide with ordinary identifiers; keep them from rewriting this TU.
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl2.h>

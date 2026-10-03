@@ -71,7 +71,14 @@ Files changed: `src/desktop/StateVisuals.h` (new), `src/desktop/AuraTheme.h` (ne
 (rewritten), `src/desktop/DesktopModel.h`, `src/desktop/DesktopTests.cpp`, `tools/aura_gui.cpp`, and the
 control-plane files.
 
-Known failures: none.
+Known failures: none. Remote CI on the push of this wave caught one real Windows/MSVC portability defect
+that Linux/GCC did not: `src/desktop/AuraWidgets.h` used `min`/`max` as local variable names, and the
+`min`/`max` macros that MSVC's Windows headers (pulled in transitively via GLFW) define rewrote
+`ImVec2 min(...)` into a function-style cast of a `float` (`error C2440: cannot convert from 'const
+float' to 'const ImVec2'`, plus cascading `C2065: 'min'/'max' undeclared`). Fixed by renaming the locals
+to `lo`/`hi` and defining `NOMINMAX` in `tools/aura_gui.cpp` before the GLFW include, so the macros
+cannot rewrite this translation unit again. Re-verified locally (GUI build 19/19, `--self-test` PASS)
+before pushing.
 
 Interpretation: the control center now uses an original, consistent, legible design language, and the
 new presentation code is verified to build clean, to keep ImGui's layout invariants across all 19

@@ -22,8 +22,8 @@ namespace desktop {
 namespace widgets {
 
 // Fills a rounded rectangle using only the ImGui draw list (legacy-safe).
-inline void filled_rect(ImVec2 min, ImVec2 max, ImVec4 col, float rounding) {
-    ImGui::GetWindowDrawList()->AddRectFilled(min, max, ImGui::GetColorU32(col), rounding);
+inline void filled_rect(ImVec2 lo, ImVec2 hi, ImVec4 col, float rounding) {
+    ImGui::GetWindowDrawList()->AddRectFilled(lo, hi, ImGui::GetColorU32(col), rounding);
 }
 
 // A bordered card container with a title strip. Call card_end() to close.
@@ -46,13 +46,13 @@ inline void badge(const char* label, ImVec4 color) {
     const ImVec2 pad(theme::kSpace1 * 1.5f, 2.0f);
     const ImVec2 text = ImGui::CalcTextSize(label);
     const ImVec2 pos = ImGui::GetCursorScreenPos();
-    const ImVec2 min(pos.x, pos.y);
-    const ImVec2 max(pos.x + text.x + pad.x * 2.0f, pos.y + text.y + pad.y * 2.0f);
-    filled_rect(min, max, ImVec4(color.x, color.y, color.z, 0.18f), 4.0f);
-    ImGui::GetWindowDrawList()->AddRect(min, max, ImGui::GetColorU32(color), 4.0f);
-    ImGui::SetCursorScreenPos(ImVec2(min.x + pad.x, min.y + pad.y));
+    const ImVec2 lo(pos.x, pos.y);
+    const ImVec2 hi(pos.x + text.x + pad.x * 2.0f, pos.y + text.y + pad.y * 2.0f);
+    filled_rect(lo, hi, ImVec4(color.x, color.y, color.z, 0.18f), 4.0f);
+    ImGui::GetWindowDrawList()->AddRect(lo, hi, ImGui::GetColorU32(color), 4.0f);
+    ImGui::SetCursorScreenPos(ImVec2(lo.x + pad.x, lo.y + pad.y));
     ImGui::TextColored(color, "%s", label);
-    ImGui::SetCursorScreenPos(ImVec2(max.x, min.y));
+    ImGui::SetCursorScreenPos(ImVec2(hi.x, lo.y));
     ImGui::Dummy(ImVec2(0.0f, text.y + pad.y * 2.0f));
 }
 
