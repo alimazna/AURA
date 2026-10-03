@@ -524,6 +524,36 @@ Interpretation: Phase 3 and 4 satisfy their V3-40 capability sets to the statica
 behaviourally tested level. No live path; no profitability/calibration claim; research cannot mutate
 runtime.
 
+
+## 2026-10-02 - Canonical Phase 5 (Evolution) / Phase 6 (Validation) / Phase 7 (Governance)
+
+Toolchain: `g++ (Debian 14.2.0-19) 14.2.0`, `-std=c++17`/`-std=c++20`,
+`-Wall -Wextra -Werror -pedantic`.
+
+Phase 5 (`src/evolution/`): Candidate, CandidateRegistry, EvolutionGraph, CandidateComparison,
+EvolutionTests -> PASS c++17/c++20. Proven: explicit candidate lifecycle with no hidden transitions
+(cannot reach PROMOTED without human-approval path); append-only registry retains history and refuses
+illegal jumps; matched comparison yields INSUFFICIENT_EVIDENCE when unmatched and VETOED on a failed
+hard constraint; evolution graph acyclic (unknown parent rejected) with reproducible lineage.
+
+Phase 6 (`src/validation/`): ValidationFirewall, EvidenceFirewall, EvaluatorFirewall,
+RewardHackingDefense, StatisticalControls, ValidationTests -> PASS c++17/c++20. Proven: missing check
+is NOT_RUN not PASS; any FAIL is NOT_CREDIBLE; holdout budget enforced, malformed request refused, no
+contamination on refused query; contamination is monotone (no silent reset); evaluator-family mismatch
+refused; hard constraints veto a high composite metric; missing statistical evidence is not passing.
+
+Phase 7 (`src/governance/`): PolicyEngine, ForbiddenBehavior, PromotionGate, HumanDecision,
+AuditLedger, GovernanceTests -> PASS c++17/c++20. Proven: policy by change type (risk/evaluator/
+research-method need human approval); forbidden behaviors rejected (only a trusted maintainer may
+request governed deployment actions, never the integrity anchors); promotion requires every gate incl.
+human approval and a shadow-stage candidate, with no self-promotion; automated actors cannot record an
+ACCEPTED human decision; audit ledger append-only with no mutation API.
+
+Header self-containment + combined TU verified for all Phase 5/6/7 headers under both standards.
+Interpretation: Phases 5-7 satisfy their V3-40 capability sets to the statically verified,
+behaviourally tested level. No live path; no profitability/calibration claim; governance cannot
+self-promote or mutate runtime.
+
 ## Future test entry format
 
 - Date

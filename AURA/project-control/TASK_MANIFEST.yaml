@@ -31,8 +31,7 @@ authority_class_enum:
 path_status_note: Phase 0 filenames are from V3-42 (CANONICAL decomposition). Phase 0.5/1/2 filenames
   and src/ layout are PROPOSED implementation decomposition and are subject to integration review (V3-16,
   V3-46). They must not be treated as canonical architecture.
-current_task: Canonical Phases 3-4 implemented (src/learning, src/research) and APPROVED; Phases 5-11
-  promoted by DECISIONS.md 2026-10-02 and in progress.
+current_task: Canonical Phases 3-7 implemented and APPROVED; Phases 8-11 in progress.
 tasks:
 - id: TASK-BOOTSTRAP-001
   phase: BOOTSTRAP
@@ -1522,43 +1521,40 @@ tasks:
   module: EVOLUTION
   layer: DEFERRED_PLANE
   authority: CANONICAL
-  status: DEFERRED
-  output: (deferred - no file-level decomposition until explicitly promoted via DECISIONS.md)
+  status: APPROVED
+  output: (promoted; decomposed into file-level tasks + milestone)
   dependencies:
   - PHASE-4
   - project-control/DECISIONS.md
   objective: 'Master capability set: candidate generator; candidate registry; evolution graph; candidate
     comparison.'
-  acceptance: Remains part of the Master architecture but inactive; requires explicit human promotion
-    recorded in DECISIONS.md followed by manifest update (IMPLEMENTATION_SCOPE.md scope-change rule).
+  acceptance: Promoted by DECISIONS.md 2026-10-02; file-level tasks APPROVED; tests pass.
 - id: PHASE-6
   phase: '6'
   module: VALIDATION
   layer: DEFERRED_PLANE
   authority: CANONICAL
-  status: DEFERRED
-  output: (deferred - no file-level decomposition until explicitly promoted via DECISIONS.md)
+  status: APPROVED
+  output: (promoted; decomposed into file-level tasks + milestone)
   dependencies:
   - PHASE-5
   - project-control/DECISIONS.md
   objective: 'Master capability set: validation firewall; OOS; walk-forward; stress; regression; holdout
     service; evaluator firewall.'
-  acceptance: Remains part of the Master architecture but inactive; requires explicit human promotion
-    recorded in DECISIONS.md followed by manifest update (IMPLEMENTATION_SCOPE.md scope-change rule).
+  acceptance: Promoted by DECISIONS.md 2026-10-02; file-level tasks APPROVED; tests pass.
 - id: PHASE-7
   phase: '7'
   module: GOVERNANCE
   layer: DEFERRED_PLANE
   authority: CANONICAL
-  status: DEFERRED
-  output: (deferred - no file-level decomposition until explicitly promoted via DECISIONS.md)
+  status: APPROVED
+  output: (promoted; decomposed into file-level tasks + milestone)
   dependencies:
   - PHASE-6
   - project-control/DECISIONS.md
   objective: 'Master capability set: approval gate; change investigation report; promotion gate; known-good
     registry; rollback; incident/postmortem.'
-  acceptance: Remains part of the Master architecture but inactive; requires explicit human promotion
-    recorded in DECISIONS.md followed by manifest update (IMPLEMENTATION_SCOPE.md scope-change rule).
+  acceptance: Promoted by DECISIONS.md 2026-10-02; file-level tasks APPROVED; tests pass.
 - id: PHASE-8
   phase: '8'
   module: OPERATING_WINDOW_RECOVERY
@@ -2263,4 +2259,266 @@ tasks:
   objective: Phase 4 Research Plane milestone.
   acceptance: All file-level tasks APPROVED; tests pass.
   evidence: All 8 file-level tasks APPROVED; ResearchTests.cpp passes c++17/c++20 strict.
+- id: EVOL-0001
+  phase: '5'
+  module: EVOLUTION
+  layer: EVOLUTION_GOVERNANCE_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: src/evolution/Candidate.h
+  dependencies:
+  - RESEARCH-0002
+  objective: Define the candidate schema and explicit candidate lifecycle (Master 18/19).
+  acceptance: Explicit lifecycle only; no hidden transitions; no path to production mutation.
+  evidence: Implemented and reviewed 2026-10-02. Verified by src/evolution/EvolutionTests.cpp (real code
+    paths, no mocks) under g++ c++17/c++20 strict.
+- id: EVOL-0002
+  phase: '5'
+  module: EVOLUTION
+  layer: EVOLUTION_GOVERNANCE_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: src/evolution/CandidateRegistry.h
+  dependencies:
+  - EVOL-0001
+  objective: Append-only candidate registry retaining diverse branches (Master 12.1).
+  acceptance: History retained; idempotent on identity; no automatic promotion.
+  evidence: Implemented and reviewed 2026-10-02. Verified by src/evolution/EvolutionTests.cpp (real code
+    paths, no mocks) under g++ c++17/c++20 strict.
+- id: EVOL-0003
+  phase: '5'
+  module: EVOLUTION
+  layer: EVOLUTION_GOVERNANCE_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: src/evolution/EvolutionGraph.h
+  dependencies:
+  - EVOL-0001
+  objective: Evolution graph with explicit single parent per version (Master 33.1).
+  acceptance: Acyclic by construction; unknown parent rejected; lineage reproducible.
+  evidence: Implemented and reviewed 2026-10-02. Verified by src/evolution/EvolutionTests.cpp (real code
+    paths, no mocks) under g++ c++17/c++20 strict.
+- id: EVOL-0004
+  phase: '5'
+  module: EVOLUTION
+  layer: EVOLUTION_GOVERNANCE_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: src/evolution/CandidateComparison.h
+  dependencies:
+  - EVOL-0001
+  objective: Matched control-vs-candidate comparison (Master 11.2/17).
+  acceptance: Constraints are vetoes; unmatched comparison yields INSUFFICIENT_EVIDENCE; no auto-promotion.
+  evidence: Implemented and reviewed 2026-10-02. Verified by src/evolution/EvolutionTests.cpp (real code
+    paths, no mocks) under g++ c++17/c++20 strict.
+- id: EVOL-0005
+  phase: '5'
+  module: EVOLUTION
+  layer: EVOLUTION_GOVERNANCE_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: src/evolution/EvolutionTests.cpp
+  dependencies:
+  - EVOL-0001
+  - EVOL-0004
+  objective: Behavioural tests proving Phase 5 evolution properties.
+  acceptance: Lifecycle integrity; no auto-promotion; veto/matching; graph acyclicity.
+  evidence: Implemented and reviewed 2026-10-02. Verified by src/evolution/EvolutionTests.cpp (real code
+    paths, no mocks) under g++ c++17/c++20 strict.
+- id: PHASE-5-MILESTONE
+  phase: '5'
+  module: EVOLUTION
+  layer: EVOLUTION_GOVERNANCE_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: (phase milestone - aggregates EVOL-0001..EVOL-0005)
+  dependencies:
+  - EVOL-0005
+  objective: Phase 5 Evolution milestone.
+  acceptance: All file-level tasks APPROVED; tests pass.
+  evidence: All 5 file-level tasks APPROVED; EvolutionTests.cpp passes c++17/c++20 strict.
+- id: VALID-0001
+  phase: '6'
+  module: VALIDATION
+  layer: EVOLUTION_GOVERNANCE_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: src/validation/ValidationFirewall.h
+  dependencies:
+  - RESEARCH-0006
+  objective: 'Validation firewall boundary: interesting vs credible (Master 14).'
+  acceptance: Missing check is NOT_RUN not PASS; any FAIL is not credible; firewall not a guarantee.
+  evidence: Implemented and reviewed 2026-10-02. Verified by src/validation/ValidationTests.cpp (real
+    code paths, no mocks) under g++ c++17/c++20 strict.
+- id: VALID-0002
+  phase: '6'
+  module: VALIDATION
+  layer: EVOLUTION_GOVERNANCE_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: src/validation/EvidenceFirewall.h
+  dependencies:
+  - VALID-0001
+  objective: 'Holdout service: no raw access, immutable audit, query budget, contamination (Master 15).'
+  acceptance: Malformed request refused; budget enforced; contamination monotone; no raw data crosses.
+  evidence: Implemented and reviewed 2026-10-02. Verified by src/validation/ValidationTests.cpp (real
+    code paths, no mocks) under g++ c++17/c++20 strict.
+- id: VALID-0003
+  phase: '6'
+  module: VALIDATION
+  layer: EVOLUTION_GOVERNANCE_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: src/validation/EvaluatorFirewall.h
+  dependencies:
+  - VALID-0001
+  objective: 'Evaluator firewall: candidate cannot redefine the evaluator (Master 16).'
+  acceptance: Mismatched evaluator/registry refused; new evidence family documented, not silent.
+  evidence: Implemented and reviewed 2026-10-02. Verified by src/validation/ValidationTests.cpp (real
+    code paths, no mocks) under g++ c++17/c++20 strict.
+- id: VALID-0004
+  phase: '6'
+  module: VALIDATION
+  layer: EVOLUTION_GOVERNANCE_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: src/validation/RewardHackingDefense.h
+  dependencies:
+  - VALID-0001
+  objective: 'Reward-hacking defense: constraints are vetoes, metrics are optimizers (Master 17).'
+  acceptance: High composite metric cannot overcome a failed hard constraint or absent validity.
+  evidence: Implemented and reviewed 2026-10-02. Verified by src/validation/ValidationTests.cpp (real
+    code paths, no mocks) under g++ c++17/c++20 strict.
+- id: VALID-0005
+  phase: '6'
+  module: VALIDATION
+  layer: EVOLUTION_GOVERNANCE_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: src/validation/StatisticalControls.h
+  dependencies:
+  - VALID-0001
+  objective: Multiple-testing evidence controls (Master 14.3).
+  acceptance: Missing evidence is not passing; no profitability/calibration claim.
+  evidence: Implemented and reviewed 2026-10-02. Verified by src/validation/ValidationTests.cpp (real
+    code paths, no mocks) under g++ c++17/c++20 strict.
+- id: VALID-0006
+  phase: '6'
+  module: VALIDATION
+  layer: EVOLUTION_GOVERNANCE_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: src/validation/ValidationTests.cpp
+  dependencies:
+  - VALID-0001
+  - VALID-0005
+  objective: Behavioural tests proving Phase 6 validation properties.
+  acceptance: Firewall; budget; contamination monotone; evaluator family; vetoes; statistical gates.
+  evidence: Implemented and reviewed 2026-10-02. Verified by src/validation/ValidationTests.cpp (real
+    code paths, no mocks) under g++ c++17/c++20 strict.
+- id: PHASE-6-MILESTONE
+  phase: '6'
+  module: VALIDATION
+  layer: EVOLUTION_GOVERNANCE_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: (phase milestone - aggregates VALID-0001..VALID-0006)
+  dependencies:
+  - VALID-0006
+  objective: Phase 6 Validation milestone.
+  acceptance: All file-level tasks APPROVED; tests pass.
+  evidence: All 6 file-level tasks APPROVED; ValidationTests.cpp passes c++17/c++20 strict.
+- id: GOV-0001
+  phase: '7'
+  module: GOVERNANCE
+  layer: EVOLUTION_GOVERNANCE_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: src/governance/PolicyEngine.h
+  dependencies:
+  - EVOL-0001
+  objective: Policy engine selecting validation policy by change type before the run (Master 38).
+  acceptance: Deterministic policy table; risk/evaluator/research-method require human approval.
+  evidence: Implemented and reviewed 2026-10-02. Verified by src/governance/GovernanceTests.cpp (real
+    code paths, no mocks) under g++ c++17/c++20 strict.
+- id: GOV-0002
+  phase: '7'
+  module: GOVERNANCE
+  layer: EVOLUTION_GOVERNANCE_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: src/governance/ForbiddenBehavior.h
+  dependencies:
+  - GOV-0001
+  objective: Hard-forbidden behavior boundary (Master 39).
+  acceptance: Forbidden actions rejected not downgraded; only trusted maintainer may request governed
+    actions.
+  evidence: Implemented and reviewed 2026-10-02. Verified by src/governance/GovernanceTests.cpp (real
+    code paths, no mocks) under g++ c++17/c++20 strict.
+- id: GOV-0003
+  phase: '7'
+  module: GOVERNANCE
+  layer: EVOLUTION_GOVERNANCE_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: src/governance/PromotionGate.h
+  dependencies:
+  - GOV-0002
+  - EVOL-0001
+  objective: Promotion gate with all required gates (Master 31).
+  acceptance: Promotion-ready only when every gate satisfied incl. human approval and shadow; no self-promotion.
+  evidence: Implemented and reviewed 2026-10-02. Verified by src/governance/GovernanceTests.cpp (real
+    code paths, no mocks) under g++ c++17/c++20 strict.
+- id: GOV-0004
+  phase: '7'
+  module: GOVERNANCE
+  layer: EVOLUTION_GOVERNANCE_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: src/governance/HumanDecision.h
+  dependencies:
+  - GOV-0001
+  objective: Human decision ledger / research notebook (Master 35/36.2).
+  acceptance: Automated actors may only propose; decisions immutable; idempotent on identity.
+  evidence: Implemented and reviewed 2026-10-02. Verified by src/governance/GovernanceTests.cpp (real
+    code paths, no mocks) under g++ c++17/c++20 strict.
+- id: GOV-0005
+  phase: '7'
+  module: GOVERNANCE
+  layer: EVOLUTION_GOVERNANCE_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: src/governance/AuditLedger.h
+  dependencies:
+  - GOV-0001
+  objective: Append-only audit ledger (Master 34.1/V3-31).
+  acceptance: No edit/delete API; duplicate identity rejected; deterministic.
+  evidence: Implemented and reviewed 2026-10-02. Verified by src/governance/GovernanceTests.cpp (real
+    code paths, no mocks) under g++ c++17/c++20 strict.
+- id: GOV-0006
+  phase: '7'
+  module: GOVERNANCE
+  layer: EVOLUTION_GOVERNANCE_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: src/governance/GovernanceTests.cpp
+  dependencies:
+  - GOV-0001
+  - GOV-0005
+  objective: Behavioural tests proving Phase 7 governance properties.
+  acceptance: Policy; forbidden screen; promotion gate; human decisions; append-only audit.
+  evidence: Implemented and reviewed 2026-10-02. Verified by src/governance/GovernanceTests.cpp (real
+    code paths, no mocks) under g++ c++17/c++20 strict.
+- id: PHASE-7-MILESTONE
+  phase: '7'
+  module: GOVERNANCE
+  layer: EVOLUTION_GOVERNANCE_PLANE
+  authority: CANONICAL
+  status: APPROVED
+  output: (phase milestone - aggregates GOV-0001..GOV-0006)
+  dependencies:
+  - GOV-0006
+  objective: Phase 7 Governance milestone.
+  acceptance: All file-level tasks APPROVED; tests pass.
+  evidence: All 6 file-level tasks APPROVED; GovernanceTests.cpp passes c++17/c++20 strict.
 last_updated: '2026-10-02'

@@ -91,6 +91,22 @@ Date: 2026-10-02
   explicit `DECISIONS.md` entry.
 - Pushed to `origin/main`; remote URL is token-free and no credential is persisted anywhere.
 
+### Session end state (2026-10-02, canonical Phases 5–7)
+
+- Phase 5 (Evolution) COMPLETE and `APPROVED`: `src/evolution/` — `Candidate`, `CandidateRegistry`,
+  `EvolutionGraph`, `CandidateComparison`, `EvolutionTests.cpp` (`EVOL-0001`..`EVOL-0005`).
+- Phase 6 (Validation) COMPLETE and `APPROVED`: `src/validation/` — `ValidationFirewall`,
+  `EvidenceFirewall`, `EvaluatorFirewall`, `RewardHackingDefense`, `StatisticalControls`,
+  `ValidationTests.cpp` (`VALID-0001`..`VALID-0006`).
+- Phase 7 (Governance) COMPLETE and `APPROVED`: `src/governance/` — `PolicyEngine`,
+  `ForbiddenBehavior`, `PromotionGate`, `HumanDecision`, `AuditLedger`, `GovernanceTests.cpp`
+  (`GOV-0001`..`GOV-0006`).
+- Verification: all Phase 5/6/7 headers self-contained + combined TU under c++17/c++20 strict;
+  `EvolutionTests.cpp`, `ValidationTests.cpp`, `GovernanceTests.cpp` PASS under both standards.
+  No live path; constraints are vetoes; governance cannot self-promote or mutate runtime.
+- Manifest now 151 tasks. Next: canonical Phases 8–11 (Operating Window & Recovery, Desktop Control
+  Center, Telegram, Controlled Real-World Validation).
+
 ### Session end state (2026-10-02, canonical Phases 3–4)
 
 - Under the session authorization, canonical Phases 3–11 were promoted into active scope via
