@@ -223,6 +223,17 @@ jobs:
           Copy-Item "build\Release\aura_gui.exe" (Join-Path $dist "aura_gui.exe")
           Copy-Item "build\Release\aura.exe" (Join-Path $dist "aura.exe")
           Copy-Item "README.md" (Join-Path $dist "README.md")
+          # Ship the staged type roles and brand assets beside the exe so the
+          # packaged GUI is fully self-contained (the build stages them under the
+          # binary directory). A missing brand asset is tolerated: the header then
+          # renders the ASTRA wordmark alone.
+          $exeDir = Split-Path -Parent (Resolve-Path "build\Release\aura_gui.exe")
+          foreach ($sub in @("fonts", "assets")) {
+            $src = Join-Path $exeDir $sub
+            if (Test-Path $src) {
+              Copy-Item -Recurse -Force $src (Join-Path $dist $sub)
+            }
+          }
           # Both executables are self-contained (static CRT). The GUI additionally
           # uses the OS-provided opengl32.dll; no third-party DLL, data file or
           # config is required. The only file read/written at run time is the store
@@ -235,12 +246,16 @@ jobs:
             aura_gui.exe   desktop control center (Dear ImGui + GLFW + OpenGL)
             aura.exe       headless console host / diagnostics / CI smoke
             README.md      build + usage notes
+            fonts/         terminal type roles (Roboto-Medium, Cousine-Regular)
+            assets/brand/  optional ASTRA brand mark (loaded when present)
 
-          Required runtime files: none. Both executables link the CRT statically and
-          need no third-party DLLs, data files or configuration. aura_gui.exe uses
-          the OS-provided opengl32.dll. Neither reads an absolute developer path; the
-          only file read/written is the persistence store you pass with --store
-          (created on first use).
+          Required runtime files: none beyond the files above. Both executables link
+          the CRT statically and need no third-party DLLs or configuration.
+          aura_gui.exe uses the OS-provided opengl32.dll. Neither reads an absolute
+          developer path; the only file read/written is the persistence store you
+          pass with --store (created on first use). The fonts/ and assets/ folders
+          are read from next to aura_gui.exe; if a font or brand asset is absent the
+          UI falls back to the built-in face / wordmark.
 
           Graphics: aura_gui.exe prefers an OpenGL 3.3 core context and, if the
           driver cannot provide one (e.g. legacy Intel HD Graphics 3000 on Windows),
@@ -313,10 +328,20 @@ jobs:
           Write-Host "ZIP entries:"; $names | ForEach-Object { Write-Host "  $_" }
           if (-not ($names -contains "aura_gui.exe")) { throw "aura_gui.exe missing from ZIP" }
           if (-not ($names -contains "aura.exe")) { throw "aura.exe missing from ZIP" }
+          # Normalise separators so the nested brand asset is checked regardless of
+          # how the archive records path separators.
+          $norm = $names | ForEach-Object { $_ -replace '\\', '/' }
+          if (-not ($norm -contains "assets/brand/astra-mark.png")) {
+            throw "assets/brand/astra-mark.png missing from ZIP"
+          }
           # Extract and run the packaged executables to prove the artifacts work.
           $verify = "verify"
           Remove-Item -Recurse -Force $verify -ErrorAction SilentlyContinue
           Expand-Archive -Path $zip -DestinationPath $verify
+          $packagedMark = Join-Path $verify "assets/brand/astra-mark.png"
+          if (!(Test-Path $packagedMark)) { throw "extracted assets/brand/astra-mark.png missing" }
+          Write-Host ("Brand asset staged: {0} ({1:N0} bytes)" -f `
+            $packagedMark, (Get-Item $packagedMark).Length)
           $packaged = Join-Path $verify "aura.exe"
           if (!(Test-Path $packaged)) { throw "extracted aura.exe missing" }
           & $packaged --self-test --store (Join-Path (Resolve-Path $verify).Path "pkg.aura")

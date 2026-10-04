@@ -43,12 +43,29 @@
 #define GL_SILENCE_DEPRECATION
 #include <GLFW/glfw3.h>
 
+// Optional ASTRA brand mark. When the build provides stb_image and a real asset
+// exists on disk it is uploaded as a GL texture and drawn in the header; when the
+// asset is absent (or the loader is unavailable) the header renders the
+// typographic wordmark alone. No logo is ever synthesized or redrawn.
+#if defined(AURA_HAVE_STB_IMAGE)
+#define STB_IMAGE_IMPLEMENTATION
+#define STBI_ONLY_PNG
+#define STBI_ONLY_JPEG
+#include "stb_image.h"
+#endif
+
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <string>
 #include <vector>
+
+#if defined(_WIN32)
+#include <windows.h>
+#else
+#include <unistd.h>
+#endif
 
 namespace {
 
@@ -226,6 +243,88 @@ void glfw_error_callback(int error, const char* description) {
     std::fprintf(stderr, "GLFW error %d: %s\n", error, description);
 }
 
+// A loaded brand mark: a GL texture plus its pixel size. `texture` is 0 when no
+// real asset was found, in which case the header draws the wordmark alone.
+struct BrandMark {
+    unsigned int texture{0};
+    int width{0};
+    int height{0};
+    bool loaded() const { return texture != 0; }
+};
+
+// Directory containing the running executable, so the packaged app finds its
+// staged assets next to itself regardless of the working directory. Falls back to
+// an empty string when it cannot be determined.
+std::string executable_dir() {
+#if defined(_WIN32)
+    char buf[1024];
+    const DWORD n = GetModuleFileNameA(nullptr, buf, sizeof(buf));
+    if (n == 0 || n >= sizeof(buf)) return {};
+    std::string p(buf, n);
+    const auto pos = p.find_last_of("\\/");
+    return pos == std::string::npos ? std::string{} : p.substr(0, pos);
+#else
+    char buf[1024];
+    const ssize_t n = readlink("/proc/self/exe", buf, sizeof(buf) - 1);
+    if (n <= 0) return {};
+    buf[n] = '\0';
+    std::string p(buf);
+    const auto pos = p.find_last_of('/');
+    return pos == std::string::npos ? std::string{} : p.substr(0, pos);
+#endif
+}
+
+std::string join_path(const std::string& dir, const std::string& leaf) {
+    if (dir.empty()) return leaf;
+    std::string s = dir;
+    if (s.back() != '/' && s.back() != '\\') s.push_back('/');
+    s += leaf;
+    return s;
+}
+
+// Attempts to load the real ASTRA brand mark. It looks next to the executable
+// first (the packaged/staged location), then in the build's asset directory.
+// Returns an empty mark when no asset exists or the loader is unavailable. It
+// never draws a substitute logo.
+BrandMark load_brand_mark() {
+    BrandMark mark;
+#if defined(AURA_HAVE_STB_IMAGE)
+    const std::string exe_dir = executable_dir();
+    const char* names[] = {"astra-mark.png", "astra-logo.png", "astra.png"};
+    std::vector<std::string> candidates;
+    for (const char* name : names) {
+        if (!exe_dir.empty()) {
+            candidates.push_back(join_path(join_path(exe_dir, "assets/brand"), name));
+            candidates.push_back(join_path(exe_dir, name));
+        }
+#if defined(AURA_BRAND_DIR)
+        candidates.push_back(join_path(AURA_BRAND_DIR, name));
+#endif
+    }
+    for (const std::string& path : candidates) {
+        int w = 0, h = 0, comp = 0;
+        stbi_set_flip_vertically_on_load(0);
+        unsigned char* pixels = stbi_load(path.c_str(), &w, &h, &comp, 4);
+        if (pixels == nullptr) continue;
+        GLuint tex = 0;
+        glGenTextures(1, &tex);
+        glBindTexture(GL_TEXTURE_2D, tex);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+        stbi_image_free(pixels);
+        mark.texture = tex;
+        mark.width = w;
+        mark.height = h;
+        std::printf("aura-gui: loaded ASTRA brand mark %s (%dx%d)\n", path.c_str(), w, h);
+        break;
+    }
+#endif
+    return mark;
+}
+
 // A created window/context plus which ImGui backend must drive it.
 struct RendererContext {
     GLFWwindow* window{nullptr};
@@ -254,7 +353,7 @@ RendererContext create_context(aura::desktop::RendererProfile profile) {
         glfwGetMonitorWorkarea(mon, &wx, &wy, &ww, &wh);
         if (ww >= 1024 && wh >= 640) { win_w = ww; win_h = wh; }
     }
-    ctx.window = glfwCreateWindow(win_w, win_h, "AURA Control Center (SHADOW ONLY)", nullptr, nullptr);
+    ctx.window = glfwCreateWindow(win_w, win_h, "ASTRA — XAUUSD Market Intelligence (SHADOW ONLY)", nullptr, nullptr);
     if (ctx.window != nullptr) {
         // Start maximized so the terminal fills the desktop work area immediately
         // at launch. This is a normal, resizable maximized window (not an exclusive
@@ -355,6 +454,16 @@ int run_gui(const aura::desktop::ControlCenterOptions& options, long max_frames,
     }
 
     aura::desktop::ControlCenterState state(options);
+    // Optional real brand mark (present only when a real asset shipped). The
+    // texture must be created while the GL context is current, which it is here.
+    const BrandMark brand = load_brand_mark();
+    aura::desktop::terminal::BrandMarkView brand_view;
+    if (brand.loaded()) {
+        brand_view.texture = reinterpret_cast<ImTextureID>(static_cast<intptr_t>(brand.texture));
+        brand_view.aspect =
+            brand.height > 0 ? static_cast<float>(brand.width) / static_cast<float>(brand.height)
+                             : 1.0f;
+    }
     // Report-only recovery evaluation at boot; it never auto-resumes state.
     {
         const aura::runtime::RecoveryOutcome& outcome = state.evaluate_recovery(false);
@@ -384,6 +493,8 @@ int run_gui(const aura::desktop::ControlCenterOptions& options, long max_frames,
         selected = pin_section;
 
     long rendered = 0;
+    bool exit_dialog_open = false;
+    bool exit_confirmed = false;
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
 
@@ -421,7 +532,7 @@ int run_gui(const aura::desktop::ControlCenterOptions& options, long max_frames,
         // ---- Top terminal bar -------------------------------------------------
         const std::string page_title =
             aura::desktop::section_title_for(selected);
-        aura::desktop::terminal::top_bar(snap, page_title, renderer, state.paused());
+        aura::desktop::terminal::top_bar(snap, page_title, renderer, state.paused(), brand_view);
 
         // ---- Body: icon rail + navigation + main workspace ---------------------
         const float status_h = aura::desktop::theme::kStatusBarHeight;
@@ -437,11 +548,12 @@ int run_gui(const aura::desktop::ControlCenterOptions& options, long max_frames,
 
         const aura::desktop::terminal::SidebarResult nav =
             aura::desktop::terminal::sidebar(nav_groups, selected,
-                                             aura::desktop::layout::sidebar_width(window_w));
+                                             aura::desktop::layout::sidebar_width(window_w),
+                                             brand_view);
         if (nav.clicked >= 0) selected = nav.clicked;
-        // EXIT (lower-left sidebar footer) requests a clean shutdown; it is handled
-        // after the frame so the normal persistence/recovery lifecycle runs.
-        const bool exit_requested = nav.exit_requested;
+        // EXIT (lower-left sidebar footer) opens the confirmation dialog; a
+        // confirmed exit is routed through the normal shutdown lifecycle below.
+        if (nav.exit_pressed) exit_dialog_open = true;
 
         ImGui::SameLine();
 
@@ -462,6 +574,10 @@ int run_gui(const aura::desktop::ControlCenterOptions& options, long max_frames,
         // ---- Slim status bar: real runtime state only -------------------------
         aura::desktop::terminal::status_bar(state, report, renderer);
 
+        // ---- EXIT confirmation (modal) ----------------------------------------
+        if (aura::desktop::terminal::exit_confirmation(exit_dialog_open))
+            exit_confirmed = true;
+
         ImGui::End();
 
         ImGui::Render();
@@ -481,8 +597,8 @@ int run_gui(const aura::desktop::ControlCenterOptions& options, long max_frames,
             std::printf("aura-gui: rendered %ld frames (bounded smoke); requesting close\n",
                         rendered);
             glfwSetWindowShouldClose(window, GLFW_TRUE);
-        } else if (exit_requested) {
-            std::printf("aura-gui: EXIT requested; requesting close\n");
+        } else if (exit_confirmed) {
+            std::printf("aura-gui: EXIT confirmed; requesting clean close\n");
             glfwSetWindowShouldClose(window, GLFW_TRUE);
         } else if (max_frames > 0 && pin_section < 0) {
             // Bounded smoke: cycle through every V3-37 section so each panel's

@@ -3,11 +3,13 @@
 
 // AURA Terminal design system.
 //
-// A muted graphite/navy terminal palette with one restrained cyan accent, a
-// small set of true type roles (hero / title / body / small / mono) and a single
-// spacing scale. Everything is flat and fixed-function friendly: no gradients,
-// no shaders, no textures beyond the font atlas, so the identical design renders
-// on the OpenGL 3.3 core backend and the legacy OpenGL 2.1 backend.
+// The ASTRA institutional terminal palette: a deep architectural navy shell with
+// slightly lighter navy panels, one restrained steel accent for the brand and a
+// single cyan functional accent for the active selection. A small set of true
+// type roles (hero / title / body / small / mono) and a single spacing scale.
+// Everything is flat and fixed-function friendly: no gradients, no shaders, no
+// textures beyond the font atlas, so the identical design renders on the OpenGL
+// 3.3 core backend and the legacy OpenGL 2.1 backend.
 //
 // State classification lives in StateVisuals.h (pure, ImGui-free) so it is
 // unit-testable; this file only maps state to colour and holds the style.
@@ -28,19 +30,22 @@ namespace theme {
 // selected navigation item, the active timeframe and genuinely important values.
 // A deep blue-black shell holds slightly lighter graphite surfaces so panels read
 // as distinct planes without heavy borders or shadows.
-constexpr ImVec4 kBackground{0.039f, 0.071f, 0.114f, 1.00f};     // app shell
-constexpr ImVec4 kRail{0.031f, 0.059f, 0.098f, 1.00f};          // far-left icon rail
-constexpr ImVec4 kSurface{0.075f, 0.118f, 0.169f, 1.00f};       // panels
-constexpr ImVec4 kSurfaceRaised{0.086f, 0.133f, 0.184f, 1.00f};  // header / rows
-constexpr ImVec4 kSurfaceInset{0.024f, 0.045f, 0.075f, 1.00f};   // chart canvas
-constexpr ImVec4 kBorder{0.129f, 0.176f, 0.243f, 1.00f};
-constexpr ImVec4 kBorderStrong{0.196f, 0.259f, 0.337f, 1.00f};
-constexpr ImVec4 kTextPrimary{0.878f, 0.906f, 0.933f, 1.00f};
-constexpr ImVec4 kTextSecondary{0.710f, 0.749f, 0.800f, 1.00f};
-constexpr ImVec4 kTextMuted{0.557f, 0.616f, 0.671f, 1.00f};
-constexpr ImVec4 kAccent{0.180f, 0.812f, 0.894f, 1.00f};
-constexpr ImVec4 kAccentDim{0.106f, 0.478f, 0.529f, 1.00f};
-constexpr ImVec4 kGridline{0.129f, 0.176f, 0.243f, 0.50f};
+constexpr ImVec4 kBackground{0.020f, 0.043f, 0.067f, 1.00f};     // app shell
+constexpr ImVec4 kRail{0.014f, 0.031f, 0.049f, 1.00f};          // far-left icon rail
+constexpr ImVec4 kSurface{0.047f, 0.090f, 0.125f, 1.00f};       // panels
+constexpr ImVec4 kSurfaceRaised{0.061f, 0.113f, 0.155f, 1.00f};  // header / rows
+constexpr ImVec4 kSurfaceInset{0.010f, 0.024f, 0.039f, 1.00f};   // chart canvas
+constexpr ImVec4 kBorder{0.094f, 0.153f, 0.196f, 1.00f};
+constexpr ImVec4 kBorderStrong{0.149f, 0.216f, 0.271f, 1.00f};
+constexpr ImVec4 kTextPrimary{0.945f, 0.957f, 0.965f, 1.00f};
+constexpr ImVec4 kTextSecondary{0.702f, 0.741f, 0.780f, 1.00f};
+constexpr ImVec4 kTextMuted{0.475f, 0.529f, 0.588f, 1.00f};
+// Steel is the ASTRA brand/identity accent; cyan is the functional selection
+// accent. Keeping them distinct means brand chrome never competes with state.
+constexpr ImVec4 kBrand{0.790f, 0.835f, 0.870f, 1.00f};
+constexpr ImVec4 kAccent{0.290f, 0.760f, 0.878f, 1.00f};
+constexpr ImVec4 kAccentDim{0.118f, 0.420f, 0.494f, 1.00f};
+constexpr ImVec4 kGridline{0.094f, 0.153f, 0.196f, 0.50f};
 
 // State colours. Kept separate from the surface palette so a state is never
 // mistaken for decoration.
@@ -262,8 +267,8 @@ inline void apply_aura_style() {
     c[ImGuiCol_TextDisabled] = kTextMuted;
 
     c[ImGuiCol_FrameBg] = kSurfaceRaised;
-    c[ImGuiCol_FrameBgHovered] = ImVec4(0.141f, 0.169f, 0.212f, 1.0f);
-    c[ImGuiCol_FrameBgActive] = ImVec4(0.165f, 0.196f, 0.243f, 1.0f);
+    c[ImGuiCol_FrameBgHovered] = ImVec4(0.086f, 0.145f, 0.196f, 1.0f);
+    c[ImGuiCol_FrameBgActive] = ImVec4(0.110f, 0.176f, 0.231f, 1.0f);
 
     c[ImGuiCol_TitleBg] = kSurface;
     c[ImGuiCol_TitleBgActive] = kSurface;
@@ -280,11 +285,11 @@ inline void apply_aura_style() {
     c[ImGuiCol_SliderGrabActive] = kAccent;
 
     c[ImGuiCol_Button] = kSurfaceRaised;
-    c[ImGuiCol_ButtonHovered] = ImVec4(0.141f, 0.169f, 0.212f, 1.0f);
+    c[ImGuiCol_ButtonHovered] = ImVec4(0.086f, 0.145f, 0.196f, 1.0f);
     c[ImGuiCol_ButtonActive] = kAccentDim;
 
-    c[ImGuiCol_Header] = ImVec4(0.141f, 0.169f, 0.212f, 1.0f);
-    c[ImGuiCol_HeaderHovered] = ImVec4(0.169f, 0.208f, 0.259f, 1.0f);
+    c[ImGuiCol_Header] = ImVec4(0.086f, 0.145f, 0.196f, 1.0f);
+    c[ImGuiCol_HeaderHovered] = ImVec4(0.110f, 0.176f, 0.231f, 1.0f);
     c[ImGuiCol_HeaderActive] = kAccentDim;
 
     c[ImGuiCol_Separator] = kBorder;
@@ -293,7 +298,7 @@ inline void apply_aura_style() {
 
     c[ImGuiCol_Tab] = kSurfaceRaised;
     c[ImGuiCol_TabHovered] = kAccentDim;
-    c[ImGuiCol_TabActive] = ImVec4(0.141f, 0.169f, 0.212f, 1.0f);
+    c[ImGuiCol_TabActive] = ImVec4(0.086f, 0.145f, 0.196f, 1.0f);
 
     c[ImGuiCol_TableHeaderBg] = kSurfaceRaised;
     c[ImGuiCol_TableBorderStrong] = kBorderStrong;

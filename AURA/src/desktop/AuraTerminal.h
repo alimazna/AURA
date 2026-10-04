@@ -67,11 +67,30 @@ inline bool last_close(const CandleSeries& cs, double& out, std::string& when) {
 
 // ---- Top terminal bar ------------------------------------------------------
 
+// A brand mark to draw in the chrome: a real GL texture plus its aspect ratio
+// (width / height) so it is never distorted. `texture == 0` means no real asset
+// was supplied, in which case the caller draws the typographic wordmark alone.
+struct BrandMarkView {
+    ImTextureID texture{0};
+    float aspect{1.0f};
+    bool valid() const { return texture != 0; }
+};
+
+// Draw the brand mark at the requested pixel height, preserving aspect ratio.
+inline void brand_mark_image(const BrandMarkView& mark, float height) {
+    if (!mark.valid() || height <= 0.0f) return;
+    const float w = height * (mark.aspect > 0.0f ? mark.aspect : 1.0f);
+    ImGui::Image(mark.texture, ImVec2(w, height));
+}
+
 // A compact terminal header: brand + instrument + descriptor on the left, the
 // current page title, and real status on the right. Height is fixed so the chart
-// keeps its space.
+// keeps its space. When a real ASTRA brand mark texture is available it is drawn
+// before the wordmark; otherwise the typographic wordmark stands alone (no
+// replacement logo is ever synthesized).
 inline void top_bar(const ControlCenterSnapshot& s, const std::string& page_title,
-                    const std::string& renderer, bool paused) {
+                    const std::string& renderer, bool paused,
+                    const BrandMarkView& brand_mark = {}) {
     const float bar_h = theme::kTopBarHeight;
     ImGui::BeginChild("topbar", ImVec2(0.0f, bar_h), false, ImGuiWindowFlags_NoScrollbar);
     const ImVec2 p = ImGui::GetCursorScreenPos();
@@ -83,9 +102,16 @@ inline void top_bar(const ControlCenterSnapshot& s, const std::string& page_titl
     const float line_h = ImGui::GetTextLineHeight();
     const float cy = (bar_h - line_h) * 0.5f;
 
-    // Left: brand + instrument + descriptor.
+    // Left: brand mark (if provided) + wordmark + instrument + descriptor.
     ImGui::SetCursorPos(ImVec2(theme::kSpace4, cy));
-    theme::text_hero(theme::kAccent, "AURA");
+    if (brand_mark.valid()) {
+        const float mark_h = line_h + 8.0f;
+        ImGui::SetCursorPosY((bar_h - mark_h) * 0.5f);
+        brand_mark_image(brand_mark, mark_h);
+        ImGui::SameLine(0.0f, theme::kSpace2);
+        ImGui::SetCursorPosY(cy);
+    }
+    theme::text_hero(theme::kBrand, "ASTRA");
     ImGui::SameLine(0.0f, theme::kSpace3);
     {
         const ImVec2 dp = ImGui::GetCursorScreenPos();
@@ -97,7 +123,7 @@ inline void top_bar(const ControlCenterSnapshot& s, const std::string& page_titl
         theme::text_hero(theme::kTextPrimary, "XAUUSD");
         ImGui::SameLine(0.0f, theme::kSpace2);
         ImGui::SetCursorPosY(cy + 5.0f);
-        theme::text_small(theme::kTextMuted, "MARKET INTELLIGENCE");
+        theme::text_small(theme::kTextMuted, "XAUUSD MARKET INTELLIGENCE");
     }
 
     // Centre-left: current page title (real navigation state).
@@ -178,24 +204,27 @@ inline int icon_rail(const std::vector<NavGroup>& groups, int selected) {
     const float tile = 36.0f;
     const float x = (w - tile) * 0.5f;
 
-    // Brand mark: an accent tile with a drawn "A" mark (no font dependency).
+    // Brand mark: a steel tile with a drawn "A" monogram (no font dependency).
+    // The monogram is brand chrome, so it uses the steel brand colour, not the
+    // functional cyan accent. When a real ASTRA logo asset is supplied it is drawn
+    // in the header instead; this monogram is only the rail's typographic mark.
     ImGui::SetCursorPos(ImVec2(x, theme::kSpace3));
     {
         const ImVec2 p = ImGui::GetCursorScreenPos();
         filled_rect(p, ImVec2(p.x + tile, p.y + tile),
-                    ImVec4(theme::kAccent.x, theme::kAccent.y, theme::kAccent.z, 0.16f), 5.0f);
+                    ImVec4(theme::kBrand.x, theme::kBrand.y, theme::kBrand.z, 0.16f), 5.0f);
         outlined_rect(p, ImVec2(p.x + tile, p.y + tile),
-                      ImVec4(theme::kAccent.x, theme::kAccent.y, theme::kAccent.z, 0.5f), 5.0f);
+                      ImVec4(theme::kBrand.x, theme::kBrand.y, theme::kBrand.z, 0.5f), 5.0f);
         ImDrawList* dl = ImGui::GetWindowDrawList();
         const float cx = p.x + tile * 0.5f;
         const float cy = p.y + tile * 0.5f;
         const float a = 8.0f;
-        dl->AddLine(ImVec2(cx - a, cy + a), ImVec2(cx, cy - a), ImGui::GetColorU32(theme::kAccent),
+        dl->AddLine(ImVec2(cx - a, cy + a), ImVec2(cx, cy - a), ImGui::GetColorU32(theme::kBrand),
                     1.8f);
-        dl->AddLine(ImVec2(cx, cy - a), ImVec2(cx + a, cy + a), ImGui::GetColorU32(theme::kAccent),
+        dl->AddLine(ImVec2(cx, cy - a), ImVec2(cx + a, cy + a), ImGui::GetColorU32(theme::kBrand),
                     1.8f);
         dl->AddLine(ImVec2(cx - a * 0.55f, cy + a * 0.15f), ImVec2(cx + a * 0.55f, cy + a * 0.15f),
-                    ImGui::GetColorU32(theme::kAccent), 1.4f);
+                    ImGui::GetColorU32(theme::kBrand), 1.4f);
         ImGui::Dummy(ImVec2(tile, tile));
     }
     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + theme::kSpace3);
@@ -222,22 +251,36 @@ inline int icon_rail(const std::vector<NavGroup>& groups, int selected) {
 // ---- Navigation sidebar ----------------------------------------------------
 
 // Sidebar interaction result: the clicked navigation index (-1 when none) and
-// whether the operator requested a clean application exit from the footer button.
+// whether the operator pressed the footer EXIT control (which opens the
+// confirmation dialog; it is not itself a shutdown).
 struct SidebarResult {
     int clicked = -1;
-    bool exit_requested = false;
+    bool exit_pressed = false;
 };
 
 // `selected` is the real current page. Group titles are muted captions; rows are
 // compact with an accent active bar. The EXIT control is pinned to the bottom of
 // the sidebar so it stays in the lower-left corner at every window size; it only
 // signals intent — the caller routes the request through the shutdown lifecycle.
-inline SidebarResult sidebar(const std::vector<NavGroup>& groups, int selected, float width) {
+inline SidebarResult sidebar(const std::vector<NavGroup>& groups, int selected, float width,
+                             const BrandMarkView& brand_mark = {}) {
     SidebarResult result;
     ImGui::BeginChild("sidebar", ImVec2(width, 0.0f), false);
+    // ASTRA identity block: the real brand mark (when supplied) beside the product
+    // wordmark and its descriptor, matching the reference sidebar. The far-left
+    // rail carries the drawn mark; when no real asset is present the typographic
+    // treatment stands alone (no replacement logo is synthesized here).
     ImGui::SetCursorPos(ImVec2(theme::kSpace3, theme::kSpace3));
-    theme::text_label(theme::kTextMuted, "NAVIGATION");
-    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + theme::kSpace1);
+    if (brand_mark.valid()) {
+        const float mark_h = ImGui::GetTextLineHeight() * 1.6f;
+        brand_mark_image(brand_mark, mark_h);
+        ImGui::SameLine(0.0f, theme::kSpace2);
+        ImGui::SetCursorPosY(theme::kSpace3);
+    }
+    theme::text_title(theme::kBrand, "ASTRA");
+    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 1.0f);
+    theme::text_label(theme::kTextMuted, "XAUUSD INTELLIGENCE");
+    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + theme::kSpace2);
     ImGui::Separator();
     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + theme::kSpace2);
 
@@ -268,10 +311,42 @@ inline SidebarResult sidebar(const std::vector<NavGroup>& groups, int selected, 
         ImGui::SetCursorPosX(theme::kSpace2);
         ImGui::SetCursorPosY(exit_y + theme::kSpace3);
         if (widgets::exit_button("EXIT", width - theme::kSpace2 * 2.0f, kExitH))
-            result.exit_requested = true;
+            result.exit_pressed = true;
     }
     ImGui::EndChild();
     return result;
+}
+
+// ---- Exit confirmation -----------------------------------------------------
+
+// A modal confirmation for the sidebar EXIT control. Returns true exactly once,
+// when the operator confirms; the caller then routes the request through the
+// normal application shutdown lifecycle (a clean close that still persists a
+// checkpoint) — never a process kill. Cancelling returns false.
+//
+// `open` is the caller's per-frame intent to raise the dialog; the caller keeps
+// it set while the dialog should remain visible.
+inline bool exit_confirmation(bool& open) {
+    bool confirmed = false;
+    if (open) {
+        ImGui::OpenPopup("Exit ASTRA?");
+        open = false;
+    }
+    if (ImGui::BeginPopupModal("Exit ASTRA?", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        theme::text_body(theme::kTextPrimary, "Close ASTRA?");
+        theme::text_small(theme::kTextMuted,
+                          "The application will shut down cleanly. A final checkpoint is "
+                          "persisted and the recovery lifecycle stays intact.");
+        ImGui::Spacing();
+        if (widgets::action_button("CANCEL", false, 110.0f)) ImGui::CloseCurrentPopup();
+        ImGui::SameLine(0.0f, theme::kSpace2);
+        if (widgets::action_button("EXIT", true, 110.0f)) {
+            confirmed = true;
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+    return confirmed;
 }
 
 // ---- Timeframe tab strip ---------------------------------------------------

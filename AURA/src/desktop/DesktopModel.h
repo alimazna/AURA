@@ -66,7 +66,7 @@ struct TimeframePanel {
 };
 
 struct OverviewPanel {
-    std::string project_name{"AURA"};
+    std::string project_name{"ASTRA"};
     std::string operating_mode{"SHADOW"};
     bool transport_connected{false};
     std::size_t streams_total{0};

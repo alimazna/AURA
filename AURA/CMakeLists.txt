@@ -132,8 +132,17 @@ if(AURA_BUILD_GUI)
   find_package(OpenGL REQUIRED)
   target_link_libraries(aura_imgui PUBLIC OpenGL::GL)
 
+  # Optional real ASTRA brand mark. stb_image (bundled, single header, public
+  # domain) is only used to upload a PNG/JPEG logo when one is actually present;
+  # if the loader is unavailable the header simply draws the wordmark. The asset
+  # directory is staged next to the binary and copied to the packaged app.
   add_executable(aura_gui ${CMAKE_CURRENT_SOURCE_DIR}/tools/aura_gui.cpp)
   target_link_libraries(aura_gui PRIVATE aura_foundation aura_imgui ${AURA_PLATFORM_LIBS})
+  target_include_directories(aura_gui PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party)
+  target_compile_definitions(aura_gui PRIVATE
+    AURA_HAVE_STB_IMAGE=1
+    AURA_BRAND_DIR="${CMAKE_CURRENT_SOURCE_DIR}/assets/brand"
+  )
   # The AURA terminal type roles (Roboto-Medium / Cousine) ship with Dear ImGui.
   # Point the executable at their source location, and also stage a copy next to
   # the binary under `fonts/` so the build tree and packaged app are self-contained.
@@ -145,7 +154,11 @@ if(AURA_BUILD_GUI)
             ${imgui_SOURCE_DIR}/misc/fonts/Roboto-Medium.ttf
             ${imgui_SOURCE_DIR}/misc/fonts/Cousine-Regular.ttf
             $<TARGET_FILE_DIR:aura_gui>/fonts
-    COMMENT "Staging AURA terminal fonts")
+    COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:aura_gui>/assets/brand
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${CMAKE_CURRENT_SOURCE_DIR}/assets/brand
+            $<TARGET_FILE_DIR:aura_gui>/assets/brand
+    COMMENT "Staging AURA terminal fonts and brand assets")
 
   # Headless GUI integration smoke, registered with CTest. It exercises the same
   # runtime ownership, recovery evaluation and snapshot projection the window
@@ -154,11 +167,14 @@ if(AURA_BUILD_GUI)
   add_test(NAME GuiSelfTest COMMAND aura_gui --self-test)
 
   install(TARGETS aura_gui RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
-  # Stage the terminal fonts beside the binary (self-contained packaged app).
+  # Stage the terminal fonts and the brand asset directory beside the binary so
+  # the packaged app is self-contained.
   install(FILES
     ${imgui_SOURCE_DIR}/misc/fonts/Roboto-Medium.ttf
     ${imgui_SOURCE_DIR}/misc/fonts/Cousine-Regular.ttf
     DESTINATION ${CMAKE_INSTALL_BINDIR}/fonts)
+  install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/assets/brand/
+          DESTINATION ${CMAKE_INSTALL_BINDIR}/assets/brand)
 endif()
 
 # Real host executable (console host; the shadow-only operational entrypoint).
