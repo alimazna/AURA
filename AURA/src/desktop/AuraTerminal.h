@@ -221,10 +221,19 @@ inline int icon_rail(const std::vector<NavGroup>& groups, int selected) {
 
 // ---- Navigation sidebar ----------------------------------------------------
 
-// Returns the clicked section index, or -1. `selected` is the real current page.
-// Group titles are muted captions; rows are compact with an accent active bar.
-inline int sidebar(const std::vector<NavGroup>& groups, int selected, float width) {
+// Sidebar interaction result: the clicked navigation index (-1 when none) and
+// whether the operator requested a clean application exit from the footer button.
+struct SidebarResult {
     int clicked = -1;
+    bool exit_requested = false;
+};
+
+// `selected` is the real current page. Group titles are muted captions; rows are
+// compact with an accent active bar. The EXIT control is pinned to the bottom of
+// the sidebar so it stays in the lower-left corner at every window size; it only
+// signals intent — the caller routes the request through the shutdown lifecycle.
+inline SidebarResult sidebar(const std::vector<NavGroup>& groups, int selected, float width) {
+    SidebarResult result;
     ImGui::BeginChild("sidebar", ImVec2(width, 0.0f), false);
     ImGui::SetCursorPos(ImVec2(theme::kSpace3, theme::kSpace3));
     theme::text_label(theme::kTextMuted, "NAVIGATION");
@@ -246,12 +255,23 @@ inline int sidebar(const std::vector<NavGroup>& groups, int selected, float widt
             ImGui::SetCursorPosX(theme::kSpace2);
             if (widgets::nav_item(item.label.c_str(), icons::icon_for_section(item.section.c_str()),
                                   selected == item.index, nav_w))
-                clicked = item.index;
+                result.clicked = item.index;
         }
     }
     ImGui::PopStyleVar();
+
+    // Bottom-anchored EXIT control (lower-left corner of the application).
+    constexpr float kExitH = 36.0f;
+    const float footer_h = kExitH + theme::kSpace3 * 2.0f;
+    const float exit_y = ImGui::GetWindowHeight() - footer_h;
+    if (exit_y > ImGui::GetCursorPosY()) {
+        ImGui::SetCursorPosX(theme::kSpace2);
+        ImGui::SetCursorPosY(exit_y + theme::kSpace3);
+        if (widgets::exit_button("EXIT", width - theme::kSpace2 * 2.0f, kExitH))
+            result.exit_requested = true;
+    }
     ImGui::EndChild();
-    return clicked;
+    return result;
 }
 
 // ---- Timeframe tab strip ---------------------------------------------------
@@ -378,28 +398,20 @@ inline void market_header(const ControlCenterReport& r) {
 
 // ---- Metric strip ----------------------------------------------------------
 
-// A compact row of information modules (SYSTEM HEALTH / DATA STREAMS / SIGNALS /
-// SCORE-CONFIDENCE / REALIZED SUCCESS / EXECUTION MODE). Only real values;
-// unavailable values are an explicit N/A, never a fake zero.
+// A compact row of five information modules (SYSTEM HEALTH / DATA STREAMS /
+// SIGNALS / RISK / EXECUTION MODE). Only real values; unavailable values are an
+// explicit N/A, never a fake zero. SCORE/CONFIDENCE ride on the SIGNALS card
+// caption and the realized success rate lives in the Shadow Positions panel, so
+// no real metric is dropped from the surface.
 inline void metric_strip(const ControlCenterReport& r) {
     const ControlCenterSnapshot& s = r.snapshot;
 
-    char score_buf[16] = {0};
-    char conf_buf[16] = {0};
-    if (s.signal.score_available) std::snprintf(score_buf, sizeof(score_buf), "%.2f", s.signal.score);
-    if (s.signal.confidence_available)
-        std::snprintf(conf_buf, sizeof(conf_buf), "%.2f", s.signal.confidence);
-    char rate_buf[16] = {0};
-    if (s.signal.outcomes_available && s.signal.positions_closed > 0)
-        std::snprintf(rate_buf, sizeof(rate_buf), "%.0f%%",
-                      static_cast<double>(s.signal.wins) /
-                          static_cast<double>(s.signal.positions_closed) * 100.0);
-
-    const float h = layout::Chrome::kMetricStrip;
-    const ImVec2 p = ImGui::GetCursorScreenPos();
-    const float avail = ImGui::GetContentRegionAvail().x;
-    filled_rect(p, ImVec2(p.x + avail, p.y + h), theme::kSurface, theme::kPanelRadius);
-    outlined_rect(p, ImVec2(p.x + avail, p.y + h), theme::kBorder, theme::kPanelRadius);
+    char score_buf[32] = {0};
+    if (s.signal.score_available && s.signal.confidence_available)
+        std::snprintf(score_buf, sizeof(score_buf), "score %.2f \u00b7 conf %.2f", s.signal.score,
+                      s.signal.confidence);
+    else if (s.signal.score_available)
+        std::snprintf(score_buf, sizeof(score_buf), "score %.2f", s.signal.score);
 
     const std::string streams =
         s.overview.streams_total == 0
@@ -412,22 +424,30 @@ inline void metric_strip(const ControlCenterReport& r) {
         std::string value;
         bool available;
         const char* reason;
+        const char* caption;
         ImVec4 col;
     };
     const Cell cells[] = {
-        {"SYSTEM HEALTH", std::string(s.overview.healthy ? "HEALTHY" : s.overview.aggregate), true, "",
+        {"SYSTEM HEALTH", std::string(s.overview.healthy ? "HEALTHY" : s.overview.aggregate), true,
+         "", s.overview.healthy ? "Operational" : "degraded",
          theme::status_color(s.overview.healthy ? "HEALTHY" : s.overview.aggregate)},
-        {"DATA STREAMS", streams, true, "", theme::kTextPrimary},
+        {"DATA STREAMS", streams, true, "",
+         s.overview.streams_total == 0 ? "no streams" : "closed-bar feeds", theme::kTextPrimary},
         {"SIGNALS", s.signal.available ? s.signal.direction : std::string(), s.signal.available,
-         "no signal", theme::status_color(s.signal.direction)},
-        {"SCORE / CONF",
-         s.signal.score_available ? (std::string(score_buf) + " / " + conf_buf) : std::string(),
-         s.signal.score_available, "no signal", theme::kAccent},
-        {"REALIZED SUCCESS", std::string(rate_buf), s.signal.outcomes_available,
-         "no closed positions", theme::kHealthy},
-        {"EXECUTION MODE", s.shadow_only ? "SHADOW" : "VIOLATED", true, "", theme::kShadow},
+         "no signal", score_buf[0] != '\0' ? score_buf : "shadow",
+         theme::status_color(s.signal.direction)},
+        {"RISK", s.risk.available ? s.risk.direction : std::string(), s.risk.available,
+         "no proposal", s.risk.is_order ? "order flag" : "no live order", theme::kAccent},
+        {"EXECUTION MODE", s.shadow_only ? "SHADOW ONLY" : "VIOLATED", true, "",
+         s.shadow_only ? "no orders" : "live path", theme::kShadow},
     };
     const int n = static_cast<int>(sizeof(cells) / sizeof(cells[0]));
+    const float h = layout::Chrome::kMetricStrip;
+    const ImVec2 p = ImGui::GetCursorScreenPos();
+    const float avail = ImGui::GetContentRegionAvail().x;
+    filled_rect(p, ImVec2(p.x + avail, p.y + h), theme::kSurface, theme::kPanelRadius);
+    outlined_rect(p, ImVec2(p.x + avail, p.y + h), theme::kBorder, theme::kPanelRadius);
+
     const float col_w = avail / static_cast<float>(n);
     for (int i = 0; i < n; ++i) {
         const float x = p.x + theme::kSpace3 + col_w * static_cast<float>(i);
@@ -438,7 +458,7 @@ inline void metric_strip(const ControlCenterReport& r) {
                 ImGui::GetColorU32(theme::kBorder));
         ImGui::SetCursorScreenPos(ImVec2(x, p.y + theme::kSpace2 + 2.0f));
         widgets::metric_module(cells[i].label, cells[i].value, cells[i].available, cells[i].col,
-                               cells[i].available ? nullptr : cells[i].reason);
+                               cells[i].available ? cells[i].caption : cells[i].reason);
     }
     ImGui::SetCursorScreenPos(ImVec2(p.x, p.y + h + theme::kSpace2));
 }

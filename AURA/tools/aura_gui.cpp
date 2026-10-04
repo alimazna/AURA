@@ -256,6 +256,11 @@ RendererContext create_context(aura::desktop::RendererProfile profile) {
     }
     ctx.window = glfwCreateWindow(win_w, win_h, "AURA Control Center (SHADOW ONLY)", nullptr, nullptr);
     if (ctx.window != nullptr) {
+        // Start maximized so the terminal fills the desktop work area immediately
+        // at launch. This is a normal, resizable maximized window (not an exclusive
+        // fullscreen mode), so standard Windows usability is preserved. The layout
+        // derives from the actual framebuffer size, so it adapts to the real screen.
+        glfwMaximizeWindow(ctx.window);
         ctx.profile = profile;
         ctx.glsl_version = hints.glsl_version;
     }
@@ -430,9 +435,13 @@ int run_gui(const aura::desktop::ControlCenterOptions& options, long max_frames,
         if (rail_clicked >= 0) selected = rail_clicked;
         ImGui::SameLine(0.0f, 0.0f);
 
-        const int clicked = aura::desktop::terminal::sidebar(
-            nav_groups, selected, aura::desktop::layout::sidebar_width(window_w));
-        if (clicked >= 0) selected = clicked;
+        const aura::desktop::terminal::SidebarResult nav =
+            aura::desktop::terminal::sidebar(nav_groups, selected,
+                                             aura::desktop::layout::sidebar_width(window_w));
+        if (nav.clicked >= 0) selected = nav.clicked;
+        // EXIT (lower-left sidebar footer) requests a clean shutdown; it is handled
+        // after the frame so the normal persistence/recovery lifecycle runs.
+        const bool exit_requested = nav.exit_requested;
 
         ImGui::SameLine();
 
@@ -471,6 +480,9 @@ int run_gui(const aura::desktop::ControlCenterOptions& options, long max_frames,
         if (max_frames > 0 && ++rendered >= max_frames) {
             std::printf("aura-gui: rendered %ld frames (bounded smoke); requesting close\n",
                         rendered);
+            glfwSetWindowShouldClose(window, GLFW_TRUE);
+        } else if (exit_requested) {
+            std::printf("aura-gui: EXIT requested; requesting close\n");
             glfwSetWindowShouldClose(window, GLFW_TRUE);
         } else if (max_frames > 0 && pin_section < 0) {
             // Bounded smoke: cycle through every V3-37 section so each panel's

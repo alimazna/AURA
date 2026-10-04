@@ -332,6 +332,34 @@ inline bool rail_item(const char* id, icons::Icon ic, bool selected, float size)
     return clicked;
 }
 
+// ---- Sidebar footer controls -----------------------------------------------
+
+// A full-width application-exit control anchored to the bottom of the navigation
+// sidebar. Deliberately quiet and neutral at rest (it is a lifecycle action, not
+// a trading action): a subtle raised fill with muted text, warming to a restrained
+// red only on hover. It returns true exactly once per click; the caller routes the
+// request through the normal shutdown lifecycle — it never terminates the process.
+inline bool exit_button(const char* label, float width, float height = 36.0f) {
+    const ImVec2 p = ImGui::GetCursorScreenPos();
+    const bool clicked = ImGui::InvisibleButton(label, ImVec2(width, height));
+    const bool hovered = ImGui::IsItemHovered();
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    const ImVec4 fill = hovered ? ImVec4(theme::kCritical.x, theme::kCritical.y, theme::kCritical.z,
+                                         0.22f)
+                                : theme::kSurfaceRaised;
+    dl->AddRectFilled(p, ImVec2(p.x + width, p.y + height), ImGui::GetColorU32(fill),
+                      theme::kControlRadius);
+    dl->AddRect(p, ImVec2(p.x + width, p.y + height),
+                ImGui::GetColorU32(hovered ? theme::kCritical : theme::kBorder),
+                theme::kControlRadius);
+    ImGui::PushFont(theme::label_font());
+    const ImVec2 ts = ImGui::CalcTextSize(label);
+    dl->AddText(ImVec2(p.x + (width - ts.x) * 0.5f, p.y + (height - ts.y) * 0.5f),
+                ImGui::GetColorU32(hovered ? theme::kCritical : theme::kTextSecondary), label);
+    ImGui::PopFont();
+    return clicked;
+}
+
 // ---- Action bar controls ---------------------------------------------------
 
 // A compact, professional control-bar button. Flat until hovered; an accent tint

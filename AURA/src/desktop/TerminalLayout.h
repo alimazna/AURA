@@ -25,7 +25,7 @@ struct Chrome {
     static constexpr float kStatusBar = 24.0f;  // == theme::kStatusBarHeight
     static constexpr float kActionBar = 40.0f;  // == theme::kActionBarHeight
     static constexpr float kIconRail = 52.0f;   // == theme::kIconRailWidth
-    static constexpr float kSidebar = 216.0f;   // max navigation width
+    static constexpr float kSidebar = 300.0f;   // max navigation width
     static constexpr float kMarketHeader = 58.0f;
     static constexpr float kTabStrip = 32.0f;
     static constexpr float kMetricStrip = 62.0f;
@@ -35,8 +35,8 @@ struct Chrome {
     static constexpr float kMinPanel = 120.0f;
     static constexpr float kTabWidth = 50.0f;
     static constexpr float kTabGap = 4.0f;
-    static constexpr float kMinSidebar = 168.0f;
-    static constexpr float kMaxSidebar = 216.0f;
+    static constexpr float kMinSidebar = 220.0f;
+    static constexpr float kMaxSidebar = 300.0f;
     static constexpr float kAnalyticsMin = 240.0f;
     static constexpr float kAnalyticsMax = 320.0f;
 };
@@ -46,7 +46,7 @@ struct Chrome {
 // central workspace at 1280x720 and at 1920x1080 alike. Pure functions: the same
 // window width always yields the same geometry (no clock, no state).
 inline float sidebar_width(float window_w) {
-    float w = window_w * 0.145f;
+    float w = window_w * 0.185f;
     if (w < Chrome::kMinSidebar) w = Chrome::kMinSidebar;
     if (w > Chrome::kMaxSidebar) w = Chrome::kMaxSidebar;
     return w;

@@ -28,31 +28,31 @@ namespace theme {
 // selected navigation item, the active timeframe and genuinely important values.
 // A deep blue-black shell holds slightly lighter graphite surfaces so panels read
 // as distinct planes without heavy borders or shadows.
-constexpr ImVec4 kBackground{0.035f, 0.045f, 0.063f, 1.00f};     // app shell
-constexpr ImVec4 kRail{0.027f, 0.035f, 0.050f, 1.00f};          // far-left icon rail
-constexpr ImVec4 kSurface{0.063f, 0.078f, 0.102f, 1.00f};       // panels
-constexpr ImVec4 kSurfaceRaised{0.086f, 0.106f, 0.137f, 1.00f};  // header / rows
-constexpr ImVec4 kSurfaceInset{0.022f, 0.029f, 0.042f, 1.00f};   // chart canvas
-constexpr ImVec4 kBorder{0.110f, 0.137f, 0.176f, 1.00f};
-constexpr ImVec4 kBorderStrong{0.176f, 0.212f, 0.267f, 1.00f};
-constexpr ImVec4 kTextPrimary{0.910f, 0.929f, 0.953f, 1.00f};
-constexpr ImVec4 kTextSecondary{0.639f, 0.682f, 0.741f, 1.00f};
-constexpr ImVec4 kTextMuted{0.400f, 0.443f, 0.510f, 1.00f};
-constexpr ImVec4 kAccent{0.259f, 0.760f, 0.851f, 1.00f};
-constexpr ImVec4 kAccentDim{0.137f, 0.392f, 0.451f, 1.00f};
-constexpr ImVec4 kGridline{0.110f, 0.137f, 0.176f, 0.50f};
+constexpr ImVec4 kBackground{0.039f, 0.071f, 0.114f, 1.00f};     // app shell
+constexpr ImVec4 kRail{0.031f, 0.059f, 0.098f, 1.00f};          // far-left icon rail
+constexpr ImVec4 kSurface{0.075f, 0.118f, 0.169f, 1.00f};       // panels
+constexpr ImVec4 kSurfaceRaised{0.086f, 0.133f, 0.184f, 1.00f};  // header / rows
+constexpr ImVec4 kSurfaceInset{0.024f, 0.045f, 0.075f, 1.00f};   // chart canvas
+constexpr ImVec4 kBorder{0.129f, 0.176f, 0.243f, 1.00f};
+constexpr ImVec4 kBorderStrong{0.196f, 0.259f, 0.337f, 1.00f};
+constexpr ImVec4 kTextPrimary{0.878f, 0.906f, 0.933f, 1.00f};
+constexpr ImVec4 kTextSecondary{0.710f, 0.749f, 0.800f, 1.00f};
+constexpr ImVec4 kTextMuted{0.557f, 0.616f, 0.671f, 1.00f};
+constexpr ImVec4 kAccent{0.180f, 0.812f, 0.894f, 1.00f};
+constexpr ImVec4 kAccentDim{0.106f, 0.478f, 0.529f, 1.00f};
+constexpr ImVec4 kGridline{0.129f, 0.176f, 0.243f, 0.50f};
 
 // State colours. Kept separate from the surface palette so a state is never
 // mistaken for decoration.
-constexpr ImVec4 kHealthy{0.325f, 0.760f, 0.494f, 1.00f};
-constexpr ImVec4 kDegraded{0.937f, 0.722f, 0.294f, 1.00f};
-constexpr ImVec4 kCritical{0.910f, 0.376f, 0.376f, 1.00f};
+constexpr ImVec4 kHealthy{0.396f, 0.780f, 0.537f, 1.00f};
+constexpr ImVec4 kDegraded{0.894f, 0.694f, 0.290f, 1.00f};
+constexpr ImVec4 kCritical{0.863f, 0.373f, 0.408f, 1.00f};
 constexpr ImVec4 kPaused{0.616f, 0.529f, 0.878f, 1.00f};
 constexpr ImVec4 kNeutral{0.529f, 0.561f, 0.620f, 1.00f};
 constexpr ImVec4 kUnknown{0.463f, 0.494f, 0.549f, 1.00f};
-constexpr ImVec4 kNotAvailable{0.376f, 0.404f, 0.463f, 1.00f};
+constexpr ImVec4 kNotAvailable{0.443f, 0.490f, 0.549f, 1.00f};
 // The shadow-only identity is deliberately distinct from every health state.
-constexpr ImVec4 kShadow{0.937f, 0.596f, 0.247f, 1.00f};
+constexpr ImVec4 kShadow{0.894f, 0.694f, 0.290f, 1.00f};
 
 // ---- Spacing scale ---------------------------------------------------------
 constexpr float kSpace1 = 4.0f;
