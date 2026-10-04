@@ -43,6 +43,14 @@
 #define GL_SILENCE_DEPRECATION
 #include <GLFW/glfw3.h>
 
+// MSVC's system <GL/gl.h> declares OpenGL 1.1 only; GL_CLAMP_TO_EDGE arrived in
+// OpenGL 1.2. Define it when the platform header has not, so the brand-mark
+// texture upload compiles on Windows without pulling in an extension loader for a
+// single enum.
+#ifndef GL_CLAMP_TO_EDGE
+#define GL_CLAMP_TO_EDGE 0x812F
+#endif
+
 // Optional ASTRA brand mark. When the build provides stb_image and a real asset
 // exists on disk it is uploaded as a GL texture and drawn in the header; when the
 // asset is absent (or the loader is unavailable) the header renders the
