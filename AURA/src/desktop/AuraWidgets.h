@@ -279,7 +279,7 @@ inline float status_item(const char* label, const std::string& value, ImVec4 col
 // selected row) a left accent bar and a subtle raised background. Selection is
 // driven by the caller's real page state, never by string comparison.
 inline bool nav_item(const char* label, icons::Icon ic, bool selected, float width) {
-    const float h = 26.0f;
+    const float h = 24.0f;
     const ImVec2 p = ImGui::GetCursorScreenPos();
     const bool clicked = ImGui::InvisibleButton(label, ImVec2(width, h));
     const bool hovered = ImGui::IsItemHovered();
@@ -302,6 +302,102 @@ inline bool nav_item(const char* label, icons::Icon ic, bool selected, float wid
                 ImGui::GetColorU32(selected ? theme::kTextPrimary : theme::kTextSecondary), label);
     ImGui::PopFont();
     return clicked;
+}
+
+// ---- Far-left icon rail ----------------------------------------------------
+
+// A square, icon-only navigation button for the far-left rail. `selected` draws
+// the accent active indicator (a short bar on the left edge plus a tinted tile).
+// Compact by design: the rail never carries text.
+inline bool rail_item(const char* id, icons::Icon ic, bool selected, float size) {
+    const ImVec2 p = ImGui::GetCursorScreenPos();
+    const bool clicked = ImGui::InvisibleButton(id, ImVec2(size, size));
+    const bool hovered = ImGui::IsItemHovered();
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    if (selected) {
+        dl->AddRectFilled(p, ImVec2(p.x + size, p.y + size),
+                          ImGui::GetColorU32(ImVec4(theme::kAccent.x, theme::kAccent.y,
+                                                    theme::kAccent.z, 0.14f)),
+                          4.0f);
+        dl->AddRectFilled(p, ImVec2(p.x + 2.5f, p.y + size), ImGui::GetColorU32(theme::kAccent),
+                          1.0f);
+    } else if (hovered) {
+        dl->AddRectFilled(p, ImVec2(p.x + size, p.y + size),
+                          ImGui::GetColorU32(ImVec4(1.0f, 1.0f, 1.0f, 0.05f)), 4.0f);
+    }
+    const ImU32 col = ImGui::GetColorU32(selected   ? theme::kAccent
+                                         : hovered ? theme::kTextSecondary
+                                                   : theme::kTextMuted);
+    icons::draw_icon(dl, ic, ImVec2(p.x + size * 0.5f, p.y + size * 0.5f), 18.0f, col, 1.5f);
+    return clicked;
+}
+
+// ---- Action bar controls ---------------------------------------------------
+
+// A compact, professional control-bar button. Flat until hovered; an accent tint
+// marks the active/pressed control (e.g. a paused transport). Text only — there
+// is no order/buy/sell control anywhere on this surface.
+inline bool action_button(const char* label, bool active = false, float min_w = 84.0f) {
+    const ImVec2 pad(theme::kSpace3, 5.0f);
+    const ImVec2 ts = ImGui::CalcTextSize(label);
+    const ImVec2 size(ts.x + pad.x * 2.0f > min_w ? ts.x + pad.x * 2.0f : min_w,
+                      ts.y + pad.y * 2.0f);
+    const ImVec2 p = ImGui::GetCursorScreenPos();
+    const bool clicked = ImGui::InvisibleButton(label, size);
+    const bool hovered = ImGui::IsItemHovered();
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    const ImVec4 base = active ? theme::kAccentDim : theme::kSurfaceRaised;
+    ImVec4 fill = base;
+    if (hovered && !active) fill = ImVec4(0.129f, 0.157f, 0.196f, 1.0f);
+    if (hovered && active) fill = ImVec4(theme::kAccent.x, theme::kAccent.y, theme::kAccent.z, 0.35f);
+    dl->AddRectFilled(p, ImVec2(p.x + size.x, p.y + size.y), ImGui::GetColorU32(fill),
+                      theme::kControlRadius);
+    dl->AddRect(p, ImVec2(p.x + size.x, p.y + size.y),
+                ImGui::GetColorU32(active ? theme::kAccentDim : theme::kBorder),
+                theme::kControlRadius);
+    ImGui::PushFont(theme::small_font());
+    const ImVec2 tsz = ImGui::CalcTextSize(label);
+    dl->AddText(ImVec2(p.x + (size.x - tsz.x) * 0.5f, p.y + (size.y - tsz.y) * 0.5f),
+                ImGui::GetColorU32(active ? theme::kAccent : theme::kTextSecondary), label);
+    ImGui::PopFont();
+    return clicked;
+}
+
+// ---- Metric modules --------------------------------------------------------
+
+// A compact information module: a small uppercase label, a prominent value and a
+// subtle status dot. This is the visual building block of the top metric row and
+// the right analytics column — deliberately not a large rounded "card". When the
+// value is unavailable the module shows an explicit N/A, never a fabricated zero.
+inline void metric_module(const char* label, const std::string& value, bool available, ImVec4 color,
+                          const char* caption = nullptr) {
+    theme::text_label(theme::kTextMuted, "%s", label);
+    const float line_h = ImGui::GetTextLineHeight();
+    const ImVec2 p = ImGui::GetCursorScreenPos();
+    if (available) {
+        ImGui::GetWindowDrawList()->AddCircleFilled(ImVec2(p.x + 3.0f, p.y + line_h * 0.55f), 3.0f,
+                                                    ImGui::GetColorU32(color));
+        ImGui::Dummy(ImVec2(10.0f, line_h));
+        ImGui::SameLine(0.0f, 0.0f);
+        theme::text_title(color, "%s", value.c_str());
+    } else {
+        theme::text_title(theme::kNotAvailable, "N/A");
+    }
+    if (caption != nullptr && caption[0] != '\0')
+        theme::text_label(theme::kTextMuted, "%s", caption);
+}
+
+// A thin horizontal progress bar used inside analytics panels. `value` is a
+// fraction in [0,1]; a non-finite/absent value must be handled by the caller.
+inline void mini_bar(float value, ImVec4 color, float width = 0.0f, float height = 4.0f) {
+    float clamped = value < 0.0f ? 0.0f : (value > 1.0f ? 1.0f : value);
+    const float w = width > 0.0f ? width : ImGui::GetContentRegionAvail().x;
+    const ImVec2 p = ImGui::GetCursorScreenPos();
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    dl->AddRectFilled(p, ImVec2(p.x + w, p.y + height), ImGui::GetColorU32(theme::kSurfaceRaised),
+                      2.0f);
+    dl->AddRectFilled(p, ImVec2(p.x + w * clamped, p.y + height), ImGui::GetColorU32(color), 2.0f);
+    ImGui::Dummy(ImVec2(w, height));
 }
 
 }  // namespace widgets

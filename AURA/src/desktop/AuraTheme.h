@@ -26,18 +26,21 @@ namespace theme {
 // ---- Palette ---------------------------------------------------------------
 // Neutral, low-glare surfaces dominate. The accent is used sparingly for the
 // selected navigation item, the active timeframe and genuinely important values.
-constexpr ImVec4 kBackground{0.043f, 0.055f, 0.075f, 1.00f};     // app chrome
-constexpr ImVec4 kSurface{0.071f, 0.086f, 0.114f, 1.00f};        // panels
-constexpr ImVec4 kSurfaceRaised{0.094f, 0.113f, 0.145f, 1.00f};  // header / rows
-constexpr ImVec4 kSurfaceInset{0.035f, 0.043f, 0.059f, 1.00f};   // chart canvas
-constexpr ImVec4 kBorder{0.129f, 0.157f, 0.196f, 1.00f};
-constexpr ImVec4 kBorderStrong{0.188f, 0.224f, 0.278f, 1.00f};
-constexpr ImVec4 kTextPrimary{0.898f, 0.918f, 0.945f, 1.00f};
-constexpr ImVec4 kTextSecondary{0.647f, 0.686f, 0.741f, 1.00f};
-constexpr ImVec4 kTextMuted{0.435f, 0.478f, 0.541f, 1.00f};
-constexpr ImVec4 kAccent{0.290f, 0.780f, 0.855f, 1.00f};
-constexpr ImVec4 kAccentDim{0.161f, 0.435f, 0.494f, 1.00f};
-constexpr ImVec4 kGridline{0.129f, 0.157f, 0.196f, 0.55f};
+// A deep blue-black shell holds slightly lighter graphite surfaces so panels read
+// as distinct planes without heavy borders or shadows.
+constexpr ImVec4 kBackground{0.035f, 0.045f, 0.063f, 1.00f};     // app shell
+constexpr ImVec4 kRail{0.027f, 0.035f, 0.050f, 1.00f};          // far-left icon rail
+constexpr ImVec4 kSurface{0.063f, 0.078f, 0.102f, 1.00f};       // panels
+constexpr ImVec4 kSurfaceRaised{0.086f, 0.106f, 0.137f, 1.00f};  // header / rows
+constexpr ImVec4 kSurfaceInset{0.022f, 0.029f, 0.042f, 1.00f};   // chart canvas
+constexpr ImVec4 kBorder{0.110f, 0.137f, 0.176f, 1.00f};
+constexpr ImVec4 kBorderStrong{0.176f, 0.212f, 0.267f, 1.00f};
+constexpr ImVec4 kTextPrimary{0.910f, 0.929f, 0.953f, 1.00f};
+constexpr ImVec4 kTextSecondary{0.639f, 0.682f, 0.741f, 1.00f};
+constexpr ImVec4 kTextMuted{0.400f, 0.443f, 0.510f, 1.00f};
+constexpr ImVec4 kAccent{0.259f, 0.760f, 0.851f, 1.00f};
+constexpr ImVec4 kAccentDim{0.137f, 0.392f, 0.451f, 1.00f};
+constexpr ImVec4 kGridline{0.110f, 0.137f, 0.176f, 0.50f};
 
 // State colours. Kept separate from the surface palette so a state is never
 // mistaken for decoration.
@@ -59,9 +62,13 @@ constexpr float kSpace4 = 16.0f;
 constexpr float kSpace5 = 24.0f;
 constexpr float kSpace6 = 32.0f;
 
-constexpr float kSidebarWidth = 216.0f;
-constexpr float kTopBarHeight = 44.0f;
+constexpr float kSidebarWidth = 200.0f;
+constexpr float kTopBarHeight = 46.0f;
 constexpr float kStatusBarHeight = 24.0f;
+constexpr float kActionBarHeight = 40.0f;
+constexpr float kIconRailWidth = 52.0f;
+constexpr float kPanelRadius = 6.0f;
+constexpr float kControlRadius = 4.0f;
 
 // ---- State classification --------------------------------------------------
 inline ImVec4 category_color(StateCategory c) {
@@ -86,11 +93,12 @@ inline ImVec4 status_color(std::string_view state) {
 // helpers below fall back to ImGui's default font, so the application still runs
 // (deterministically, just with the built-in typeface).
 struct AuraFonts {
-    ImFont* hero{nullptr};    // brand / instrument
-    ImFont* title{nullptr};   // page & panel titles
-    ImFont* body{nullptr};    // default UI text
-    ImFont* small{nullptr};   // metadata / captions
-    ImFont* mono{nullptr};    // numeric values, prices, tables
+    ImFont* hero{nullptr};    // brand / instrument (24)
+    ImFont* title{nullptr};   // page & panel titles (17)
+    ImFont* body{nullptr};    // default UI text (14)
+    ImFont* small{nullptr};   // metadata / captions (12)
+    ImFont* label{nullptr};   // tiny uppercase module labels (11)
+    ImFont* mono{nullptr};    // numeric values, prices, tables (13)
     bool loaded{false};
 };
 
@@ -103,6 +111,7 @@ inline ImFont* hero_font() { return fonts().hero != nullptr ? fonts().hero : ImG
 inline ImFont* title_font() { return fonts().title != nullptr ? fonts().title : ImGui::GetFont(); }
 inline ImFont* body_font() { return fonts().body != nullptr ? fonts().body : ImGui::GetFont(); }
 inline ImFont* small_font() { return fonts().small != nullptr ? fonts().small : ImGui::GetFont(); }
+inline ImFont* label_font() { return fonts().label != nullptr ? fonts().label : small_font(); }
 inline ImFont* mono_font() { return fonts().mono != nullptr ? fonts().mono : ImGui::GetFont(); }
 
 // Convenience text wrappers that push the requested type role.
@@ -142,6 +151,26 @@ inline void text_small(ImVec4 col, const char* fmt, ...) {
     ImGui::PopFont();
     va_end(args);
 }
+// The tiny uppercase module label used above metric values and panel captions.
+inline void text_label(ImVec4 col, const char* fmt, ...) IM_FMTARGS(2);
+inline void text_label(ImVec4 col, const char* fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    ImGui::PushFont(label_font());
+    ImGui::TextColoredV(col, fmt, args);
+    ImGui::PopFont();
+    va_end(args);
+}
+// Numeric values (prices, counts, scores) in the monospaced face so columns align.
+inline void text_mono(ImVec4 col, const char* fmt, ...) IM_FMTARGS(2);
+inline void text_mono(ImVec4 col, const char* fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    ImGui::PushFont(mono_font());
+    ImGui::TextColoredV(col, fmt, args);
+    ImGui::PopFont();
+    va_end(args);
+}
 
 // Loads the AURA type roles from `font_dir` (the directory the build copies the
 // fonts to). Every role is optional: a missing file leaves that role null and the
@@ -168,11 +197,12 @@ inline bool load_fonts(const char* font_dir) {
     cfg.OversampleV = 1;
     cfg.PixelSnapH = true;
 
-    if (ImFont* h = io.Fonts->AddFontFromFileTTF(body_path.c_str(), 24.0f, &cfg)) f.hero = h;
-    if (ImFont* t = io.Fonts->AddFontFromFileTTF(body_path.c_str(), 18.0f, &cfg)) f.title = t;
-    if (ImFont* b = io.Fonts->AddFontFromFileTTF(body_path.c_str(), 15.0f, &cfg)) f.body = b;
-    if (ImFont* s = io.Fonts->AddFontFromFileTTF(body_path.c_str(), 13.0f, &cfg)) f.small = s;
-    if (ImFont* m = io.Fonts->AddFontFromFileTTF(mono_path.c_str(), 14.0f, &cfg)) f.mono = m;
+    if (ImFont* h = io.Fonts->AddFontFromFileTTF(body_path.c_str(), 23.0f, &cfg)) f.hero = h;
+    if (ImFont* t = io.Fonts->AddFontFromFileTTF(body_path.c_str(), 17.0f, &cfg)) f.title = t;
+    if (ImFont* b = io.Fonts->AddFontFromFileTTF(body_path.c_str(), 14.0f, &cfg)) f.body = b;
+    if (ImFont* s = io.Fonts->AddFontFromFileTTF(body_path.c_str(), 12.0f, &cfg)) f.small = s;
+    if (ImFont* l = io.Fonts->AddFontFromFileTTF(body_path.c_str(), 11.0f, &cfg)) f.label = l;
+    if (ImFont* m = io.Fonts->AddFontFromFileTTF(mono_path.c_str(), 13.0f, &cfg)) f.mono = m;
 
     // Nothing loaded (fonts absent): keep ImGui's built-in ProggyClean so the app
     // still runs, and remember that the roles are unavailable.
@@ -193,12 +223,12 @@ inline void apply_aura_style() {
     ImGuiStyle& style = ImGui::GetStyle();
 
     style.WindowRounding = 0.0f;
-    style.ChildRounding = 4.0f;
-    style.FrameRounding = 3.0f;
-    style.PopupRounding = 4.0f;
-    style.ScrollbarRounding = 3.0f;
-    style.GrabRounding = 3.0f;
-    style.TabRounding = 3.0f;
+    style.ChildRounding = kPanelRadius;
+    style.FrameRounding = kControlRadius;
+    style.PopupRounding = kPanelRadius;
+    style.ScrollbarRounding = kControlRadius;
+    style.GrabRounding = kControlRadius;
+    style.TabRounding = kControlRadius;
 
     style.WindowBorderSize = 0.0f;
     style.ChildBorderSize = 1.0f;
@@ -206,13 +236,13 @@ inline void apply_aura_style() {
     style.PopupBorderSize = 1.0f;
 
     style.WindowPadding = ImVec2(kSpace3, kSpace2 + 2.0f);
-    style.FramePadding = ImVec2(kSpace2 + 2.0f, 5.0f);
+    style.FramePadding = ImVec2(kSpace2, 4.0f);
     style.CellPadding = ImVec2(kSpace2, 4.0f);
     style.ItemSpacing = ImVec2(kSpace3, kSpace2);
     style.ItemInnerSpacing = ImVec2(6.0f, 5.0f);
     style.IndentSpacing = 16.0f;
-    style.ScrollbarSize = 10.0f;
-    style.GrabMinSize = 12.0f;
+    style.ScrollbarSize = 9.0f;
+    style.GrabMinSize = 11.0f;
 
     style.WindowTitleAlign = ImVec2(0.0f, 0.5f);
     style.ButtonTextAlign = ImVec2(0.5f, 0.5f);

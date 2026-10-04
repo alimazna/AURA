@@ -74,15 +74,15 @@ inline void candlestick_chart(const CandleSeries& series, float height = 380.0f)
 
     // Chart surface: distinct inset canvas with a hairline border.
     dl->AddRectFilled(origin, ImVec2(origin.x + total_w, origin.y + height),
-                      ImGui::GetColorU32(theme::kSurfaceInset), 3.0f);
+                      ImGui::GetColorU32(theme::kSurfaceInset), theme::kPanelRadius);
     dl->AddRect(origin, ImVec2(origin.x + total_w, origin.y + height),
-                ImGui::GetColorU32(theme::kBorder), 3.0f);
+                ImGui::GetColorU32(theme::kBorder), theme::kPanelRadius);
 
     // Plot geometry: a right-hand price gutter and a bottom time axis.
-    const float gutter = 76.0f;
-    const float axis_h = 22.0f;
-    const float pad_top = 12.0f;
-    const float pad_left = 10.0f;
+    const float gutter = 82.0f;
+    const float axis_h = 24.0f;
+    const float pad_top = 14.0f;
+    const float pad_left = 12.0f;
     const float plot_x0 = origin.x + pad_left;
     const float plot_x1 = origin.x + total_w - gutter;
     const float plot_y0 = origin.y + pad_top;
@@ -119,9 +119,9 @@ inline void candlestick_chart(const CandleSeries& series, float height = 380.0f)
 
     // Candles: wick (high-low) plus a body (open-close). Green up, red down.
     const float slot = plot_w / static_cast<float>(n > 0 ? n : 1);
-    float body_w = slot * 0.62f;
+    float body_w = slot * 0.66f;
     if (body_w < 2.0f) body_w = 2.0f;
-    if (body_w > 16.0f) body_w = 16.0f;
+    if (body_w > 22.0f) body_w = 22.0f;
     for (std::size_t i = 0; i < n; ++i) {
         const CandleLayout& l = g.candles[i];
         const float xc = plot_x0 + l.x * plot_w;
@@ -130,7 +130,7 @@ inline void candlestick_chart(const CandleSeries& series, float height = 380.0f)
 
         const float wy0 = plot_y0 + l.wick_top * plot_h;
         const float wy1 = plot_y0 + l.wick_bottom * plot_h;
-        dl->AddLine(ImVec2(xc, wy0), ImVec2(xc, wy1), col, 1.0f);
+        dl->AddLine(ImVec2(xc, wy0), ImVec2(xc, wy1), col, 1.2f);
 
         float by0 = plot_y0 + l.body_top * plot_h;
         float by1 = plot_y0 + l.body_bottom * plot_h;
@@ -152,7 +152,7 @@ inline void candlestick_chart(const CandleSeries& series, float height = 380.0f)
             float lx = x - tw * 0.5f;
             if (lx < plot_x0) lx = plot_x0;
             if (lx > plot_x1 - tw) lx = plot_x1 - tw;
-            dl->AddText(ImVec2(lx, plot_y1 + 5.0f), ImGui::GetColorU32(theme::kTextMuted),
+            dl->AddText(ImVec2(lx, plot_y1 + 6.0f), ImGui::GetColorU32(theme::kTextMuted),
                         label.c_str());
         }
         ImGui::PopFont();
@@ -184,6 +184,49 @@ inline void candlestick_chart(const CandleSeries& series, float height = 380.0f)
                     ImGui::GetColorU32(theme::kBackground), buf);
         ImGui::PopFont();
     }
+}
+
+// A professional chart header strip above the canvas: instrument + timeframe on
+// the left and the last real closed bar's OHLC + change on the right. Every value
+// is drawn from the real closed-bar series; an absent value shows N/A.
+inline void chart_header(const CandleSeries& series, const std::string& ohlc, float height = 26.0f) {
+    const ImVec2 p = ImGui::GetCursorScreenPos();
+    const float w = ImGui::GetContentRegionAvail().x;
+    ImGui::GetWindowDrawList()->AddLine(ImVec2(p.x, p.y + height - 1.0f),
+                                        ImVec2(p.x + w, p.y + height - 1.0f),
+                                        ImGui::GetColorU32(theme::kBorder));
+    theme::text_label(theme::kTextMuted, "XAUUSD");
+    ImGui::SameLine(0.0f, theme::kSpace2);
+    theme::text_label(theme::kAccent, "%s", series.label.c_str());
+    ImGui::SameLine(0.0f, theme::kSpace3);
+    if (!series.available || series.candles.empty()) {
+        theme::text_label(theme::kNotAvailable, "NO DATA");
+    } else {
+        const Candle& last = series.candles.back();
+        const double change = last.close - last.open;
+        theme::text_mono(theme::kTextSecondary, "O %s", [&] {
+            char b[16]; std::snprintf(b, sizeof(b), "%.3f", last.open); return std::string(b);
+        }().c_str());
+        ImGui::SameLine(0.0f, theme::kSpace2);
+        theme::text_mono(theme::kTextSecondary, "H %s", [&] {
+            char b[16]; std::snprintf(b, sizeof(b), "%.3f", last.high); return std::string(b);
+        }().c_str());
+        ImGui::SameLine(0.0f, theme::kSpace2);
+        theme::text_mono(theme::kTextSecondary, "L %s", [&] {
+            char b[16]; std::snprintf(b, sizeof(b), "%.3f", last.low); return std::string(b);
+        }().c_str());
+        ImGui::SameLine(0.0f, theme::kSpace2);
+        theme::text_mono(last.close >= last.open ? theme::kHealthy : theme::kCritical, "C %s",
+                         [&] {
+                             char b[16]; std::snprintf(b, sizeof(b), "%.3f", last.close);
+                             return std::string(b);
+                         }().c_str());
+        ImGui::SameLine(0.0f, theme::kSpace2);
+        theme::text_label(last.close >= last.open ? theme::kHealthy : theme::kCritical, "(%+.3f)",
+                          change);
+    }
+    ImGui::SetCursorScreenPos(ImVec2(p.x, p.y + height));
+    (void)ohlc;
 }
 
 }  // namespace chart

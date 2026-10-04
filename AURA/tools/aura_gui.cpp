@@ -71,6 +71,7 @@ int usage() {
                  "usage:\n"
                  "  aura --gui    [--store <path>] [--serve <port>] [--replay <frames>] [--keep]\n"
                  "                  [--frames <n>]  bounded render for CI smoke\n"
+                 "                  [--section <n>] pin one navigation section (0..18)\n"
                  "                  [--renderer auto|modern|legacy]  (default auto: GL3.3 then GL2.1)\n"
                  "  aura --self-test [--store <path>] [--keep]\n"
                  "  (run without --gui and without --self-test, or with --help, for this text)\n"
@@ -244,7 +245,16 @@ RendererContext create_context(aura::desktop::RendererProfile profile) {
     glfwWindowHint(GLFW_OPENGL_PROFILE, hints.request_core_profile ? GLFW_OPENGL_CORE_PROFILE
                                                                    : GLFW_OPENGL_ANY_PROFILE);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, hints.forward_compatible ? GLFW_TRUE : GLFW_FALSE);
-    ctx.window = glfwCreateWindow(1360, 860, "AURA Control Center (SHADOW ONLY)", nullptr, nullptr);
+    // Size the terminal to the display work area so it fills the screen at
+    // whatever resolution the operator has (a trading terminal is used full-size).
+    // Falls back to a sane 1440x900 when no monitor is reported.
+    int win_w = 1440, win_h = 900;
+    if (GLFWmonitor* mon = glfwGetPrimaryMonitor()) {
+        int wx = 0, wy = 0, ww = 0, wh = 0;
+        glfwGetMonitorWorkarea(mon, &wx, &wy, &ww, &wh);
+        if (ww >= 1024 && wh >= 640) { win_w = ww; win_h = wh; }
+    }
+    ctx.window = glfwCreateWindow(win_w, win_h, "AURA Control Center (SHADOW ONLY)", nullptr, nullptr);
     if (ctx.window != nullptr) {
         ctx.profile = profile;
         ctx.glsl_version = hints.glsl_version;
@@ -300,7 +310,7 @@ RendererContext create_best_context(aura::desktop::RendererChoice choice) {
 // the render loop (0 = unbounded); a non-zero bound is used by CI to prove the
 // window/render lifecycle starts and shuts down cleanly, then exits.
 int run_gui(const aura::desktop::ControlCenterOptions& options, long max_frames,
-            aura::desktop::RendererChoice renderer_choice) {
+            aura::desktop::RendererChoice renderer_choice, int pin_section = -1) {
     glfwSetErrorCallback(glfw_error_callback);
     if (!glfwInit()) {
         std::fprintf(stderr, "aura-gui: GLFW init failed (no windowing system?)\n");
@@ -364,6 +374,9 @@ int run_gui(const aura::desktop::ControlCenterOptions& options, long max_frames,
     const std::vector<aura::desktop::NavGroup> nav_groups =
         aura::desktop::navigation_groups();
     int selected = 0;
+    if (pin_section >= 0 &&
+        pin_section < static_cast<int>(aura::desktop::navigation_count()))
+        selected = pin_section;
 
     long rendered = 0;
     while (!glfwWindowShouldClose(window)) {
@@ -401,18 +414,24 @@ int run_gui(const aura::desktop::ControlCenterOptions& options, long max_frames,
         const std::string renderer = std::string(aura::desktop::to_string(rctx.profile));
 
         // ---- Top terminal bar -------------------------------------------------
-        aura::desktop::terminal::top_bar(snap, state.timeframe_selection().selected_label(),
-                                         renderer, state.paused());
+        const std::string page_title =
+            aura::desktop::section_title_for(selected);
+        aura::desktop::terminal::top_bar(snap, page_title, renderer, state.paused());
 
-        // ---- Body: navigation sidebar + main market workspace -----------------
+        // ---- Body: icon rail + navigation + main workspace ---------------------
         const float status_h = aura::desktop::theme::kStatusBarHeight;
-        const float body_h = ImGui::GetContentRegionAvail().y - status_h;
+        const float action_h = aura::desktop::theme::kActionBarHeight;
+        const float body_h = ImGui::GetContentRegionAvail().y - status_h - action_h;
         ImGui::BeginChild("body", ImVec2(0.0f, body_h), false,
                           ImGuiWindowFlags_NoScrollbar);
 
-        const int clicked =
-            aura::desktop::terminal::sidebar(nav_groups, selected,
-                                             aura::desktop::theme::kSidebarWidth);
+        const float window_w = ImGui::GetMainViewport()->Size.x;
+        const int rail_clicked = aura::desktop::terminal::icon_rail(nav_groups, selected);
+        if (rail_clicked >= 0) selected = rail_clicked;
+        ImGui::SameLine(0.0f, 0.0f);
+
+        const int clicked = aura::desktop::terminal::sidebar(
+            nav_groups, selected, aura::desktop::layout::sidebar_width(window_w));
         if (clicked >= 0) selected = clicked;
 
         ImGui::SameLine();
@@ -422,6 +441,14 @@ int run_gui(const aura::desktop::ControlCenterOptions& options, long max_frames,
         ImGui::EndChild();
 
         ImGui::EndChild();
+
+        // ---- Compact action / control bar (safe control-plane ops only) --------
+        const unsigned actions = aura::desktop::terminal::action_bar(state, report);
+        if (actions & aura::desktop::terminal::kActionRefresh) state.refresh_report();
+        if (actions & aura::desktop::terminal::kActionCheckpoint) state.persist_checkpoint();
+        if (actions & aura::desktop::terminal::kActionPauseToggle) state.toggle_pause();
+        if (actions & aura::desktop::terminal::kActionStop) state.request_stop();
+        if (actions & aura::desktop::terminal::kActionRecovery) state.evaluate_recovery(false);
 
         // ---- Slim status bar: real runtime state only -------------------------
         aura::desktop::terminal::status_bar(state, report, renderer);
@@ -445,10 +472,11 @@ int run_gui(const aura::desktop::ControlCenterOptions& options, long max_frames,
             std::printf("aura-gui: rendered %ld frames (bounded smoke); requesting close\n",
                         rendered);
             glfwSetWindowShouldClose(window, GLFW_TRUE);
-        } else if (max_frames > 0) {
+        } else if (max_frames > 0 && pin_section < 0) {
             // Bounded smoke: cycle through every V3-37 section so each panel's
             // draw path is exercised (a real render of each section, not just the
-            // default one) before the bounded loop exits.
+            // default one) before the bounded loop exits. A pinned section stays
+            // on one page (used for deterministic screenshots).
             selected = (selected + 1) % static_cast<int>(aura::desktop::navigation_count());
         }
     }
@@ -483,5 +511,7 @@ int main(int argc, char** argv) {
     const long max_frames = frames.empty() ? 0 : std::atol(frames.c_str());
     const aura::desktop::RendererChoice choice =
         aura::desktop::renderer_choice_from_string(value_of(argc, argv, "--renderer"));
-    return run_gui(options, max_frames, choice);
+    const std::string sec = value_of(argc, argv, "--section");
+    const int pin_section = sec.empty() ? -1 : std::atoi(sec.c_str());
+    return run_gui(options, max_frames, choice, pin_section);
 }

@@ -135,34 +135,44 @@ inline void draw_main_chart(const ControlCenterReport& r, float chart_h) {
 }
 
 inline void draw_dashboard(const ControlCenterReport& r, ControlCenterState& state) {
-    const ControlCenterSnapshot& s = r.snapshot;
-
-    // Chart-first composition: instrument header, timeframe tabs, the dominant
-    // candle chart, a compact metric strip, then secondary panels. The chart is
-    // sized to the available height so it stays the visual anchor on every
-    // supported resolution without clipping the supporting information.
+    // Chart-first composition with a right-hand analytics column:
+    //   instrument header -> top metric row -> timeframe tabs ->
+    //   [ dominant chart | Signals / Risk / Shadow Positions ] -> lower modules.
+    // The chart keeps the majority of the workspace on every supported resolution;
+    // the analytics column is deliberately narrower than the chart.
     terminal::market_header(r);
 
     ImGui::Spacing();
+    terminal::metric_strip(r);
+    ImGui::Spacing();
+
     terminal::timeframe_tabs(state.timeframe_selection());
     ImGui::Spacing();
 
-    {
-        // Reserve space for the metric strip (62) + its spacing (8*2) + the
-        // lower panels (196) + spacing; the chart takes the rest.
-        const float reserved = 62.0f + 16.0f + 196.0f + 24.0f;
-        float chart_h = ImGui::GetContentRegionAvail().y - reserved;
-        if (chart_h < 220.0f) chart_h = 220.0f;
-        if (chart_h > 680.0f) chart_h = 680.0f;
-        draw_main_chart(r, chart_h);
-    }
+    const float gap = theme::kSpace3;
+    const float avail_w = ImGui::GetContentRegionAvail().x;
+    const float window_w = ImGui::GetMainViewport()->Size.x;
+    float analytics_w = layout::analytics_width(window_w);
+    // Never let the analytics column crowd out the chart on a narrow window.
+    if (avail_w - analytics_w - gap < 380.0f) analytics_w = avail_w * 0.30f;
+    const float chart_w = avail_w - analytics_w - gap;
+
+    // The chart + analytics row takes everything left after the lower module row.
+    const float content_h = ImGui::GetContentRegionAvail().y;
+    const float reserved = layout::Chrome::kLowerModules + theme::kSpace3;
+    float col_h = content_h - reserved;
+    if (col_h < layout::Chrome::kMinChart) col_h = layout::Chrome::kMinChart;
+
+    ImGui::BeginChild("chart_col", ImVec2(chart_w, col_h), false, ImGuiWindowFlags_NoScrollbar);
+    chart::chart_header(r.chart, std::string());
+    draw_main_chart(r, col_h - 26.0f);
+    ImGui::EndChild();
+
+    ImGui::SameLine(0.0f, gap);
+    terminal::analytics_column(r, analytics_w, col_h);
 
     ImGui::Spacing();
-    ImGui::Spacing();
-    terminal::metric_strip(r);
-    ImGui::Spacing();
-    ImGui::Spacing();
-    terminal::lower_panels(r);
+    terminal::lower_modules(r);
 }
 
 // ---- Market / Data Health --------------------------------------------------
