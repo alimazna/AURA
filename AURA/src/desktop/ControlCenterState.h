@@ -1,6 +1,7 @@
 #ifndef AURA_DESKTOP_CONTROLCENTERSTATE_H
 #define AURA_DESKTOP_CONTROLCENTERSTATE_H
 
+#include "desktop/BiquoteCandles.h"
 #include "desktop/CandleChart.h"
 #include "desktop/ControlCenterPanels.h"
 #include "desktop/DesktopModel.h"
@@ -68,6 +69,12 @@ struct ControlCenterReport {
     // chart, projected from the runtime's real retained closed bars. Empty (and
     // unavailable) when the selected stream has reported nothing.
     CandleSeries chart{};
+
+    // Which source produced `chart`. `true` only when real Biquote candles were
+    // loaded from disk; otherwise the existing synthetic/runtime path supplied
+    // them. The UI shows this so an operator is never misled about provenance.
+    bool using_real_data{false};
+    std::string data_source_note{};
 };
 
 // Runtime options for the desktop control center. Kept dependency-free so the
@@ -261,7 +268,21 @@ public:
         report_.checkpoints = ControlCenterPanels::checkpoints(src);
         report_.audit = ControlCenterPanels::audit(src, audit_);
         report_.version = ControlCenterPanels::version(shell_.pipeline());
-        report_.chart = chart_series(selection_.selected());
+        // Optional real candles: prefer the bridge when it has them, else the
+        // unchanged synthetic/runtime series. Provenance is recorded honestly.
+        const biquote::LoadResult attempt = try_real_candles(selection_.selected());
+        if (attempt.loaded) {
+            report_.chart = attempt.series;
+            report_.using_real_data = true;
+            report_.data_source_note = "Biquote real candles";
+            last_real_data_note_ = attempt.path_tried;
+        } else {
+            report_.chart = make_candle_series(selection_.selected(),
+                                               shell_.pipeline().bar_series(selection_.selected()));
+            report_.using_real_data = false;
+            report_.data_source_note = "SYNTHETIC (no Biquote)";
+            last_real_data_note_ = attempt.reason;
+        }
         return report_;
     }
 
@@ -272,9 +293,43 @@ public:
     // Reads the runtime's real retained closed bars for one timeframe (explicit
     // identity, never a row position) and projects them into chart candles. No
     // candle is invented; an empty series means NO CANDLE DATA.
+    //
+    // Optional real data: when AURA/bridge/biquote/out/candles_<TF>.json exists
+    // (or AURA_BRIDGE_DIR points at it) those real closed bars are preferred.
+    // The synthetic path below is completely unchanged and still used whenever
+    // the bridge is absent, unreadable or empty, so no existing behaviour can
+    // regress. Provenance is recorded in `last_load_` for the UI.
     CandleSeries chart_series(runtime::Timeframe tf) const {
+        const biquote::LoadResult attempt = try_real_candles(tf);
+        if (attempt.loaded) return attempt.series;
         return make_candle_series(tf, shell_.pipeline().bar_series(tf));
     }
+
+    // Attempts the optional real-candle path without falling back. Returns an
+    // unavailable result unless the operator has explicitly enabled the bridge,
+    // so no existing caller can change behaviour by accident.
+    biquote::LoadResult try_real_candles(runtime::Timeframe tf) const {
+        if (!bridge_enabled_) return biquote::LoadResult{};
+        return biquote::load_candles(tf, exe_dir_);
+    }
+
+    // Enables the optional Biquote bridge and records where the executable lives
+    // so bridge/biquote/out/*.json can be found. Until this is called, every path
+    // behaves exactly as it did before the integration existed.
+    void enable_biquote_bridge(std::string exe_dir) {
+        exe_dir_ = std::move(exe_dir);
+        bridge_enabled_ = true;
+    }
+
+    bool biquote_bridge_enabled() const noexcept { return bridge_enabled_; }
+
+    // True when real Biquote candles are available for the operational
+    // timeframe. Used for the honest provenance label.
+    bool real_data_available() const {
+        return biquote::real_data_available(selection_.selected(), exe_dir_);
+    }
+
+    const std::string& last_real_data_note() const noexcept { return last_real_data_note_; }
 
     const ControlCenterReport& report() const noexcept { return report_; }
 
@@ -285,6 +340,11 @@ public:
 private:
     ControlCenterOptions options_{};
     runtime::ApplicationShell shell_;
+    // Optional Biquote bridge support. Disabled by default, so with no bridge
+    // enabled every code path behaves exactly as it did before this integration.
+    std::string exe_dir_{};
+    bool bridge_enabled_{false};
+    mutable std::string last_real_data_note_{};
     runtime::RecoveryOutcome recovery_{};
     ControlCenterSnapshot snapshot_{};
     ControlCenterReport report_{};

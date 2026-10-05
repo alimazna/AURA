@@ -1,0 +1,4 @@
+# Generated market data is not committed: it is broker-feed-specific, large,
+# and reproduced by running the bridge on a machine with network access. Only
+# the folder marker is tracked.
+*.json
