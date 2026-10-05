@@ -213,6 +213,33 @@ public:
         return streams_;
     }
 
+    // Restores one timeframe's last-processed progress after a restart, without
+    // reprocessing history. Monotonic: a record that would regress the timeframe
+    // is refused. The stream is marked ONLINE so the next genuine closed bar that
+    // strictly advances it is accepted. This resumes derived state only; it places
+    // no order and fabricates no bar.
+    bool restore_progress(const runtime::TimeframeProgress& progress) {
+        ReceiverStreamState* state = mutable_state(progress.timeframe);
+        if (state == nullptr) return false;
+        if (!store_.restore(progress)) return false;
+        state->state = foundation::ServiceState::ONLINE;
+        state->quality = foundation::DataQualityState::VALID;
+        state->last_event_time = progress.last_close;
+        state->last_receive_time = progress.last_close;
+        state->last_sequence = progress.sequence;
+        state->accepted_bars = progress.sequence;
+        state->connected = true;
+        return true;
+    }
+
+    // Clears the per-stream sequence guard so a restarted sender may re-use
+    // sequence numbers. Does not change last-processed progress.
+    void reset_stream_sequences() {
+        for (auto& entry : streams_) {
+            entry.second.last_sequence = 0;
+        }
+    }
+
 private:
     ReceiverStreamState* mutable_state(runtime::Timeframe timeframe) {
         const auto it = streams_.find(timeframe);
