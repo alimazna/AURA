@@ -446,10 +446,20 @@ int run_gui(const aura::desktop::ControlCenterOptions& options, long max_frames,
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     io.IniFilename = nullptr;  // deterministic; no user-path ini file
-    // Real type hierarchy: load the AURA font roles (Roboto-Medium / Cousine) from
-    // the directory the build copies them to. Missing fonts fall back to ImGui's
-    // built-in face, so the terminal still runs.
-    aura::desktop::theme::load_fonts(AURA_FONT_DIR);
+    // Real type hierarchy: load the AURA font roles (Roboto-Medium / Cousine).
+    // AURA_FONT_DIR is an absolute BUILD-machine path into the fetched ImGui
+    // source tree, so it does not exist on the operator's PC. The build and the
+    // package stage the two faces next to the executable, so try that first and
+    // only then the build-tree directory; otherwise the packaged Windows app
+    // silently falls back to ImGui's built-in bitmap face and the terminal loses
+    // its designed type hierarchy. Missing fonts still fall back to ImGui's
+    // built-in face, so the terminal always runs.
+    const std::string exe_dir = executable_dir();
+    const std::string staged_fonts =
+        exe_dir.empty() ? std::string() : join_path(exe_dir, "fonts");
+    const bool fonts_loaded = !staged_fonts.empty() &&
+                              aura::desktop::theme::load_fonts(staged_fonts.c_str());
+    if (!fonts_loaded) aura::desktop::theme::load_fonts(AURA_FONT_DIR);
     aura::desktop::theme::apply_aura_style();
 
     ImGui_ImplGlfw_InitForOpenGL(window, true);
@@ -550,7 +560,8 @@ int run_gui(const aura::desktop::ControlCenterOptions& options, long max_frames,
                           ImGuiWindowFlags_NoScrollbar);
 
         const float window_w = ImGui::GetMainViewport()->Size.x;
-        const int rail_clicked = aura::desktop::terminal::icon_rail(nav_groups, selected);
+        const int rail_clicked =
+            aura::desktop::terminal::icon_rail(nav_groups, selected, brand_view);
         if (rail_clicked >= 0) selected = rail_clicked;
         ImGui::SameLine(0.0f, 0.0f);
 

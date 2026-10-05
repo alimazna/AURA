@@ -57,7 +57,10 @@ constexpr ImVec4 kNeutral{0.529f, 0.561f, 0.620f, 1.00f};
 constexpr ImVec4 kUnknown{0.463f, 0.494f, 0.549f, 1.00f};
 constexpr ImVec4 kNotAvailable{0.443f, 0.490f, 0.549f, 1.00f};
 // The shadow-only identity is deliberately distinct from every health state.
-constexpr ImVec4 kShadow{0.894f, 0.694f, 0.290f, 1.00f};
+// It is the steel brand tone (the execution mode is an identity, not a warning),
+// so amber stays reserved for genuinely degraded states.
+constexpr ImVec4 kShadow{0.790f, 0.835f, 0.870f, 1.00f};
+constexpr ImVec4 kShadowDim{0.790f, 0.835f, 0.870f, 0.55f};
 
 // ---- Spacing scale ---------------------------------------------------------
 constexpr float kSpace1 = 4.0f;
@@ -68,7 +71,7 @@ constexpr float kSpace5 = 24.0f;
 constexpr float kSpace6 = 32.0f;
 
 constexpr float kSidebarWidth = 200.0f;
-constexpr float kTopBarHeight = 46.0f;
+constexpr float kTopBarHeight = 48.0f;
 constexpr float kStatusBarHeight = 24.0f;
 constexpr float kActionBarHeight = 40.0f;
 constexpr float kIconRailWidth = 52.0f;

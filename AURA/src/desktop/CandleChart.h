@@ -15,6 +15,27 @@
 namespace aura {
 namespace desktop {
 
+// A deterministic calendar month count (months since 1970-01, Gregorian) for a
+// bar close time's epoch seconds, from the civil-date algorithm below. In that
+// algorithm `y` is the March-based year, so January/February roll back one year
+// and are corrected here (checked: 1970-01-01 -> 0, 2026-01-15 -> 672,
+// 2025-02-28 -> 661).
+inline std::int64_t utc_month_index(foundation::Timestamp t) {
+    std::int64_t secs = t.seconds();
+    if (secs < 0) secs = 0;
+    const std::int64_t days = secs / 86400;
+    const std::int64_t z = days + 719468;
+    const std::int64_t era = (z >= 0 ? z : z - 146096) / 146097;
+    const std::int64_t doe = z - era * 146097;
+    const std::int64_t yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;
+    const std::int64_t y = yoe + era * 400;
+    const std::int64_t doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    const std::int64_t mp = (5 * doy + 2) / 153;
+    const std::int64_t m = mp + (mp < 10 ? 3 : -9);
+    const std::int64_t civil_year = (m >= 3) ? y : y + 1;  // undo the March-based year
+    return (civil_year - 1970) * 12 + (m - 1);
+}
+
 // UTC formatter for a bar close time (MM-DD HH:MM from the epoch nanoseconds).
 // The axis shows the real close time of the closed bar; there is no wall clock.
 inline std::string format_utc_minute(foundation::Timestamp t) {
@@ -39,6 +60,34 @@ inline std::string format_utc_minute(foundation::Timestamp t) {
     return std::string(buf);
 }
 
+// Per-timeframe axis label for a real closed-bar close time. Intraday
+// timeframes label the clock time; daily/weekly label the date; monthly labels
+// the abbreviated month and year. The value is always the bar's own close time
+// (no wall clock, no fabrication); M15 is the default operational read.
+inline std::string format_axis_label(foundation::Timestamp t, runtime::Timeframe tf) {
+    switch (tf) {
+        case runtime::Timeframe::D1:
+        case runtime::Timeframe::W1:
+            return format_utc_minute(t).substr(0, 5);  // "MM-DD"
+        case runtime::Timeframe::MN1: {
+            static const char* kMonths[12] = {"JAN", "FEB", "MAR", "APR", "MAY", "JUN",
+                                              "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"};
+            // utc_month_index is the true calendar month count since 1970-01, so
+            // the year and month are the whole part and remainder over 12
+            // (checked: Jan 2026 -> "JAN 26", Dec 2026 -> "DEC 26",
+            // Feb 2025 -> "FEB 25", 1970-01-01 -> "JAN 70").
+            const std::int64_t mi = utc_month_index(t);
+            const std::int64_t year = 1970 + mi / 12;
+            const std::int64_t month = mi % 12;
+            char buf[12];
+            std::snprintf(buf, sizeof(buf), "%s %02lld", kMonths[month],
+                          static_cast<long long>(year % 100));
+            return std::string(buf);
+        }
+        default:
+            return format_utc_minute(t).substr(6, 5);  // "HH:MM" (M1..H4)
+    }
+}
 
 // Pure, ImGui-free chart model for the XAUUSD candlestick view.
 //

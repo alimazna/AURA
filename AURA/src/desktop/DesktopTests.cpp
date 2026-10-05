@@ -935,6 +935,49 @@ static void test_terminal_layout_contract() {
     }
 }
 
+// V2 polish: the pure dashboard row geometry and the canonical timeframe role
+// map are a contract between the composition and the tests.
+static void test_dashboard_rows_and_roles() {
+    using namespace desktop::layout;
+    // The canonical V3-29 authority role of each explicit timeframe identity.
+    CHECK(std::string(timeframe_role(runtime::Timeframe::M15)) == "OPERATIONAL");
+    CHECK(std::string(timeframe_role(runtime::Timeframe::H4)) == "STRUCTURAL");
+    CHECK(std::string(timeframe_role(runtime::Timeframe::M1)) == "EXECUTION");
+    CHECK(std::string(timeframe_role(runtime::Timeframe::M5)) == "EXECUTION");
+    CHECK(std::string(timeframe_role(runtime::Timeframe::M30)) == "CONTEXT");
+    CHECK(std::string(timeframe_role(runtime::Timeframe::H1)) == "CONTEXT");
+    CHECK(std::string(timeframe_role(runtime::Timeframe::D1)) == "LONG HORIZON");
+    CHECK(std::string(timeframe_role(runtime::Timeframe::W1)) == "LONG HORIZON");
+    CHECK(std::string(timeframe_role(runtime::Timeframe::MN1)) == "LONG HORIZON");
+    CHECK(std::string(timeframe_role(runtime::Timeframe::UNKNOWN)).empty());
+
+    // 1366x768-class content: exact fit (never overflows into a scrollbar), the
+    // analytics row stays a minority band and the chart stays dominant.
+    const DashboardRows hd = dashboard_rows(656.0f);
+    CHECK(hd.analytics_h >= 120.0f && hd.analytics_h <= 220.0f);
+    CHECK(hd.chart_h >= Chrome::kMinChart && hd.chart_h <= Chrome::kMaxChart);
+    CHECK(hd.chart_h + hd.analytics_h + Chrome::kSecondaryStrip + 5.0f * 8.0f + 4.0f <=
+          656.0f + 0.001f);
+    CHECK(hd.chart_h > hd.analytics_h * 2.0f);
+
+    // 1600x900 / 1920x1080-class content: the analytics row is capped, the chart
+    // takes the remainder and stays within its bounds.
+    const DashboardRows hr = dashboard_rows(968.0f);
+    CHECK(hr.analytics_h == 220.0f);
+    CHECK(hr.chart_h == 968.0f - 220.0f - Chrome::kSecondaryStrip - 5.0f * 8.0f - 4.0f);
+    CHECK(hr.chart_h > Chrome::kMinChart && hr.chart_h <= Chrome::kMaxChart);
+
+    // Short viewport: the chart floor wins and the panels keep their own floor.
+    const DashboardRows hs = dashboard_rows(300.0f);
+    CHECK(hs.chart_h == Chrome::kMinChart);
+    CHECK(hs.analytics_h == 120.0f);
+
+    // Deterministic: identical inputs yield identical geometry.
+    const DashboardRows again = dashboard_rows(656.0f);
+    CHECK(again.chart_h == hd.chart_h);
+    CHECK(again.analytics_h == hd.analytics_h);
+}
+
 int main() {
     test_dashboard_no_fabrication();
     test_knowledge_projection_readonly();
@@ -963,6 +1006,7 @@ int main() {
     test_chart_utc_formatter();
     test_real_metrics_projection();
     test_terminal_layout_contract();
+    test_dashboard_rows_and_roles();
     if (g_failures == 0) {
         std::printf("DesktopTests: ALL PASS\n");
         return 0;

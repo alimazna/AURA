@@ -50,6 +50,21 @@ inline std::string price(double v) {
     return std::string(b);
 }
 
+// Shared identity strings, typed once so the descriptor and the execution-mode
+// label never drift apart between the top bar, the sidebar, the metric strip
+// and the status bar.
+inline constexpr const char* kDescriptor = "XAUUSD MARKET INTELLIGENCE";
+inline constexpr const char* kShadowOnly = "SHADOW ONLY";
+
+// Colour for a real LONG/SHORT direction label. NONE (or anything else) is
+// informational, never a positive colour — an absent direction must not read
+// as a green light.
+inline ImVec4 direction_color(const std::string& d) {
+    if (d == runtime::to_string(runtime::SignalDirection::LONG)) return theme::kHealthy;
+    if (d == runtime::to_string(runtime::SignalDirection::SHORT)) return theme::kCritical;
+    return theme::kNeutral;
+}
+
 // The nine-timeframe row whose explicit identity matches (never positional).
 inline const TimeframeRow* row_for(const TimeframePanel& panel, runtime::Timeframe tf) {
     for (const TimeframeRow& r : panel.rows)
@@ -102,7 +117,9 @@ inline void top_bar(const ControlCenterSnapshot& s, const std::string& page_titl
     const float line_h = ImGui::GetTextLineHeight();
     const float cy = (bar_h - line_h) * 0.5f;
 
-    // Left: brand mark (if provided) + wordmark + instrument + descriptor.
+    // Left: brand mark (if provided) + ASTRA wordmark + the single descriptor.
+    // The descriptor is the product tagline; the instrument identity lives in the
+    // dashboard's market header, so "XAUUSD" is not repeated here.
     ImGui::SetCursorPos(ImVec2(theme::kSpace4, cy));
     if (brand_mark.valid()) {
         const float mark_h = line_h + 8.0f;
@@ -111,28 +128,23 @@ inline void top_bar(const ControlCenterSnapshot& s, const std::string& page_titl
         ImGui::SameLine(0.0f, theme::kSpace2);
         ImGui::SetCursorPosY(cy);
     }
-    theme::text_hero(theme::kBrand, "ASTRA");
+    theme::text_title(theme::kBrand, "ASTRA");
     ImGui::SameLine(0.0f, theme::kSpace3);
     {
+        // A hairline separator between the wordmark and the descriptor, then the
+        // descriptor in one muted small line.
         const ImVec2 dp = ImGui::GetCursorScreenPos();
         const float dy = dp.y + line_h * 0.5f;
         ImGui::GetWindowDrawList()->AddLine(ImVec2(dp.x, dy - 10.0f), ImVec2(dp.x, dy + 10.0f),
                                             ImGui::GetColorU32(theme::kBorderStrong));
         ImGui::Dummy(ImVec2(1.0f, line_h));
         ImGui::SameLine(0.0f, theme::kSpace3);
-        theme::text_hero(theme::kTextPrimary, "XAUUSD");
-        ImGui::SameLine(0.0f, theme::kSpace2);
-        ImGui::SetCursorPosY(cy + 5.0f);
-        theme::text_small(theme::kTextMuted, "XAUUSD MARKET INTELLIGENCE");
+        theme::text_small(theme::kTextSecondary, "%s", kDescriptor);
     }
 
-    // Centre-left: current page title (real navigation state).
-    if (!page_title.empty()) {
-        ImGui::SetCursorPos(ImVec2(full_w * 0.34f, cy + 1.0f));
-        theme::text_title(theme::kTextSecondary, "%s", page_title.c_str());
-    }
-
-    // Right: real, right-aligned status. Widths are measured, not hard-coded.
+    // Right: real, right-aligned status. Widths are measured, not hard-coded,
+    // and measured up front so the page title can be clamped to the actual
+    // cluster boundary at every window width (never a pinned pixel offset).
     struct Item {
         const char* label;
         std::string value;
@@ -143,7 +155,7 @@ inline void top_bar(const ControlCenterSnapshot& s, const std::string& page_titl
             ? std::string(s.overview.aggregate)
             : std::to_string(s.overview.streams_healthy) + "/" +
                   std::to_string(s.overview.streams_total);
-    const std::string mode = paused ? "PAUSED" : "SHADOW ONLY";
+    const std::string mode = paused ? "PAUSED" : kShadowOnly;
     const Item items[] = {
         {"SYSTEM", std::string(s.overview.healthy ? "HEALTHY" : s.overview.aggregate),
          theme::status_color(s.overview.healthy ? "HEALTHY" : s.overview.aggregate)},
@@ -151,14 +163,30 @@ inline void top_bar(const ControlCenterSnapshot& s, const std::string& page_titl
         {"RENDERER", renderer, theme::kTextSecondary},
     };
 
-    float total = 0.0f;
+    float cluster_w = 0.0f;
     for (const Item& it : items) {
-        if (it.label[0] != '\0') total += text_w(it.label) + 5.0f;
-        total += text_w(it.value.c_str()) + theme::kSpace4;
+        if (it.label[0] != '\0') cluster_w += text_w(it.label) + 5.0f;
+        cluster_w += text_w(it.value.c_str()) + theme::kSpace4;
     }
-    total += text_w(mode.c_str()) + theme::kSpace3;
+    cluster_w += text_w(mode.c_str()) + theme::kSpace3;
+    const float cluster_x = full_w - cluster_w - theme::kSpace4;
 
-    float x = full_w - total - theme::kSpace4;
+    // Centre-left: current page title (real navigation state), measured and
+    // clamped so it never runs into the measured status cluster.
+    if (!page_title.empty()) {
+        const float brand_end = ImGui::GetCursorPosX();
+        float tx = brand_end + theme::kSpace5 * 1.5f;
+        ImGui::PushFont(theme::title_font());
+        const float title_w = ImGui::CalcTextSize(page_title.c_str()).x;
+        ImGui::PopFont();
+        const float right_edge = cluster_x - theme::kSpace5;
+        if (tx + title_w > right_edge && right_edge - title_w > brand_end + theme::kSpace2)
+            tx = right_edge - title_w;
+        ImGui::SetCursorPos(ImVec2(tx, cy + 1.0f));
+        theme::text_title(theme::kTextSecondary, "%s", page_title.c_str());
+    }
+
+    float x = cluster_x;
     if (x < full_w * 0.55f) x = full_w * 0.55f;
     ImGui::SetCursorPos(ImVec2(x, cy));
     for (const Item& it : items) {
@@ -169,16 +197,21 @@ inline void top_bar(const ControlCenterSnapshot& s, const std::string& page_titl
         theme::text_small(it.col, "%s", it.value.c_str());
         ImGui::SameLine(0.0f, theme::kSpace4);
     }
-    // SHADOW ONLY / PAUSED identity pill.
+    // SHADOW ONLY / PAUSED identity pill. Steel/off-white identity treatment:
+    // the execution mode is an identity, not a warning, so it never borrows a
+    // health colour. PAUSED keeps the violet paused tone.
     {
         const ImVec2 sp = ImGui::GetCursorScreenPos();
         const ImVec2 ts = ImGui::CalcTextSize(mode.c_str());
         const ImVec2 lo(sp.x, sp.y - 1.0f);
-        const ImVec2 hi(sp.x + ts.x + theme::kSpace2, sp.y + ts.y + 1.0f);
+        const ImVec2 hi(sp.x + ts.x + theme::kSpace2 + 8.0f, sp.y + ts.y + 1.0f);
         const ImVec4 col = paused ? theme::kPaused : theme::kShadow;
-        filled_rect(lo, hi, ImVec4(col.x, col.y, col.z, 0.16f), 3.0f);
+        filled_rect(lo, hi, ImVec4(col.x, col.y, col.z, 0.10f), 3.0f);
         outlined_rect(lo, hi, ImVec4(col.x, col.y, col.z, 0.55f), 3.0f);
-        ImGui::SetCursorScreenPos(ImVec2(lo.x + theme::kSpace1, lo.y + 1.0f));
+        // Identity dot (the reference chip's filled marker).
+        ImGui::GetWindowDrawList()->AddCircleFilled(
+            ImVec2(lo.x + 7.0f, (lo.y + hi.y) * 0.5f), 2.2f, ImGui::GetColorU32(col));
+        ImGui::SetCursorScreenPos(ImVec2(lo.x + 12.0f, lo.y + 1.0f));
         theme::text_small(col, "%s", mode.c_str());
     }
     ImGui::EndChild();
@@ -188,8 +221,11 @@ inline void top_bar(const ControlCenterSnapshot& s, const std::string& page_titl
 
 // A narrow vertical icon rail. One icon per navigation group (the group's first
 // section); clicking jumps to that group's first page. The active group carries
-// the accent indicator. Returns the clicked section index, or -1.
-inline int icon_rail(const std::vector<NavGroup>& groups, int selected) {
+// the accent indicator. The real ASTRA brand mark (when the build supplied one)
+// tops the rail; without an asset the rail starts directly with the navigation
+// icons — no invented monogram is drawn. Returns the clicked section index, or -1.
+inline int icon_rail(const std::vector<NavGroup>& groups, int selected,
+                     const BrandMarkView& brand_mark = {}) {
     int clicked = -1;
     ImGui::BeginChild("rail", ImVec2(theme::kIconRailWidth, 0.0f), false,
                       ImGuiWindowFlags_NoScrollbar);
@@ -204,30 +240,18 @@ inline int icon_rail(const std::vector<NavGroup>& groups, int selected) {
     const float tile = 36.0f;
     const float x = (w - tile) * 0.5f;
 
-    // Brand mark: a steel tile with a drawn "A" monogram (no font dependency).
-    // The monogram is brand chrome, so it uses the steel brand colour, not the
-    // functional cyan accent. When a real ASTRA logo asset is supplied it is drawn
-    // in the header instead; this monogram is only the rail's typographic mark.
-    ImGui::SetCursorPos(ImVec2(x, theme::kSpace3));
-    {
-        const ImVec2 p = ImGui::GetCursorScreenPos();
-        filled_rect(p, ImVec2(p.x + tile, p.y + tile),
-                    ImVec4(theme::kBrand.x, theme::kBrand.y, theme::kBrand.z, 0.16f), 5.0f);
-        outlined_rect(p, ImVec2(p.x + tile, p.y + tile),
-                      ImVec4(theme::kBrand.x, theme::kBrand.y, theme::kBrand.z, 0.5f), 5.0f);
-        ImDrawList* dl = ImGui::GetWindowDrawList();
-        const float cx = p.x + tile * 0.5f;
-        const float cy = p.y + tile * 0.5f;
-        const float a = 8.0f;
-        dl->AddLine(ImVec2(cx - a, cy + a), ImVec2(cx, cy - a), ImGui::GetColorU32(theme::kBrand),
-                    1.8f);
-        dl->AddLine(ImVec2(cx, cy - a), ImVec2(cx + a, cy + a), ImGui::GetColorU32(theme::kBrand),
-                    1.8f);
-        dl->AddLine(ImVec2(cx - a * 0.55f, cy + a * 0.15f), ImVec2(cx + a * 0.55f, cy + a * 0.15f),
-                    ImGui::GetColorU32(theme::kBrand), 1.4f);
+    // Brand mark: the real ASTRA asset when the build supplied one, otherwise
+    // nothing. No invented monogram is drawn here — the reference identity is
+    // the real mark or the typographic wordmark, never a synthesized glyph.
+    if (brand_mark.valid()) {
+        const float mark_w = tile * (brand_mark.aspect > 0.0f ? brand_mark.aspect : 1.0f);
+        ImGui::SetCursorPos(ImVec2((w - mark_w) * 0.5f, theme::kSpace3));
+        brand_mark_image(brand_mark, tile);
         ImGui::Dummy(ImVec2(tile, tile));
+        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + theme::kSpace3);
+    } else {
+        ImGui::SetCursorPosY(theme::kSpace3);
     }
-    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + theme::kSpace3);
     ImGui::Separator();
     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + theme::kSpace2);
 
@@ -266,20 +290,18 @@ inline SidebarResult sidebar(const std::vector<NavGroup>& groups, int selected, 
                              const BrandMarkView& brand_mark = {}) {
     SidebarResult result;
     ImGui::BeginChild("sidebar", ImVec2(width, 0.0f), false);
-    // ASTRA identity block: the real brand mark (when supplied) beside the product
-    // wordmark and its descriptor, matching the reference sidebar. The far-left
-    // rail carries the drawn mark; when no real asset is present the typographic
-    // treatment stands alone (no replacement logo is synthesized here).
+    // ASTRA identity block: the real brand mark (when supplied) above the
+    // product wordmark and the full descriptor, matching the reference sidebar.
+    // When no asset is present the typographic treatment stands alone (no
+    // replacement logo is synthesized here).
     ImGui::SetCursorPos(ImVec2(theme::kSpace3, theme::kSpace3));
     if (brand_mark.valid()) {
-        const float mark_h = ImGui::GetTextLineHeight() * 1.6f;
-        brand_mark_image(brand_mark, mark_h);
-        ImGui::SameLine(0.0f, theme::kSpace2);
-        ImGui::SetCursorPosY(theme::kSpace3);
+        brand_mark_image(brand_mark, ImGui::GetTextLineHeight() * 1.4f);
+        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + theme::kSpace1);
     }
     theme::text_title(theme::kBrand, "ASTRA");
     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 1.0f);
-    theme::text_label(theme::kTextMuted, "XAUUSD INTELLIGENCE");
+    theme::text_label(theme::kTextMuted, "%s", kDescriptor);
     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + theme::kSpace2);
     ImGui::Separator();
     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + theme::kSpace2);
@@ -351,9 +373,13 @@ inline bool exit_confirmation(bool& open) {
 
 // ---- Timeframe tab strip ---------------------------------------------------
 
-// Terminal-style timeframe tabs. `sel` is the presentation selection state.
-// Clicking a tab switches the chart stream (explicit timeframe identity) and
-// returns true. The active tab has an accent underline and brighter text.
+// Terminal-style segmented timeframe strip (the institutional selector from the
+// ASTRA reference): one inset container with a bordered segment per timeframe, a
+// separator between segments, an elevated active segment with an accent
+// underline, and a small dot marking the structural authority (H4). Clicking a
+// tab switches the chart stream by explicit timeframe identity and returns true.
+// A caption right of the strip names the selected stream's canonical V3-29
+// authority role (OPERATIONAL / STRUCTURAL / ...).
 inline bool timeframe_tabs(TimeframeSelection& sel, float height = 32.0f) {
     bool changed = false;
     const std::vector<runtime::Timeframe>& tfs = chart_timeframes();
@@ -361,6 +387,13 @@ inline bool timeframe_tabs(TimeframeSelection& sel, float height = 32.0f) {
     const float y0 = ImGui::GetCursorScreenPos().y;
     const float x_start = ImGui::GetCursorScreenPos().x;
     ImDrawList* dl = ImGui::GetWindowDrawList();
+
+    // Segmented container: one inset strip holding all nine segments.
+    const float strip_w = tfs.size() * tab_w;
+    dl->AddRectFilled(ImVec2(x_start, y0), ImVec2(x_start + strip_w, y0 + height),
+                      ImGui::GetColorU32(theme::kSurface), 3.0f);
+    dl->AddRect(ImVec2(x_start, y0), ImVec2(x_start + strip_w, y0 + height),
+                ImGui::GetColorU32(theme::kBorder), 3.0f);
 
     for (std::size_t i = 0; i < tfs.size(); ++i) {
         const runtime::Timeframe tf = tfs[i];
@@ -372,13 +405,17 @@ inline bool timeframe_tabs(TimeframeSelection& sel, float height = 32.0f) {
         const bool hovered = ImGui::IsItemHovered();
         if (active) {
             dl->AddRectFilled(p, ImVec2(p.x + tab_w, p.y + height),
-                              ImGui::GetColorU32(ImVec4(1.0f, 1.0f, 1.0f, 0.05f)), 3.0f);
+                              ImGui::GetColorU32(theme::kSurfaceRaised), 0.0f);
             dl->AddRectFilled(ImVec2(p.x, p.y + height - 2.0f), ImVec2(p.x + tab_w, p.y + height),
                               ImGui::GetColorU32(theme::kAccent), 0.0f);
         } else if (hovered) {
             dl->AddRectFilled(p, ImVec2(p.x + tab_w, p.y + height),
-                              ImGui::GetColorU32(ImVec4(1.0f, 1.0f, 1.0f, 0.03f)), 3.0f);
+                              ImGui::GetColorU32(ImVec4(1.0f, 1.0f, 1.0f, 0.03f)), 0.0f);
         }
+        // Segment separator (reference-style shared borders).
+        if (i > 0)
+            dl->AddLine(ImVec2(p.x, y0 + 6.0f), ImVec2(p.x, y0 + height - 6.0f),
+                        ImGui::GetColorU32(theme::kBorder));
         ImGui::PushFont(theme::body_font());
         const ImVec2 ts = ImGui::CalcTextSize(label.c_str());
         dl->AddText(ImVec2(p.x + (tab_w - ts.x) * 0.5f, p.y + (height - ts.y) * 0.5f),
@@ -387,31 +424,64 @@ inline bool timeframe_tabs(TimeframeSelection& sel, float height = 32.0f) {
                                                  : theme::kTextMuted),
                     label.c_str());
         ImGui::PopFont();
+        // A small dot marks the primary structural authority (H4), matching the
+        // reference's role hint. Identity comes from the explicit timeframe.
+        if (tf == runtime::Timeframe::H4 && !active) {
+            dl->AddCircleFilled(ImVec2(p.x + tab_w - 6.0f, p.y + 6.0f), 1.6f,
+                                ImGui::GetColorU32(theme::kTextMuted));
+        }
         ImGui::PopID();
         if (clicked && sel.select(tf)) changed = true;
-        if (i + 1 < tfs.size()) ImGui::SameLine(0.0f, layout::Chrome::kTabGap);
+        if (i + 1 < tfs.size()) ImGui::SameLine(0.0f, 0.0f);
     }
-    const float x_end = ImGui::GetCursorScreenPos().x;
-    dl->AddLine(ImVec2(x_start, y0 + height + 1.0f), ImVec2(x_end, y0 + height + 1.0f),
-                ImGui::GetColorU32(theme::kBorder));
+
+    // Right of the strip: the selected stream's authority role (real identity,
+    // never positional), drawn on the strip's centreline. The cursor is parked
+    // past the strip with a reserved dummy so following widgets do not overlap.
+    const char* role = layout::timeframe_role(sel.selected());
+    const std::string caption =
+        role[0] != '\0' ? std::string(role) + " \u00b7 " + sel.selected_label() : std::string();
+    ImGui::SameLine(0.0f, theme::kSpace3);
+    ImVec2 ts(0.0f, 0.0f);
+    if (!caption.empty()) {
+        ImGui::PushFont(theme::label_font());
+        ts = ImGui::CalcTextSize(caption.c_str());
+        ImGui::PopFont();
+    }
+    // Overflow guard: on a narrow window the nine-tab strip wins and the role
+    // caption is dropped (never clipped or wrapped onto a second line).
+    if (!caption.empty() && ts.x + theme::kSpace2 <= ImGui::GetContentRegionAvail().x) {
+        const float cy = y0 + (height - ts.y) * 0.5f;
+        dl->AddText(ImVec2(x_start + strip_w + theme::kSpace3, cy),
+                    ImGui::GetColorU32(theme::kTextMuted), caption.c_str());
+        ImGui::Dummy(ImVec2(theme::kSpace3 + ts.x, height));
+    } else {
+        ImGui::Dummy(ImVec2(0.0f, height));
+    }
     return changed;
 }
 
 // ---- Instrument (market) header --------------------------------------------
 
-// Compact instrument header above the chart: identity, selected timeframe, real
-// last closed price/time and the selected stream's real state/quality/bars.
+// Compact instrument header above the chart: identity, selected timeframe with
+// its canonical authority role, the real last closed price as the hero value
+// (with the change against the previous real closed bar when one exists) and
+// the selected stream's real state/quality/bars. Layout is measured, not pinned
+// to hard-coded pixel offsets, so it stays coherent with any font fallback and
+// at every supported resolution. Absent values render N/A / NOT AVAILABLE.
 inline void market_header(const ControlCenterReport& r) {
     const ControlCenterSnapshot& s = r.snapshot;
     const CandleSeries& cs = r.chart;
     const TimeframeRow* row = row_for(s.timeframes, cs.timeframe);
 
     const float avail = ImGui::GetContentRegionAvail().x;
-    const float h = 56.0f;
+    const float h = 58.0f;
     const ImVec2 p = ImGui::GetCursorScreenPos();
     filled_rect(p, ImVec2(p.x + avail, p.y + h), theme::kSurface, 3.0f);
     outlined_rect(p, ImVec2(p.x + avail, p.y + h), theme::kBorder, 3.0f);
+    ImDrawList* dl = ImGui::GetWindowDrawList();
 
+    // ---- Left: instrument identity + timeframe badge + role -----------------
     ImGui::SetCursorScreenPos(ImVec2(p.x + theme::kSpace3, p.y + theme::kSpace2));
     theme::text_hero(theme::kTextPrimary, "XAUUSD");
     ImGui::SameLine(0.0f, theme::kSpace2);
@@ -426,12 +496,15 @@ inline void market_header(const ControlCenterReport& r) {
         ImGui::SetCursorScreenPos(ImVec2(lo.x + theme::kSpace1, lo.y + 1.0f));
         theme::text_body(theme::kAccent, "%s", tf.c_str());
     }
-    ImGui::SetCursorScreenPos(ImVec2(p.x + theme::kSpace3, p.y + 33.0f));
+    ImGui::SameLine(0.0f, theme::kSpace2);
+    {
+        const char* role = layout::timeframe_role(cs.timeframe);
+        if (role[0] != '\0') theme::text_label(theme::kTextMuted, "%s", role);
+    }
+    ImGui::SetCursorScreenPos(ImVec2(p.x + theme::kSpace3, p.y + 35.0f));
     theme::text_label(theme::kTextMuted, "MARKET INTELLIGENCE");
 
-    double close_v = 0.0;
-    std::string close_t;
-    const bool have_close = last_close(cs, close_v, close_t);
+    // ---- Real values --------------------------------------------------------
     const bool have_row = row != nullptr && row->present;
     const std::string stream_state = have_row ? row_health(*row) : std::string("NOT AVAILABLE");
     const std::string quality = (have_row && row->quality != "NOT AVAILABLE")
@@ -440,32 +513,101 @@ inline void market_header(const ControlCenterReport& r) {
     const std::string bars =
         have_row && row->sequence.available ? row->sequence.value : std::string("N/A");
 
-    {
-        const float col_w = 150.0f;
-        float x = p.x + avail - col_w - theme::kSpace3;
-        ImGui::SetCursorScreenPos(ImVec2(x, p.y + theme::kSpace2));
-        theme::text_label(theme::kTextMuted, "LAST CLOSED");
-        ImGui::SetCursorScreenPos(ImVec2(x, p.y + theme::kSpace2 + 14.0f));
-        if (have_close)
-            theme::text_mono(theme::kTextPrimary, "%s", price(close_v).c_str());
-        else
-            theme::text_mono(theme::kNotAvailable, "N/A");
-        ImGui::SetCursorScreenPos(ImVec2(x, p.y + theme::kSpace2 + 33.0f));
-        theme::text_label(theme::kTextMuted, "%s", have_close ? close_t.c_str() : "\u2014");
+    const bool have_close = cs.available && !cs.candles.empty();
+    double close_v = 0.0;
+    std::string close_t;
+    if (have_close) {
+        close_v = cs.candles.back().close;
+        close_t = format_utc_minute(cs.candles.back().close_time);
+    }
+    // Change against the previous real closed bar (present only when at least
+    // two real closed bars exist; never computed from anything else).
+    bool have_change = false;
+    double change = 0.0;
+    if (have_close && cs.candles.size() >= 2) {
+        change = close_v - cs.candles[cs.candles.size() - 2].close;
+        have_change = true;
+    }
 
-        const float x2 = x - 240.0f;
-        ImGui::SetCursorScreenPos(ImVec2(x2, p.y + theme::kSpace2));
-        theme::text_label(theme::kTextMuted, "STREAM");
-        ImGui::SameLine(0.0f, theme::kSpace3);
-        theme::text_label(theme::kTextMuted, "QUALITY");
-        ImGui::SameLine(0.0f, theme::kSpace3);
-        theme::text_label(theme::kTextMuted, "BARS");
-        ImGui::SetCursorScreenPos(ImVec2(x2, p.y + theme::kSpace2 + 16.0f));
-        theme::text_body(theme::status_color(stream_state), "%s", stream_state.c_str());
-        ImGui::SameLine(0.0f, theme::kSpace3);
-        theme::text_body(theme::status_color(quality), "%s", quality.c_str());
-        ImGui::SameLine(0.0f, theme::kSpace3);
-        theme::text_mono(theme::kTextPrimary, "%s", bars.c_str());
+    // ---- Middle: hero price + change ---------------------------------------
+    {
+        const float hero_x = p.x + avail * 0.42f;
+        // Keep the formatted price alive for the whole draw (never a temporary
+        // c_str()).
+        const std::string pv_str = have_close ? price(close_v) : std::string("N/A");
+        const char* pv = pv_str.c_str();
+        ImGui::PushFont(theme::hero_font());
+        const ImVec2 ps = ImGui::CalcTextSize(pv);
+        ImGui::PopFont();
+        const float hero_y = p.y + (h - ps.y - 14.0f) * 0.5f;
+        dl->AddText(ImVec2(hero_x, hero_y),
+                    ImGui::GetColorU32(have_close ? theme::kTextPrimary : theme::kNotAvailable),
+                    pv);
+        if (have_close) {
+            ImGui::PushFont(theme::label_font());
+            const std::string cap = "LAST CLOSED \u00b7 " + close_t;
+            dl->AddText(ImVec2(hero_x, hero_y + ps.y + 2.0f),
+                        ImGui::GetColorU32(theme::kTextMuted), cap.c_str());
+            ImGui::PopFont();
+        }
+        if (have_change) {
+            char cb[32];
+            std::snprintf(cb, sizeof(cb), "%+.3f", change);
+            const ImVec2 csz = ImGui::CalcTextSize(cb);
+            const float cx = hero_x + ps.x + theme::kSpace3;
+            ImGui::PushFont(theme::mono_font());
+            dl->AddText(ImVec2(cx, hero_y + ps.y - csz.y),
+                        ImGui::GetColorU32(change >= 0.0 ? theme::kHealthy : theme::kCritical),
+                        cb);
+            ImGui::PopFont();
+        }
+    }
+
+    // ---- Right: stream / quality / bars, right-aligned, measured ------------
+    {
+        struct Stat {
+            const char* label;
+            std::string value;
+            ImVec4 col;
+            bool mono;  // numeric values use the monospaced face so digits align
+        };
+        const Stat stats[] = {
+            {"STREAM", stream_state, theme::status_color(stream_state), false},
+            {"QUALITY", quality, theme::status_color(quality), false},
+            {"BARS", bars, theme::kTextPrimary, true},
+        };
+        // Measure the whole cluster with the exact fonts it will draw in, then
+        // place it flush right.
+        auto label_w = [](const char* txt) {
+            ImGui::PushFont(theme::label_font());
+            const float w = ImGui::CalcTextSize(txt).x;
+            ImGui::PopFont();
+            return w;
+        };
+        auto value_w = [](const std::string& v, bool mono) {
+            ImGui::PushFont(mono ? theme::mono_font() : theme::body_font());
+            const float w = ImGui::CalcTextSize(v.c_str()).x;
+            ImGui::PopFont();
+            return w;
+        };
+        float cluster_w = 0.0f;
+        for (const Stat& st : stats)
+            cluster_w += label_w(st.label) + 5.0f + value_w(st.value, st.mono) + theme::kSpace4;
+        float x = p.x + avail - cluster_w - theme::kSpace3;
+        const float min_x = p.x + avail * 0.68f;  // never collide with the hero price
+        if (x < min_x) x = min_x;
+        const float ly = p.y + theme::kSpace2 + 1.0f;
+        const float vy = p.y + theme::kSpace2 + 15.0f;
+        for (const Stat& st : stats) {
+            ImGui::PushFont(theme::label_font());
+            dl->AddText(ImVec2(x, ly), ImGui::GetColorU32(theme::kTextMuted), st.label);
+            const float lw = ImGui::CalcTextSize(st.label).x;
+            ImGui::PopFont();
+            ImGui::PushFont(st.mono ? theme::mono_font() : theme::body_font());
+            dl->AddText(ImVec2(x, vy), ImGui::GetColorU32(st.col), st.value.c_str());
+            ImGui::PopFont();
+            x += lw + 5.0f + value_w(st.value, st.mono) + theme::kSpace4;
+        }
     }
 
     ImGui::SetCursorScreenPos(ImVec2(p.x, p.y + h + theme::kSpace2));
@@ -512,8 +654,9 @@ inline void metric_strip(const ControlCenterReport& r) {
          "no signal", score_buf[0] != '\0' ? score_buf : "shadow",
          theme::status_color(s.signal.direction)},
         {"RISK", s.risk.available ? s.risk.direction : std::string(), s.risk.available,
-         "no proposal", s.risk.is_order ? "order flag" : "no live order", theme::kAccent},
-        {"EXECUTION MODE", s.shadow_only ? "SHADOW ONLY" : "VIOLATED", true, "",
+         "no proposal", s.risk.is_order ? "order flag" : "no live order",
+         theme::status_color(s.risk.available ? s.risk.direction : "UNKNOWN")},
+        {"EXECUTION MODE", s.shadow_only ? kShadowOnly : "VIOLATED", true, "",
          s.shadow_only ? "no orders" : "live path", theme::kShadow},
     };
     const int n = static_cast<int>(sizeof(cells) / sizeof(cells[0]));
@@ -589,26 +732,22 @@ inline void lower_modules(const ControlCenterReport& r) {
     ImGui::PopStyleVar();
 }
 
-// ---- Analytics column ------------------------------------------------------
+// ---- Analytics panels ------------------------------------------------------
 
-// The right-hand analytics column: Signals, Risk and Shadow Positions. Compact,
-// professionally aligned, real values only. Deliberately narrower than the chart.
-inline void analytics_column(const ControlCenterReport& r, float width, float height) {
+// The right-hand analytics content: Signals, Risk and Shadow Positions. Each
+// panel is exposed separately so the vertical analytics column and the
+// dashboard's horizontal Signals/Risk/Shadow row render the identical content
+// from one implementation. Compact, professionally aligned, real values only.
+
+// The SIGNALS panel body (most recent decision, real score/confidence).
+inline void signals_panel(const ControlCenterReport& r, float width, float height) {
     const ControlCenterSnapshot& s = r.snapshot;
-    ImGui::BeginChild("analytics", ImVec2(width, height), false);
-
-    const float panel_h = (height - theme::kSpace3 * 2.0f) / 3.0f;
-
-    // ---- SIGNALS ----
-    widgets::panel_begin("an_signals", "SIGNALS", icons::Icon::Signals, ImVec2(width, 0.0f), panel_h,
-                         true);
+    widgets::panel_begin("an_signals", "SHADOW SIGNALS", icons::Icon::Signals, ImVec2(width, 0.0f),
+                         height, true);
     if (!s.signal.available) {
         widgets::empty_state("Signal", "no signal produced yet");
     } else {
-        const ImVec4 dir_col =
-            s.signal.direction == runtime::to_string(runtime::SignalDirection::SHORT)
-                ? theme::kCritical
-                : theme::kHealthy;
+        const ImVec4 dir_col = direction_color(s.signal.direction);
         widgets::badge(s.signal.direction.c_str(), dir_col);
         ImGui::SameLine(0.0f, theme::kSpace2);
         theme::text_small(theme::kTextSecondary, "on %s", s.signal.trigger_timeframe.c_str());
@@ -628,18 +767,16 @@ inline void analytics_column(const ControlCenterReport& r, float width, float he
         }
     }
     widgets::panel_end();
+}
 
-    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + theme::kSpace2);
-
-    // ---- RISK ----
-    widgets::panel_begin("an_risk", "RISK", icons::Icon::Risk, ImVec2(width, 0.0f), panel_h, true);
+// The RISK panel body (shadow-only sizing proposal; never an order).
+inline void risk_panel(const ControlCenterReport& r, float width, float height) {
+    const ControlCenterSnapshot& s = r.snapshot;
+    widgets::panel_begin("an_risk", "RISK", icons::Icon::Risk, ImVec2(width, 0.0f), height, true);
     if (!s.risk.available) {
         widgets::empty_state("Risk proposal", "no proposal yet");
     } else {
-        const ImVec4 dir_col =
-            s.risk.direction == runtime::to_string(runtime::SignalDirection::SHORT)
-                ? theme::kCritical
-                : theme::kHealthy;
+        const ImVec4 dir_col = direction_color(s.risk.direction);
         widgets::badge(s.risk.direction.c_str(), dir_col);
         ImGui::SetCursorPosY(ImGui::GetCursorPosY() + theme::kSpace1);
         char b[32];
@@ -652,14 +789,19 @@ inline void analytics_column(const ControlCenterReport& r, float width, float he
         widgets::kv_state_row("Live order", s.risk.is_order ? "YES" : "NO", 92.0f);
     }
     widgets::panel_end();
+}
 
-    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + theme::kSpace2);
-
-    // ---- SHADOW POSITIONS ----
+// The SHADOW POSITIONS panel body (simulated fills only; SHADOW ONLY identity).
+inline void shadow_positions_panel(const ControlCenterReport& r, float width, float height) {
+    const ControlCenterSnapshot& s = r.snapshot;
     widgets::panel_begin("an_positions", "SHADOW POSITIONS", icons::Icon::Positions,
-                         ImVec2(width, 0.0f), panel_h, true);
+                         ImVec2(width, 0.0f), height, true);
+    // An open shadow position is informational, not degraded: amber stays
+    // reserved for genuinely degraded states, and nothing here implies a live
+    // order.
     widgets::badge(s.positions.has_open_position ? "OPEN" : "NONE",
-                   theme::status_color(s.positions.has_open_position ? "DEGRADED" : "NONE"));
+                   s.positions.has_open_position ? theme::kNeutral
+                                                 : theme::status_color("NONE"));
     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + theme::kSpace1);
     widgets::kv_row("Ledger", std::to_string(s.positions.ledger_entries), 92.0f);
     widgets::kv_row("Fills", std::to_string(s.positions.shadow_fills), 92.0f);
@@ -675,8 +817,21 @@ inline void analytics_column(const ControlCenterReport& r, float width, float he
                         std::string(b) + " (" + std::to_string(s.positions.wins) + " up)", 92.0f);
     }
     ImGui::Spacing();
-    theme::text_label(theme::kShadow, "SHADOW ONLY \u00b7 simulated fills");
+    theme::text_label(theme::kShadow, "%s \u00b7 simulated fills", kShadowOnly);
     widgets::panel_end();
+}
+
+// The vertical analytics column: Signals, Risk and Shadow Positions stacked.
+// Deliberately narrower than the chart.
+inline void analytics_column(const ControlCenterReport& r, float width, float height) {
+    ImGui::BeginChild("analytics", ImVec2(width, height), false);
+
+    const float panel_h = (height - theme::kSpace3 * 2.0f) / 3.0f;
+    signals_panel(r, width, panel_h);
+    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + theme::kSpace2);
+    risk_panel(r, width, panel_h);
+    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + theme::kSpace2);
+    shadow_positions_panel(r, width, panel_h);
 
     ImGui::EndChild();
 }
@@ -760,7 +915,7 @@ inline void status_bar(ControlCenterState& state, const ControlCenterReport& r,
         theme::text_small(it.col, "%s", it.value.c_str());
         ImGui::SameLine(0.0f, theme::kSpace4);
     }
-    const std::string mode = "SHADOW ONLY";
+    const std::string mode = kShadowOnly;
     ImGui::SameLine();
     ImGui::SetCursorPosX(w - text_w(mode.c_str()) - theme::kSpace4);
     theme::text_label(theme::kShadow, "%s", mode.c_str());

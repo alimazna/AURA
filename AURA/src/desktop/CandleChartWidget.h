@@ -4,6 +4,7 @@
 #include "desktop/AuraTheme.h"
 #include "desktop/AuraWidgets.h"
 #include "desktop/CandleChart.h"
+#include "desktop/TerminalLayout.h"
 
 #include <imgui.h>
 
@@ -45,7 +46,10 @@ inline void no_candle_data(const CandleSeries& series, float height) {
     dl->AddText(ImVec2(cx - a.x * 0.5f, y), ImGui::GetColorU32(theme::kTextSecondary), l1);
     ImGui::PopFont();
     y += a.y + 14.0f;
-    const std::string l2 = "XAUUSD \u00b7 " + series.label;
+    // "XAUUSD · M15" plus the stream's canonical V3-29 authority role.
+    const char* role = layout::timeframe_role(series.timeframe);
+    const std::string l2 = std::string("XAUUSD \u00b7 ") + series.label.c_str() +
+                           (role[0] != '\0' ? std::string("  \u00b7  ") + role : std::string());
     ImGui::PushFont(theme::small_font());
     const ImVec2 b = ImGui::CalcTextSize(l2.c_str());
     dl->AddText(ImVec2(cx - b.x * 0.5f, y), ImGui::GetColorU32(theme::kAccent), l2.c_str());
@@ -60,8 +64,10 @@ inline void no_candle_data(const CandleSeries& series, float height) {
 
 // Draws a real OHLC candlestick chart for the given closed-bar series, with an
 // integrated price scale, a time axis and a subtle grid. Never draws anything
-// but real candle data.
-inline void candlestick_chart(const CandleSeries& series, float height = 380.0f) {
+// but real candle data. `grid_lines` is the price-grid density and `dash`
+// selects the dashed (institutional-style) last-price marker line.
+inline void candlestick_chart(const CandleSeries& series, float height = 380.0f,
+                              int grid_lines = 7, bool dash = true) {
     if (!series.available) {
         no_candle_data(series, height);
         return;
@@ -94,7 +100,7 @@ inline void candlestick_chart(const CandleSeries& series, float height = 380.0f)
     dl->AddLine(ImVec2(plot_x1, plot_y0 - 2.0f), ImVec2(plot_x1, plot_y1 + 2.0f),
                 ImGui::GetColorU32(theme::kBorder));
 
-    const ChartGeometry g = build_chart_geometry(series, 5, 0.0f);
+    const ChartGeometry g = build_chart_geometry(series, grid_lines, 0.0f);
 
     // Subtle grid + readable price scale on the integrated gutter.
     for (std::size_t i = 0; i < g.grid_y.size(); ++i) {
@@ -141,12 +147,14 @@ inline void candlestick_chart(const CandleSeries& series, float height = 380.0f)
                     ImGui::GetColorU32(ImVec4(cc.x * 0.7f, cc.y * 0.7f, cc.z * 0.7f, 1.0f)));
     }
 
-    // Time axis: real close times of the first, middle and last closed bars.
+    // Time axis: real close times of the first, middle and last closed bars,
+    // labelled per the selected timeframe's granularity.
     {
         ImGui::PushFont(theme::small_font());
         for (std::size_t k = 0; k < 3; ++k) {
             if (n == 0) break;
-            const std::string label = format_utc_minute(series.candles[tidx[k]].close_time);
+            const std::string label =
+                format_axis_label(series.candles[tidx[k]].close_time, series.timeframe);
             const float x = plot_x0 + g.candles[tidx[k]].x * plot_w;
             const float tw = ImGui::CalcTextSize(label.c_str()).x;
             float lx = x - tw * 0.5f;
@@ -170,18 +178,58 @@ inline void candlestick_chart(const CandleSeries& series, float height = 380.0f)
         const bool up = last.close >= last.open;
         const ImVec4 cc = up ? theme::kHealthy : theme::kCritical;
         const ImU32 col = ImGui::GetColorU32(cc);
-        dl->AddLine(ImVec2(plot_x0, y), ImVec2(plot_x1, y), col, 1.0f);
+        // Dashed last-price line (2 px on / 3 px off) reads as a marker, not a
+        // gridline; when the range is too flat the line is still drawn.
+        if (dash) {
+            float seg = plot_x0;
+            while (seg < plot_x1) {
+                const float end = (seg + 2.0f < plot_x1) ? seg + 2.0f : plot_x1;
+                dl->AddLine(ImVec2(seg, y), ImVec2(end, y), col, 1.0f);
+                seg = end + 3.0f;
+            }
+        } else {
+            dl->AddLine(ImVec2(plot_x0, y), ImVec2(plot_x1, y), col, 1.0f);
+        }
 
         char buf[24];
         std::snprintf(buf, sizeof(buf), "%.3f", last.close);
         ImGui::PushFont(theme::mono_font());
         const ImVec2 ts = ImGui::CalcTextSize(buf);
         const float tag_h = ts.y + 4.0f;
-        const ImVec2 lo(plot_x1 + 4.0f, y - tag_h * 0.5f);
-        const ImVec2 hi(plot_x1 + 4.0f + ts.x + theme::kSpace2, y + tag_h * 0.5f);
+        // The tag is right-flush against the gutter edge and vertically clamped
+        // to the plot, so a close at the top or bottom of the range can never
+        // push it into the canvas padding or over the time axis.
+        const float ty = y < plot_y0 + tag_h * 0.5f   ? plot_y0 + tag_h * 0.5f
+                         : y > plot_y1 - tag_h * 0.5f ? plot_y1 - tag_h * 0.5f
+                                                      : y;
+        const ImVec2 hi(plot_x1 + 63.0f, ty + tag_h * 0.5f);
+        const ImVec2 lo(hi.x - ts.x - theme::kSpace2, hi.y - tag_h);
         dl->AddRectFilled(lo, hi, col, 2.0f);
-        dl->AddText(ImVec2(lo.x + theme::kSpace1, y - ts.y * 0.5f),
+        dl->AddText(ImVec2(lo.x + theme::kSpace1, ty - ts.y * 0.5f),
                     ImGui::GetColorU32(theme::kBackground), buf);
+        ImGui::PopFont();
+    }
+
+    // In-canvas O/H/L/C legend for the last real closed bar (top-left). This is
+    // the terminal's OHLC read-out, not a fabricated value; it exists only when
+    // the series does.
+    {
+        const Candle& last = series.candles.back();
+        ImGui::PushFont(theme::small_font());
+        float lx = origin.x + 12.0f;
+        const float ly = origin.y + 12.0f;
+        auto legend = [&](const char* k, double v, const ImVec4& c) {
+            char vb[16];
+            std::snprintf(vb, sizeof(vb), "%.3f", v);
+            dl->AddText(ImVec2(lx, ly), ImGui::GetColorU32(theme::kTextMuted), k);
+            const float kw = ImGui::CalcTextSize(k).x;
+            dl->AddText(ImVec2(lx + kw + 4.0f, ly), ImGui::GetColorU32(c), vb);
+            lx += kw + 4.0f + ImGui::CalcTextSize(vb).x + 14.0f;
+        };
+        legend("O", last.open, theme::kTextPrimary);
+        legend("H", last.high, theme::kTextPrimary);
+        legend("L", last.low, theme::kTextPrimary);
+        legend("C", last.close, last.close >= last.open ? theme::kHealthy : theme::kCritical);
         ImGui::PopFont();
     }
 }

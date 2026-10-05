@@ -74,55 +74,6 @@ inline const TimeframeRow* find_timeframe_row(const TimeframePanel& panel,
     return nullptr;
 }
 
-// Compact market information strip above the chart: symbol identity, selected
-// timeframe, the real last closed price and close time, stream state and data
-// quality for the selected stream. Every value comes from the real runtime; an
-// absent value is shown as N/A / NOT AVAILABLE, never fabricated.
-inline void draw_market_strip(const ControlCenterReport& r) {
-    const CandleSeries& series = r.chart;
-    const TimeframeRow* row = find_timeframe_row(r.snapshot.timeframes, series.timeframe);
-
-    ImGui::TextColored(theme::kTextPrimary, "XAUUSD");
-    ImGui::SameLine(0.0f, theme::kSpace2);
-    ImGui::TextColored(theme::kAccent, "%s", series.label.c_str());
-    ImGui::SameLine(0.0f, theme::kSpace2);
-    ImGui::TextColored(theme::kTextMuted, "\u00b7");
-    ImGui::SameLine(0.0f, theme::kSpace2);
-    ImGui::TextColored(theme::kTextSecondary, "MARKET INTELLIGENCE");
-    ImGui::SameLine(0.0f, theme::kSpace3);
-    ImGui::TextColored(theme::kShadow, "\u00b7 SHADOW ONLY");
-
-    // Real values, right-aligned where available.
-    ImGui::TextColored(theme::kTextMuted, "LAST CLOSED");
-    ImGui::SameLine(0.0f, 6.0f);
-    if (series.available) {
-        ImGui::TextColored(theme::kTextPrimary, "%.3f", series.candles.back().close);
-        ImGui::SameLine(0.0f, theme::kSpace3);
-        ImGui::TextColored(theme::kTextMuted, "AT");
-        ImGui::SameLine(0.0f, 6.0f);
-        ImGui::TextColored(theme::kTextSecondary, "%s", format_utc_minute(series.last_close).c_str());
-    } else {
-        ImGui::TextColored(theme::kNotAvailable, "N/A");
-    }
-    ImGui::SameLine(0.0f, theme::kSpace3);
-    ImGui::TextColored(theme::kTextMuted, "STREAM");
-    ImGui::SameLine(0.0f, 6.0f);
-    if (row != nullptr) widgets::state_cell(row_health(*row));
-    else ImGui::TextColored(theme::kNotAvailable, "NOT AVAILABLE");
-    ImGui::SameLine(0.0f, theme::kSpace3);
-    ImGui::TextColored(theme::kTextMuted, "QUALITY");
-    ImGui::SameLine(0.0f, 6.0f);
-    if (row != nullptr) widgets::state_cell(row->quality);
-    else ImGui::TextColored(theme::kNotAvailable, "NOT AVAILABLE");
-    ImGui::SameLine(0.0f, theme::kSpace3);
-    ImGui::TextColored(theme::kTextMuted, "BARS");
-    ImGui::SameLine(0.0f, 6.0f);
-    if (series.available)
-        ImGui::TextColored(theme::kTextPrimary, "%d", static_cast<int>(series.candles.size()));
-    else
-        ImGui::TextColored(theme::kNotAvailable, "N/A");
-}
-
 // The real XAUUSD candlestick chart, drawn full-width as the dominant workspace
 // element (no surrounding card box). `chart_h` is the caller-computed height.
 inline void draw_main_chart(const ControlCenterReport& r, float chart_h) {
@@ -134,12 +85,65 @@ inline void draw_main_chart(const ControlCenterReport& r, float chart_h) {
     chart::candlestick_chart(series, chart_h);
 }
 
+// One compact cell of the secondary-modules strip: a muted caption and the real
+// value where the plane is wired, an explicit NOT AVAILABLE otherwise.
+inline void secondary_cell(const char* label, bool available, const std::string& value,
+                           const ImVec2& p, float x, float w, ImDrawList* dl) {
+    (void)w;
+    if (x > p.x)  // hairline separator between cells
+        dl->AddLine(ImVec2(x - theme::kSpace3, p.y + 8.0f), ImVec2(x - theme::kSpace3, p.y + 48.0f),
+                    ImGui::GetColorU32(theme::kBorder));
+    ImGui::SetCursorScreenPos(ImVec2(x, p.y + 8.0f));
+    theme::text_label(theme::kTextMuted, "%s", label);
+    ImGui::SetCursorScreenPos(ImVec2(x, p.y + 25.0f));
+    if (available)
+        theme::text_body(theme::kTextPrimary, "%s", value.c_str());
+    else
+        theme::text_body(theme::kNotAvailable, "NOT AVAILABLE");
+}
+
+// The compact secondary-modules strip: Research / Knowledge / Candidates /
+// Validation / Approval Center / Schedule in one row. Real counts where the
+// plane is wired to the runtime; explicit NOT AVAILABLE where it is not. A
+// caption strip rather than a card stack, so it never crowds the chart on
+// 1366x768. Never fabricates a value for an unwired plane.
+inline void draw_secondary_modules(const ControlCenterReport& r) {
+    struct Cell {
+        const char* label;
+        bool available;
+        std::string value;
+    };
+    const Cell cells[] = {
+        {"RESEARCH", r.research.available, std::to_string(r.research.total)},
+        {"KNOWLEDGE", r.knowledge.available, std::to_string(r.knowledge.identities)},
+        {"CANDIDATES", r.candidates.available, std::to_string(r.candidates.population)},
+        {"VALIDATION", r.validation.available, std::to_string(r.validation.campaigns)},
+        {"APPROVALS", r.approvals.available, std::to_string(r.approvals.total)},
+        {"SCHEDULE", r.schedule.available,
+         r.schedule.available ? r.schedule.window_phase : std::string()},
+    };
+    const int n = static_cast<int>(sizeof(cells) / sizeof(cells[0]));
+    const float h = layout::Chrome::kSecondaryStrip;
+    const ImVec2 p = ImGui::GetCursorScreenPos();
+    const float avail = ImGui::GetContentRegionAvail().x;
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    widgets::filled_rect(p, ImVec2(p.x + avail, p.y + h), theme::kSurface, theme::kPanelRadius);
+    widgets::outlined_rect(p, ImVec2(p.x + avail, p.y + h), theme::kBorder, theme::kPanelRadius);
+    const float col_w = avail / static_cast<float>(n);
+    for (int i = 0; i < n; ++i)
+        secondary_cell(cells[i].label, cells[i].available, cells[i].value, p,
+                       p.x + theme::kSpace3 + col_w * static_cast<float>(i), col_w, dl);
+    ImGui::SetCursorScreenPos(ImVec2(p.x, p.y + h + theme::kSpace2));
+}
+
 inline void draw_dashboard(const ControlCenterReport& r, ControlCenterState& state) {
-    // Chart-first composition with a right-hand analytics column:
-    //   instrument header -> top metric row -> timeframe tabs ->
-    //   [ dominant chart | Signals / Risk / Shadow Positions ] -> lower modules.
-    // The chart keeps the majority of the workspace on every supported resolution;
-    // the analytics column is deliberately narrower than the chart.
+    // Chart-first composition mirroring the ASTRA reference hierarchy:
+    //   instrument header -> metric row -> timeframe tabs ->
+    //   [ dominant full-width chart ] -> Signals / Risk / Shadow Positions ->
+    //   compact secondary modules.
+    // The chart owns the full central width; the three analytics panels form the
+    // row below it, so the market view dominates the workspace at 1366x768,
+    // 1600x900 and 1920x1080 alike.
     terminal::market_header(r);
 
     ImGui::Spacing();
@@ -151,28 +155,38 @@ inline void draw_dashboard(const ControlCenterReport& r, ControlCenterState& sta
 
     const float gap = theme::kSpace3;
     const float avail_w = ImGui::GetContentRegionAvail().x;
-    const float window_w = ImGui::GetMainViewport()->Size.x;
-    float analytics_w = layout::analytics_width(window_w);
-    // Never let the analytics column crowd out the chart on a narrow window.
-    if (avail_w - analytics_w - gap < 380.0f) analytics_w = avail_w * 0.30f;
-    const float chart_w = avail_w - analytics_w - gap;
-
-    // The chart + analytics row takes everything left after the lower module row.
     const float content_h = ImGui::GetContentRegionAvail().y;
-    const float reserved = layout::Chrome::kLowerModules + theme::kSpace3;
-    float col_h = content_h - reserved;
-    if (col_h < layout::Chrome::kMinChart) col_h = layout::Chrome::kMinChart;
 
-    ImGui::BeginChild("chart_col", ImVec2(chart_w, col_h), false, ImGuiWindowFlags_NoScrollbar);
-    chart::chart_header(r.chart, std::string());
-    draw_main_chart(r, col_h - 26.0f);
+    // Row heights come from the pure layout contract so the composition and the
+    // tests share one accounting: the compact secondary strip, the style's
+    // ItemSpacing.y gaps between the three rows and a small slack are reserved
+    // up front, so the dashboard never overflows into a scrollbar and the chart
+    // stays the dominant element at 1366x768, 1600x900 and 1920x1080 alike.
+    const layout::DashboardRows rows =
+        layout::dashboard_rows(content_h, ImGui::GetStyle().ItemSpacing.y);
+    const float chart_h = rows.chart_h;
+    const float analytics_h = rows.analytics_h;
+
+    // ---- Dominant full-width chart ------------------------------------------
+    ImGui::BeginChild("chart_col", ImVec2(avail_w, chart_h), false, ImGuiWindowFlags_NoScrollbar);
+    draw_main_chart(r, chart_h);
     ImGui::EndChild();
 
-    ImGui::SameLine(0.0f, gap);
-    terminal::analytics_column(r, analytics_w, col_h);
-
+    // ---- Signals / Risk / Shadow Positions row -------------------------------
     ImGui::Spacing();
-    terminal::lower_modules(r);
+    const float panel_w = (avail_w - gap * 2.0f) / 3.0f;
+    ImGui::BeginChild("dash_analytics", ImVec2(avail_w, analytics_h), false,
+                      ImGuiWindowFlags_NoScrollbar);
+    terminal::signals_panel(r, panel_w, analytics_h);
+    ImGui::SameLine(0.0f, gap);
+    terminal::risk_panel(r, panel_w, analytics_h);
+    ImGui::SameLine(0.0f, gap);
+    terminal::shadow_positions_panel(r, panel_w, analytics_h);
+    ImGui::EndChild();
+
+    // ---- Compact secondary modules -------------------------------------------
+    ImGui::Spacing();
+    draw_secondary_modules(r);
 }
 
 // ---- Market / Data Health --------------------------------------------------
@@ -311,10 +325,7 @@ inline void draw_signals(const ControlCenterSnapshot& s) {
     if (!s.signal.available) {
         widgets::empty_state("Signal", "no signal has been produced by the runtime yet");
     } else {
-        const ImVec4 dir_col =
-            s.signal.direction == runtime::to_string(runtime::SignalDirection::SHORT)
-                ? theme::kCritical
-                : theme::kHealthy;
+        const ImVec4 dir_col = terminal::direction_color(s.signal.direction);
         widgets::badge(s.signal.direction.c_str(), dir_col);
         ImGui::Spacing();
         widgets::kv_row("Direction", direction_label(s.signal.direction));
@@ -354,10 +365,7 @@ inline void draw_risk(const ControlCenterSnapshot& s) {
     if (!s.risk.available) {
         widgets::empty_state("Risk proposal", "no risk proposal has been produced yet");
     } else {
-        const ImVec4 dir_col =
-            s.risk.direction == runtime::to_string(runtime::SignalDirection::SHORT)
-                ? theme::kCritical
-                : theme::kHealthy;
+        const ImVec4 dir_col = terminal::direction_color(s.risk.direction);
         widgets::badge(s.risk.direction.c_str(), dir_col);
         ImGui::Spacing();
         widgets::kv_row("Direction", direction_label(s.risk.direction));
@@ -386,7 +394,8 @@ inline void draw_positions(const ControlCenterSnapshot& s) {
 
     widgets::card_begin("pos_open", "OPEN POSITION", ImVec2(w, 110.0f));
     widgets::badge(s.positions.has_open_position ? "OPEN" : "NONE",
-                   theme::status_color(s.positions.has_open_position ? "DEGRADED" : "NONE"));
+                   s.positions.has_open_position ? theme::kNeutral
+                                                 : theme::status_color("NONE"));
     ImGui::Spacing();
     widgets::kv_row("Ledger entries", std::to_string(s.positions.ledger_entries));
     widgets::card_end();

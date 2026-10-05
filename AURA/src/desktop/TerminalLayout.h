@@ -21,7 +21,7 @@ namespace layout {
 // Fixed chrome heights (device-independent pixels at 1x). Kept in one place so
 // the window shell, the composition and the tests agree.
 struct Chrome {
-    static constexpr float kTopBar = 46.0f;     // == theme::kTopBarHeight
+    static constexpr float kTopBar = 48.0f;     // == theme::kTopBarHeight
     static constexpr float kStatusBar = 24.0f;  // == theme::kStatusBarHeight
     static constexpr float kActionBar = 40.0f;  // == theme::kActionBarHeight
     static constexpr float kIconRail = 52.0f;   // == theme::kIconRailWidth
@@ -30,6 +30,7 @@ struct Chrome {
     static constexpr float kTabStrip = 32.0f;
     static constexpr float kMetricStrip = 62.0f;
     static constexpr float kLowerModules = 150.0f;
+    static constexpr float kSecondaryStrip = 56.0f;  // compact secondary-modules strip
     static constexpr float kMinChart = 220.0f;
     static constexpr float kMaxChart = 680.0f;
     static constexpr float kMinPanel = 120.0f;
@@ -102,6 +103,24 @@ struct Row {
     float width;
 };
 
+// The canonical V3-29 authority role of each logical timeframe stream. This is
+// presentation-only labelling of the existing runtime identity: it never changes
+// which stream a selection maps to. UNKNOWN is not a stream and has no role.
+inline const char* timeframe_role(runtime::Timeframe tf) {
+    switch (tf) {
+        case runtime::Timeframe::M15: return "OPERATIONAL";  // primary setup/trigger
+        case runtime::Timeframe::H4:  return "STRUCTURAL";   // primary structural authority
+        case runtime::Timeframe::M5:
+        case runtime::Timeframe::M1:  return "EXECUTION";    // execution / microstructure context
+        case runtime::Timeframe::M30:
+        case runtime::Timeframe::H1:  return "CONTEXT";
+        case runtime::Timeframe::D1:
+        case runtime::Timeframe::W1:
+        case runtime::Timeframe::MN1: return "LONG HORIZON";
+        default:                      return "";
+    }
+}
+
 // The ordered timeframe tab geometry: exactly nine tabs in the canonical V3-29
 // order, one per supported timeframe (explicit identity, never positional).
 inline std::vector<Row> timeframe_rows(float origin_x = 0.0f) {
@@ -113,6 +132,37 @@ inline std::vector<Row> timeframe_rows(float origin_x = 0.0f) {
         x += Chrome::kTabWidth + Chrome::kTabGap;
     }
     return rows;
+}
+
+// Heights of the dashboard rows below the strips: the dominant chart and the
+// Signals / Risk / Shadow Positions row. Pure so the composition and the tests
+// agree on the same accounting: content_h covers the analytics row, the compact
+// secondary strip (kSecondaryStrip + its trailing spacing), the five
+// ItemSpacing-sized gaps between the three rows and a 4px slack, so rounding
+// can never spill the dashboard into a scrollbar. The analytics row stays a
+// minority band; on short viewports the chart floor wins and the panels keep
+// only their own usable minimum.
+struct DashboardRows {
+    float chart_h{0.0f};
+    float analytics_h{0.0f};
+};
+
+inline DashboardRows dashboard_rows(float content_h, float gap_y = 8.0f) {
+    const float reserved = Chrome::kSecondaryStrip + 5.0f * gap_y + 4.0f;
+    float analytics = content_h * 0.26f;
+    if (analytics < 150.0f) analytics = 150.0f;  // usable minimum for the panel row
+    if (analytics > 220.0f) analytics = 220.0f;  // the row stays a minority band
+    float chart = content_h - analytics - reserved;
+    if (chart > Chrome::kMaxChart) chart = Chrome::kMaxChart;
+    if (chart < Chrome::kMinChart) {
+        chart = Chrome::kMinChart;  // the chart floor wins
+        analytics = content_h - chart - reserved;
+        if (analytics < 120.0f) analytics = 120.0f;
+    }
+    DashboardRows r;
+    r.chart_h = chart;
+    r.analytics_h = analytics;
+    return r;
 }
 
 }  // namespace layout
