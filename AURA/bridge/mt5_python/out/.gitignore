@@ -1,0 +1,4 @@
+# Generated candle data is not committed: it is broker-specific, can be large,
+# and is reproduced by running read_candles.py on the machine that has the
+# MetaTrader 5 terminal. Only the folder marker is tracked.
+*.json
