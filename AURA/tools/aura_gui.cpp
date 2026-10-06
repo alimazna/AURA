@@ -472,6 +472,11 @@ int run_gui(const aura::desktop::ControlCenterOptions& options, long max_frames,
     }
 
     aura::desktop::ControlCenterState state(options);
+    // Opt-in: serve real XAUUSD candles from the MT5 Python bridge when their
+    // exported files are present; otherwise the chart keeps its existing
+    // synthetic source unchanged. This never enables live trading.
+    state.enable_mt5_bridge(exe_dir);
+    std::printf("aura-gui: chart data source -> %s\n", state.data_source_note().c_str());
     // Optional real brand mark (present only when a real asset shipped). The
     // texture must be created while the GL context is current, which it is here.
     const BrandMark brand = load_brand_mark();

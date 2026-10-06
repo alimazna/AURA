@@ -4,6 +4,7 @@
 #include "desktop/CandleChart.h"
 #include "desktop/ControlCenterPanels.h"
 #include "desktop/DesktopModel.h"
+#include "desktop/Mt5Candles.h"
 #include "foundation/PersistenceStatus.h"
 #include "mt5/ProtocolCodec.h"
 #include "observation/FailureDetectionEngine.h"
@@ -12,6 +13,7 @@
 
 #include <cstdint>
 #include <fstream>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -38,7 +40,7 @@ inline std::vector<std::string> builtin_frames(int steps) {
             b.close = b.open + 0.8;
             b.volume = 100.0;
             b.closed = true;
-            out.push_back(mt5::ProtocolCodec::encode_closed_bar(
+            out.push_back(aura::mt5::ProtocolCodec::encode_closed_bar(
                 b, "XAUUSD", static_cast<std::uint64_t>(i + 1),
                 foundation::Timestamp::from_seconds(close + 1)));
         }
@@ -269,12 +271,62 @@ public:
     TimeframeSelection& timeframe_selection() noexcept { return selection_; }
     const TimeframeSelection& timeframe_selection() const noexcept { return selection_; }
 
-    // Reads the runtime's real retained closed bars for one timeframe (explicit
-    // identity, never a row position) and projects them into chart candles. No
-    // candle is invented; an empty series means NO CANDLE DATA.
+    // Reads a timeframe's closed-bar series for the chart. When the opt-in MT5
+    // bridge is enabled and a real candle file is present for this timeframe it is
+    // served; otherwise this falls back to the runtime's existing retained series
+    // (the synthetic/builtin source) unchanged. No candle is invented; an empty
+    // series means NO CANDLE DATA.
     CandleSeries chart_series(runtime::Timeframe tf) const {
+        if (mt5_enabled_) {
+            const auto it = mt5_cache_.find(tf);
+            if (it != mt5_cache_.end() && it->second.loaded) return it->second.series;
+        }
         return make_candle_series(tf, shell_.pipeline().bar_series(tf));
     }
+
+    // ---- Opt-in MT5 bridge (real candle files) --------------------------------
+    //
+    // Enabling the bridge is purely additive: it looks for real XAUUSD candle
+    // files exported by the MT5 Python bridge and, where present, serves them to
+    // the chart. Absent files change nothing. The bridge never enables live
+    // trading; the system remains shadow-only.
+
+    // Loads any available bridge candle files. Returns the number of timeframes
+    // loaded. `exe_dir` is used to resolve the packaged bridge location.
+    std::size_t enable_mt5_bridge(const std::string& exe_dir) {
+        return enable_mt5_bridge_from_dirs(mt5::candidate_dirs(exe_dir));
+    }
+
+    // As above, but with explicit candidate directories (used by tests and by any
+    // caller that already knows where the bridge output lives). Order is honoured.
+    std::size_t enable_mt5_bridge_from_dirs(const std::vector<std::string>& dirs) {
+        mt5_enabled_ = true;
+        mt5_dirs_ = dirs;
+        mt5_cache_.clear();
+        std::size_t loaded = 0;
+        for (const runtime::Timeframe tf : chart_timeframes()) {
+            const std::string label(runtime::to_string(tf));
+            mt5::LoadResult r = mt5::load_candles_any(mt5_dirs_, label);
+            if (r.loaded) ++loaded;
+            mt5_cache_.emplace(tf, std::move(r));
+        }
+        mt5_loaded_ = loaded;
+        return loaded;
+    }
+
+    // True when the chart is currently being served real MT5 bridge data.
+    bool using_real_data() const noexcept { return mt5_enabled_ && mt5_loaded_ > 0; }
+
+    // A short, honest description of the chart data source, for logging.
+    std::string data_source_note() const {
+        if (using_real_data())
+            return "LIVE (MT5) - " + std::to_string(mt5_loaded_) +
+                   "/9 timeframes from the MT5 bridge";
+        if (mt5_enabled_) return "SYNTHETIC (MT5 bridge enabled, no candle files found)";
+        return "SYNTHETIC";
+    }
+
+    std::size_t mt5_timeframes_loaded() const noexcept { return mt5_loaded_; }
 
     const ControlCenterReport& report() const noexcept { return report_; }
 
@@ -308,6 +360,12 @@ private:
     TimeframeSelection selection_{};
     bool paused_{false};
     bool recovery_evaluated_{false};
+    // Opt-in MT5 bridge state. Empty/disabled by default, so behavior is
+    // unchanged unless enable_mt5_bridge() is called.
+    bool mt5_enabled_{false};
+    std::size_t mt5_loaded_{0};
+    std::vector<std::string> mt5_dirs_{};
+    std::map<runtime::Timeframe, mt5::LoadResult> mt5_cache_{};
 };
 
 }  // namespace desktop

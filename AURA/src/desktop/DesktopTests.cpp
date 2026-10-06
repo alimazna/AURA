@@ -8,6 +8,8 @@
 #include "desktop/ControlCenterViewModels.h"
 #include "desktop/DashboardProjector.h"
 #include "desktop/DesktopModel.h"
+#include "desktop/Mt5Candles.h"
+#include "desktop/Mt5Json.h"
 #include "desktop/NavigationModel.h"
 #include "desktop/RendererPolicy.h"
 #include "desktop/StateVisuals.h"
@@ -31,6 +33,8 @@
 #include "runtime/ApplicationShell.h"
 
 #include <cstdio>
+#include <filesystem>
+#include <fstream>
 #include <limits>
 #include <string>
 #include <vector>
@@ -978,6 +982,136 @@ static void test_dashboard_rows_and_roles() {
     CHECK(again.analytics_h == hd.analytics_h);
 }
 
+// ---- MT5 Python bridge loader tests -----------------------------------------
+
+// A missing bridge file must be reported as not loaded, with no fabricated
+// candles and a non-empty path attempted.
+static void test_mt5_loader_missing_file() {
+    const desktop::mt5::LoadResult r =
+        desktop::mt5::load_candles("no_such_bridge_dir_xyz", "M15");
+    CHECK(!r.loaded);
+    CHECK(r.count == 0);
+    CHECK(!r.series.available);
+    CHECK(r.series.candles.empty());
+    CHECK(!r.path_tried.empty());
+}
+
+// A real fixture is parsed into the correct closed-bar count; malformed JSON and a
+// declared-count mismatch are both rejected (never partially trusted).
+static void test_mt5_loader_fixture_count() {
+    namespace fs = std::filesystem;
+    const fs::path dir = fs::temp_directory_path() / "aura_mt5_fixture_test";
+    std::error_code ec;
+    fs::remove_all(dir, ec);
+    fs::create_directories(dir, ec);
+
+    const std::string body =
+        "{\"symbol\":\"XAUUSD\",\"timeframe\":\"M15\",\"broker\":\"TestBroker\","
+        "\"account_login\":4242,\"generated_at_utc\":1700000000,\"count\":3,\"candles\":["
+        "{\"time\":1700000000,\"open\":2000.0,\"high\":2001.0,\"low\":1999.5,\"close\":2000.5,"
+        "\"tick_volume\":10,\"spread\":20,\"real_volume\":0},"
+        "{\"time\":1700000900,\"open\":2000.5,\"high\":2002.0,\"low\":2000.0,\"close\":2001.5,"
+        "\"tick_volume\":11,\"spread\":21,\"real_volume\":0},"
+        "{\"time\":1700001800,\"open\":2001.5,\"high\":2003.0,\"low\":2001.0,\"close\":2002.5,"
+        "\"tick_volume\":12,\"spread\":19,\"real_volume\":0}]}";
+    {
+        std::ofstream f(dir / "candles_M15.json", std::ios::binary);
+        f << body;
+    }
+
+    const desktop::mt5::LoadResult r = desktop::mt5::load_candles(dir.string(), "M15");
+    CHECK(r.loaded);
+    CHECK(r.count == 3);
+    CHECK(r.series.available);
+    CHECK(r.series.timeframe == runtime::Timeframe::M15);
+    CHECK(r.series.candles.size() == 3);
+    CHECK(r.series.candles.front().open == 2000.0);
+    CHECK(r.series.candles.back().close == 2002.5);
+    CHECK(r.symbol == "XAUUSD");
+    CHECK(r.broker == "TestBroker");
+    CHECK(r.account_login == 4242);
+    CHECK(r.series.low == 1999.5);
+    CHECK(r.series.high == 2003.0);
+    CHECK(r.series.first_close.seconds() == 1700000000);
+    CHECK(r.series.last_close.seconds() == 1700001800);
+
+    // Malformed JSON is rejected.
+    {
+        std::ofstream f(dir / "candles_H1.json", std::ios::binary);
+        f << "{ broken";
+    }
+    const desktop::mt5::LoadResult bad = desktop::mt5::load_candles(dir.string(), "H1");
+    CHECK(!bad.loaded);
+
+    // Declared count that disagrees with the array is rejected.
+    {
+        std::ofstream f(dir / "candles_D1.json", std::ios::binary);
+        f << "{\"timeframe\":\"D1\",\"count\":9,\"candles\":"
+             "[{\"time\":1,\"open\":1,\"high\":1,\"low\":1,\"close\":1}]}";
+    }
+    const desktop::mt5::LoadResult mm = desktop::mt5::load_candles(dir.string(), "D1");
+    CHECK(!mm.loaded);
+
+    fs::remove_all(dir, ec);
+}
+
+// Without enable_mt5_bridge() the chart uses the existing synthetic source
+// unchanged and reports itself as synthetic.
+static void test_chart_default_is_synthetic() {
+    desktop::ControlCenterOptions o;
+    desktop::ControlCenterState st(o);
+    CHECK(!st.using_real_data());
+    CHECK(st.data_source_note() == "SYNTHETIC");
+    st.feed_builtin(5);
+    CHECK(st.timeframe_selection().selected() == runtime::Timeframe::M15);
+    const desktop::CandleSeries cs = st.chart_series(runtime::Timeframe::M15);
+    CHECK(cs.available);  // the synthetic/builtin source still works
+    CHECK(!cs.candles.empty());
+    CHECK(cs.candles.size() <= 5);
+}
+
+// Opting in serves real bridge candles for timeframes that have files, and falls
+// back to the synthetic source for timeframes that do not.
+static void test_mt5_bridge_optin_and_fallback() {
+    namespace fs = std::filesystem;
+    const fs::path dir = fs::temp_directory_path() / "aura_mt5_optin_test";
+    std::error_code ec;
+    fs::remove_all(dir, ec);
+    fs::create_directories(dir, ec);
+    {
+        std::ofstream f(dir / "candles_M15.json", std::ios::binary);
+        f << "{\"symbol\":\"XAUUSD\",\"timeframe\":\"M15\",\"count\":1,\"candles\":"
+             "[{\"time\":1700000000,\"open\":111.0,\"high\":112.0,\"low\":110.0,\"close\":111.5}]}";
+    }
+
+    desktop::ControlCenterOptions o;
+    desktop::ControlCenterState st(o);
+    st.feed_builtin(5);  // synthetic source is populated
+    CHECK(st.enable_mt5_bridge_from_dirs({dir.string()}) == 1);  // only M15 present
+    CHECK(st.using_real_data());
+    CHECK(st.mt5_timeframes_loaded() == 1);
+
+    const desktop::CandleSeries m15 = st.chart_series(runtime::Timeframe::M15);
+    CHECK(m15.available);
+    CHECK(m15.candles.size() == 1);
+    CHECK(m15.candles.front().open == 111.0);  // real bridge data is used
+
+    // A timeframe with no bridge file falls back to the synthetic source.
+    const desktop::CandleSeries h1 = st.chart_series(runtime::Timeframe::H1);
+    CHECK(h1.available);
+    CHECK(!h1.candles.empty());
+    CHECK(h1.candles.front().open != 111.0);
+
+    // Opting in with no files changes nothing: synthetic, no real data.
+    desktop::ControlCenterState st2(o);
+    st2.feed_builtin(5);
+    CHECK(st2.enable_mt5_bridge_from_dirs({"/nonexistent_bridge_xyz"}) == 0);
+    CHECK(!st2.using_real_data());
+    CHECK(st2.chart_series(runtime::Timeframe::M15).available);
+
+    fs::remove_all(dir, ec);
+}
+
 int main() {
     test_dashboard_no_fabrication();
     test_knowledge_projection_readonly();
@@ -1007,6 +1141,10 @@ int main() {
     test_real_metrics_projection();
     test_terminal_layout_contract();
     test_dashboard_rows_and_roles();
+    test_mt5_loader_missing_file();
+    test_mt5_loader_fixture_count();
+    test_chart_default_is_synthetic();
+    test_mt5_bridge_optin_and_fallback();
     if (g_failures == 0) {
         std::printf("DesktopTests: ALL PASS\n");
         return 0;
