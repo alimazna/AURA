@@ -153,6 +153,15 @@ tbody tr.active { background: rgba(4, 86, 230, 0.16); }
 @keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: 0.35 } }
 .live { animation: pulse 1.8s ease-in-out infinite; }
 
+/* Compact square control used inside the chart header and footer. */
+.chart-btn {
+  width: 24px; height: 22px; display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--border-strong); border-radius: 3px; background: var(--surface-3);
+  color: var(--text-mid); font-size: 12px; line-height: 1; padding: 0;
+}
+.chart-btn:hover { background: var(--blue-dim); color: var(--text); border-color: var(--blue); }
+.chart-btn:active { transform: translateY(1px); }
+
 @media (max-width: 1180px) {
   .grid-3, .grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }

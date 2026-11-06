@@ -153,19 +153,18 @@ export default function App() {
   const stats = snapshot?.statistics;
 
   const chart = useMemo(() => (
-    <Panel
-      title={`شارت XAUUSD · ${timeframe}`}
-      hint={snapshot ? `${snapshot.data.closedBars} شمعة مغلقة${snapshot.data.derived ? ' · مجمّعة من اليومي' : ''}` : ''}
-      right={<span className="chip dim">شموع مغلقة فقط</span>}
-      style={{ minWidth: 0 }}
-    >
-      <div style={{ padding: '8px 10px 0' }}>
+    <section className="panel" style={{ minWidth: 0, padding: 0, overflow: 'hidden' }}>
+      <div style={{ padding: '6px 10px', borderBottom: '1px solid var(--border)' }}>
         <TimeframeRail timeframes={timeframes} selected={timeframe} onSelect={onSelectTimeframe} defaultTf="M15" />
       </div>
-      <div style={{ height: 440 }}>
-        <CandlestickChart candles={snapshot?.candles || []} timeframe={timeframe} regions={regions} trades={trades} />
-      </div>
-    </Panel>
+      <CandlestickChart
+        candles={snapshot?.candles || []}
+        timeframe={timeframe}
+        regions={regions}
+        trades={trades}
+        height={440}
+      />
+    </section>
   ), [snapshot, timeframe, regions, trades, timeframes, onSelectTimeframe]);
 
   if (closed) {
