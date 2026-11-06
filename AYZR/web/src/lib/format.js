@@ -116,6 +116,63 @@ export const TYPE_AR = {
 
 export const DIR_AR = { LONG: 'شراء', SHORT: 'بيع', NEUTRAL: 'محايد', WAIT: 'انتظار' };
 
+/** Short names for the chart. A band label has room for one word, not a sentence, so the
+ *  full TYPE_AR wording is reserved for the table where there is space for it. */
+export const TYPE_SHORT_AR = {
+  LIQUIDITY_POOL_ABOVE: 'سيولة',
+  LIQUIDITY_POOL_BELOW: 'سيولة',
+  LIQUIDITY_SWEEP: 'كنس سيولة',
+  SUPPORT_LEVEL: 'دعم',
+  RESISTANCE_LEVEL: 'مقاومة',
+  DEMAND_ZONE: 'طلب',
+  SUPPLY_ZONE: 'عرض',
+  BREAK_OF_STRUCTURE: 'كسر بنية',
+  CHANGE_OF_CHARACTER: 'تغيّر طابع',
+  FAIR_VALUE_GAP_BULLISH: 'فجوة صاعدة',
+  FAIR_VALUE_GAP_BEARISH: 'فجوة هابطة',
+  BULLISH_ORDER_BLOCK: 'أوردر صاعد',
+  BEARISH_ORDER_BLOCK: 'أوردر هابط',
+  BREAKOUT_CONFIRMED: 'اختراق',
+  FAKE_BREAKOUT: 'اختراق كاذب',
+};
+
+/** What each region type means for price, in one line. Shown on hover so a reader who does
+ *  not know the abbreviation is never left guessing. */
+export const TYPE_MEANING_AR = {
+  LIQUIDITY_POOL_ABOVE: 'قمم متساوية أعلى السعر تجذب السعر نحوها (مغناطيس)',
+  LIQUIDITY_POOL_BELOW: 'قيعان متساوية أدنى السعر تجذب السعر نحوها (مغناطيس)',
+  LIQUIDITY_SWEEP: 'كنس السيولة ثم الانعكاس',
+  SUPPORT_LEVEL: 'منطقة ارتداد صاعدة متكررة',
+  RESISTANCE_LEVEL: 'منطقة ارتداد هابطة متكررة',
+  DEMAND_ZONE: 'منطقة طلب: مشترون سابقون',
+  SUPPLY_ZONE: 'منطقة عرض: بائعون سابقون',
+  BREAK_OF_STRUCTURE: 'كسر بنية السوق',
+  CHANGE_OF_CHARACTER: 'تغيّر طابع السوق: انعكاس محتمل',
+  FAIR_VALUE_GAP_BULLISH: 'فجوة سعرية صاعدة غير مُعاد اختبارها',
+  FAIR_VALUE_GAP_BEARISH: 'فجوة سعرية هابطة غير مُعاد اختبارها',
+  BULLISH_ORDER_BLOCK: 'أوردر بلوك صاعد',
+  BEARISH_ORDER_BLOCK: 'أوردر بلوك هابط',
+  BREAKOUT_CONFIRMED: 'اختراق مؤكد بمتابعة',
+  FAKE_BREAKOUT: 'اختراق كاذب: فشل ثم انعكاس',
+};
+
+/** Region categories, ordered by how directly each one answers "where might price turn".
+ *  Support/resistance and supply/demand are the levels a trader acts on; liquidity pools are
+ *  magnets, not turning points, so they rank last. This order decides which bands win a slot
+ *  on the chart, since there are always far more regions than can be drawn. */
+export const REGION_CATEGORY_AR = {
+  levels: 'دعم ومقاومة',
+  supplyDemand: 'عرض وطلب',
+  structure: 'بنية السوق',
+  breakout: 'اختراق',
+  imbalance: 'فجوات سعرية',
+  liquidity: 'سيولة',
+};
+
+export const REGION_CATEGORY_ORDER = [
+  'levels', 'supplyDemand', 'structure', 'breakout', 'imbalance', 'liquidity',
+];
+
 export const ROLE_AR = {
   execution: 'سياق تنفيذي',
   operational: 'تشغيلي',

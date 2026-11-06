@@ -1,10 +1,10 @@
 /* AYZR design system.
  *
- * Colours are sampled from the reference dashboard (aa/AYZR_Reference_Dashboard.png).
- * Measured values: page background #000818 (36.8% of pixels), raised surface
- * #000820/#001020, borders around #081830, primary blue #003068..#04418c, gold
- * #f3d36c. The earlier build used a lighter navy than the reference; these tokens
- * follow the measurement.
+ * Every token below is sampled from the reference dashboard
+ * (aa/AYZR_Reference_Dashboard.png, 1672x941). Measured surfaces: top bar #010917,
+ * sidebar #030d1e, chart #020b1a, right panel #020e20, hairline #010a19. Accents:
+ * primary blue #064dcf, cyan #13b8fa, gold #fbbf1d, green #01cd75, red #e93d53,
+ * body text #ffffff with muted blue #9abbe5. Re-measure with PIL before changing one.
  *
  * Type scale. Arabic needs more size and line-height than Latin to stay legible,
  * so the smallest step is 11px and Arabic letter-spacing is always 0 (tracking
@@ -13,34 +13,34 @@
 
 :root {
   /* Surfaces, darkest to lightest */
-  --bg: #000818;
-  --surface: #001020;
-  --surface-2: #00142a;
-  --surface-3: #061a33;
-  --sidebar: #000614;
-  --chart: #000a1c;
+  --bg: #010a18;
+  --surface: #010917;
+  --surface-2: #020e20;
+  --surface-3: #04122a;
+  --sidebar: #030d1e;
+  --chart: #020b1a;
 
   /* Lines */
-  --line: #0a1e3a;
-  --line-soft: rgba(10, 30, 58, 0.6);
-  --line-strong: #143259;
+  --line: #061428;
+  --line-soft: rgba(6, 20, 40, 0.6);
+  --line-strong: #0d2544;
 
   /* Text */
-  --fg: #eaf1fa;
-  --fg-mid: #a6bcd8;
-  --fg-dim: #6d87a6;
-  --fg-faint: #647f9b;
+  --fg: #ffffff;
+  --fg-mid: #9abbe5;
+  --fg-dim: #8daede;
+  --fg-faint: #5d7ba6;
 
   /* Accents */
-  --gold: #f3d36c;
-  --gold-deep: #7a5c1f;
-  --blue: #1a6cf0;
-  --blue-soft: rgba(26, 108, 240, 0.14);
-  --blue-line: #1c4a8a;
-  --cyan: #45c8f0;
-  --up: #12c48b;
-  --down: #e04b5c;
-  --warn: #f0b93a;
+  --gold: #fbbf1d;
+  --gold-deep: #8a6420;
+  --blue: #064dcf;
+  --blue-soft: rgba(6, 77, 207, 0.18);
+  --blue-line: #1b4a95;
+  --cyan: #13b8fa;
+  --up: #01cd75;
+  --down: #e93d53;
+  --warn: #fbbf1d;
 
   /* Type scale */
   /* Arabic needs a larger floor than Latin to stay legible: 11px is the smallest size
@@ -176,6 +176,19 @@ input::placeholder, textarea::placeholder { color: var(--fg-faint); }
   font-weight: 400;
 }
 .panel-body { padding: var(--s3); }
+/* The market strip is a status line, not a hero: the reference keeps it to one compact row
+   so the chart and the first row of panels share the opening screen with it. Inside the chart
+   panel it is a header row, so it drops the panel chrome - a panel border drawn one pixel
+   inside another panel border read as a rendering fault. */
+.market-strip .num[style] { line-height: 1.2; }
+.market-strip { flex: 0 0 auto; }
+.panel > .panel.market-strip {
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+}
+
 
 /* Quiet bordered pill for status and counts. */
 .chip {
@@ -248,6 +261,25 @@ td.strong { color: var(--fg); font-weight: 500; }
 
 .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s3); }
 .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s3); }
+
+/* Panels in a dashboard row are stretched to the tallest sibling by the grid, and a table
+   with a dozen rows then pushed the whole row - and the page - far past the viewport: the
+   first screen showed one panel and empty space. Each panel is capped and its content
+   scrolls instead, so the dashboard reads as a dashboard and not as a long document. */
+.grid-2 > .panel, .grid-3 > .panel {
+  display: flex;
+  flex-direction: column;
+  max-height: 288px;
+}
+.grid-2 > .panel > *:not(.panel-head),
+.grid-3 > .panel > *:not(.panel-head) {
+  min-height: 0;
+  overflow-y: auto;
+}
+/* Thin scrollbars, so a scrolled panel does not gain a bright gutter. */
+.panel *::-webkit-scrollbar { width: 8px; height: 8px; }
+.panel *::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 4px; }
+.panel *::-webkit-scrollbar-track { background: transparent; }
 
 .stack { display: flex; flex-direction: column; gap: var(--s3); }
 .stack-sm { display: flex; flex-direction: column; gap: var(--s2); }

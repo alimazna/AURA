@@ -63,9 +63,9 @@ export function MarketHeader({ snapshot }) {
   const up = (chg ?? 0) >= 0;
   const priceValue = q?.mid ?? null;
   return (
-    <div className="panel" style={{ padding: 'var(--s4)' }}>
-      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', gap: 'var(--s4) var(--s5)', justifyContent: 'space-between' }}>
-        <div className="row" style={{ gap: 'var(--s5)', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+    <div className="panel market-strip" style={{ padding: '10px var(--s3)' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 'var(--s3) var(--s5)', justifyContent: 'space-between' }}>
+        <div className="row" style={{ gap: 'var(--s5)', flexWrap: 'wrap', alignItems: 'center' }}>
           <div>
             <div className="row" style={{ gap: 'var(--s2)', alignItems: 'baseline' }}>
               <span className="num" style={{ fontSize: 'var(--t-display)', fontWeight: 600 }}>{price(priceValue)}</span>

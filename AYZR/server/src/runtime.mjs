@@ -4,12 +4,15 @@
 // venue data, runs the engines, advances the region lifecycle, and evaluates virtual
 // trades. The AI is never on this path.
 
-import { SYMBOL, TIMEFRAMES, TIMEFRAME_BY_ID, DEFAULT_TIMEFRAME, RUNTIME } from './config.mjs';
+import { SYMBOL, TIMEFRAMES, TIMEFRAME_BY_ID, DEFAULT_TIMEFRAME, INDICATOR_IDS, RUNTIME } from './config.mjs';
 import * as bq from './biquote/client.mjs';
 import { runAllEngines } from './engines/index.mjs';
 import { advanceRegion, expireStale, regionKey, TERMINAL_STATES } from './engines/regions.mjs';
 import { signalFromRegion, virtualTradeFromRegion, evaluateVirtualTrade, closeVirtualTrade, statistics, isActionable, eligibleBarsFor, manualTradeFromDrawing, validateDrawing } from './engines/trades.mjs';
 import { isoNow, round, stableId } from './engines/primitives.mjs';
+import {
+  sma, ema, rsi, macd, bollinger, stochastic, vwap, volumeSma, adx,
+} from './engines/indicators.mjs';
 import { requestPlan, buildContext, providerStatus, newRequestId } from './ai/planner.mjs';
 
 const MAX_REGION_AGE_MS = 72 * 3600 * 1000;
@@ -364,6 +367,34 @@ export class Runtime {
     return { ...record, reason: result.reason, model: result.model || '' };
   }
 
+  /** Indicator series for one timeframe, computed on closed bars only.
+   *  Pure and cheap enough to compute per request, so the chart can show exactly the
+   *  overlays the operator asked for without a cache to invalidate. */
+  indicators(timeframe, selected) {
+    const tfId = TIMEFRAME_BY_ID.has(timeframe) ? timeframe : DEFAULT_TIMEFRAME;
+    const bars = (this.bars.get(tfId) || []).filter((b) => !b.isOpen).slice(-200);
+    // No selection means "everything computable", not "the default set". The default is the
+    // client's choice of what to draw; conflating the two made the picker circular, because a
+    // chip for an uncomputed indicator could never be switched on.
+    const want = new Set(selected && selected.length ? selected : INDICATOR_IDS);
+    const out = {};
+    if (want.has('ema20')) out.ema20 = ema(bars, 20);
+    if (want.has('ema50')) out.ema50 = ema(bars, 50);
+    if (want.has('ema200')) out.ema200 = ema(bars, 200);
+    if (want.has('sma50')) out.sma50 = sma(bars, 50);
+    if (want.has('sma200')) out.sma200 = sma(bars, 200);
+    if (want.has('vwap')) out.vwap = vwap(bars, 20);
+    if (want.has('bollinger')) out.bollinger = bollinger(bars, 20, 2);
+    if (want.has('rsi')) out.rsi = rsi(bars, 14);
+    if (want.has('macd')) out.macd = macd(bars, 12, 26, 9);
+    if (want.has('stochastic')) out.stochastic = stochastic(bars, 14, 3, 3);
+    if (want.has('adx')) out.adx = adx(bars, 14);
+    if (want.has('volume')) { out.volume = bars.map((b) => b.tickVolume ?? 0); out.volumeSma = volumeSma(bars, 20); }
+    out.available = [...want];
+    out.bars = bars.length;
+    return out;
+  }
+
   snapshot(timeframe) {
     const tfId = TIMEFRAME_BY_ID.has(timeframe) ? timeframe : DEFAULT_TIMEFRAME;
     const bars = this.bars.get(tfId) || [];
@@ -379,6 +410,9 @@ export class Runtime {
       capturedAt: isoNow(),
       mode: 'SHADOW_ONLY',
       liveTrading: 'DISABLED',
+      // Exposed so the chart can warn about the limit while the operator is still dragging,
+      // instead of letting the server reject the trade after the fact.
+      limits: { manualMaxRiskPoints: RUNTIME.manualMaxRiskPoints },
       quote: this.quote,
       data: {
         source: 'BiQuote',

@@ -89,3 +89,39 @@ The store gains `origin`/`operator`/`note` through an additive migration in
   When targeting it from a script, pick the largest by area.
 - Commits push to a branch connected to Lovable. Never force-push or rewrite pushed
   history.
+
+## Matching the reference dashboard
+
+`aa/AYZR_Reference_Dashboard.png` (1672x941) is the visual spec. Every colour token in
+`styles/app.css` is sampled from it with PIL, not eyeballed — re-measure before changing
+one. Measured surfaces: top bar `#010917`, sidebar `#030d1e`, chart `#020b1a`, right panel
+`#020e20`, hairline `#010a19`. Accents: blue `#064dcf`, cyan `#13b8fa`, gold `#fbbf1d`,
+green `#01cd75`, red `#e93d53`, text `#ffffff` / muted `#9abbe5`. The chart's `UP`/`DOWN`/
+`GRID`/`AXIS_TEXT` constants mirror the same values so candles and UI never drift apart.
+
+Layout, measured the same way: the reference is one full-width chart panel with the market
+strip **inside it** as a header row, then one row of three cards. The opening screen must
+show all of that without scrolling — chart panel + card row + gaps has to total the main
+area height. Today: `height={357}` on `CandlestickChart` and `max-height: 288px` on
+`.grid-3 > .panel` sum to 855px. Change one and you must re-tune the other, then re-measure
+with `python3 /tmp/fit.py`.
+
+Density is the honest check, not eyeballing: compare bright-pixel share per 60px band
+against the reference. The reference's extra brightness is decorative sample data (fake
+prices, extra cards) that must NOT be copied — only the layout and colour are real
+specifications.
+
+## Chart label collisions
+
+Three things print numbers in the same right-hand column: the price scale, the pane guide
+values (RSI 30/70, etc.) and the last-price badge. Any two landing within ~14px of each
+other read as one garbled number. `paneGuides` decides placement in a single pass over all
+panes top-to-bottom, keeping a label only when it clears the previous one; price ticks are
+then dropped when they would collide with either the guides or the badge. Verify with
+`/tmp/verify3.py` — it reports the text-overlap count and must be 0.
+
+## Dashboard panel height
+
+`.grid-3` stretches every panel to the tallest sibling. With 12 signal rows that pushed the
+row to 770px and the first screen showed one panel plus empty space. Panels are capped
+(`max-height`) and scroll internally instead.

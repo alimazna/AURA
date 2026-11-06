@@ -33,6 +33,10 @@ export const api = {
   health: () => get('/api/health'),
   snapshot: (timeframe) => get(`/api/snapshot?timeframe=${encodeURIComponent(timeframe)}`),
   timeframes: () => get('/api/timeframes'),
+  indicators: (timeframe, only) => get(
+    `/api/indicators?timeframe=${encodeURIComponent(timeframe)}`
+    + (only && only.length ? `&only=${encodeURIComponent(only.join(','))}` : ''),
+  ),
   engines: () => get('/api/engines'),
   regions: (timeframe) => get(`/api/regions${timeframe ? `?timeframe=${timeframe}` : ''}`),
   region: (id) => get(`/api/regions?id=${encodeURIComponent(id)}`),

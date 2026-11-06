@@ -58,6 +58,10 @@ export default function App() {
   const [lastAi, setLastAi] = useState(null);
   const [exitOpen, setExitOpen] = useState(false);
   const [closed, setClosed] = useState(false);
+  // Indicators: which are on, their series, and the server's definitions for them.
+  const [activeIndicators, setActiveIndicators] = useState(['ema20', 'ema50', 'rsi']);
+  const [indicators, setIndicators] = useState(null);
+  const [indicatorDefs, setIndicatorDefs] = useState({});
   const [operator, setOperator] = useState(isOperator());
   const [tokenDraft, setTokenDraft] = useState('');
 
@@ -99,6 +103,26 @@ export default function App() {
   }, [timeframe]);
 
   useEffect(() => { refresh(); }, [refresh]);
+
+  // Every indicator the server can compute is fetched once per timeframe, and the chart picks
+  // what to draw. Fetching only the active ones made toggling circular: a chip could not be
+  // switched on because its series had never been requested. Twelve series over 200 closed
+  // bars is cheap, and it only moves when a bar closes, so the 12s snapshot poll is not used.
+  useEffect(() => {
+    let cancelled = false;
+    api.indicators(timeframe)
+      .then((r) => {
+        if (cancelled) return;
+        setIndicators(r.indicators || null);
+        setIndicatorDefs(r.definitions || {});
+      })
+      .catch(() => { if (!cancelled) setIndicators(null); });
+    return () => { cancelled = true; };
+  }, [timeframe]);
+
+  const toggleIndicator = useCallback((id) => {
+    setActiveIndicators((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]));
+  }, []);
   useEffect(() => {
     const id = setInterval(refresh, 12000);
     return () => clearInterval(id);
@@ -166,6 +190,7 @@ export default function App() {
 
   const chart = useMemo(() => (
     <section className="panel" style={{ minWidth: 0, padding: 0 }}>
+      <MarketHeader snapshot={snapshot} />
       <div style={{ padding: 'var(--s2) var(--s3)', borderBottom: '1px solid var(--line)' }}>
         <TimeframeRail timeframes={timeframes} selected={timeframe} onSelect={onSelectTimeframe} defaultTf="M15" />
       </div>
@@ -174,13 +199,18 @@ export default function App() {
         timeframe={timeframe}
         regions={regions}
         trades={trades}
-        height={440}
+        height={357}
         operator={operator}
         onCreateTrade={onCreateTrade}
         onCloseTrade={onCloseTrade}
+        indicators={indicators}
+        activeIndicators={activeIndicators}
+        onToggleIndicator={toggleIndicator}
+        indicatorDefs={indicatorDefs}
+        maxRiskPoints={snapshot?.limits?.manualMaxRiskPoints ?? 60}
       />
     </section>
-  ), [snapshot, timeframe, regions, trades, timeframes, onSelectTimeframe, operator, onCreateTrade, onCloseTrade]);
+  ), [snapshot, timeframe, regions, trades, timeframes, onSelectTimeframe, operator, onCreateTrade, onCloseTrade, indicators, activeIndicators, toggleIndicator, indicatorDefs]);
 
   if (closed) {
     return (
@@ -424,7 +454,6 @@ function SectionRouter(props) {
   if (section === 'dashboard' || section === 'market') {
     return (
       <div className="stack">
-        <MarketHeader snapshot={snapshot} />
         {chart}
         <div className="grid-3">
           <SignalsPanel signals={snapshot.signals} operator={operator} onDecide={onDecide} />

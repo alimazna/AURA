@@ -24,6 +24,18 @@ export const TIMEFRAMES = [
 
 export const TIMEFRAME_BY_ID = new Map(TIMEFRAMES.map((t) => [t.id, t]));
 
+/** Indicators shown before the operator chooses. A deliberately short list: EMA20/50 for
+ *  trend context, RSI for momentum, ATR-scaled bands off. Everything else is opt-in, because
+ *  a chart with every indicator on is the clutter this platform is trying to avoid. */
+export const DEFAULT_INDICATORS = ['ema20', 'ema50', 'rsi'];
+
+/** Every indicator the server can compute. The web chart mirrors this list; a name that is
+ *  not here is never requested and never invented. */
+export const INDICATOR_IDS = [
+  'ema20', 'ema50', 'ema200', 'sma50', 'sma200', 'vwap',
+  'bollinger', 'rsi', 'macd', 'stochastic', 'adx', 'volume',
+];
+
 export const BIQUOTE = {
   base: process.env.BIQUOTE_BASE || 'https://biquote.io',
   hub: process.env.BIQUOTE_HUB || 'https://biquote.io/hubs/tick',
