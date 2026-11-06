@@ -25,21 +25,24 @@ const ENGINE_STROKE = {
   breakout: '#4d8dff',
 };
 const ENGINE_FILL = {
-  liquidity: 'rgba(243,211,108,0.07)',
-  levels: 'rgba(77,141,255,0.07)',
-  supplyDemand: 'rgba(27,209,162,0.07)',
-  structure: 'rgba(150,110,230,0.07)',
-  imbalance: 'rgba(217,59,75,0.06)',
-  breakout: 'rgba(77,141,255,0.07)',
+  liquidity: 'rgba(243,211,108,0.05)',
+  levels: 'rgba(77,141,255,0.05)',
+  supplyDemand: 'rgba(27,209,162,0.05)',
+  structure: 'rgba(150,110,230,0.05)',
+  imbalance: 'rgba(217,59,75,0.045)',
+  breakout: 'rgba(77,141,255,0.05)',
 };
 
 const UP = '#12c48b';
 const DOWN = '#e04b5c';
-const GRID = '#0a1a30';
+const GRID = '#0d1f38';
 const AXIS_TEXT = '#6d87a6';
 // One label size for every piece of chart text, so the plot never looks like a pile of
 // slightly different type sizes.
 const LABEL = 11;
+// Bands drawn at once. 16 overlapping zones washed the candles out, so only the
+// highest-scoring are kept and the footer states how many are shown.
+const MAX_ZONES = 9;
 
 export function CandlestickChart({
   candles, timeframe, regions = [], trades = [], height = 440,
@@ -160,7 +163,7 @@ export function CandlestickChart({
         return { ...r, startIdx: Math.max(0, Math.min(bars.length - 1, Math.round(frac * (bars.length - 1)))) };
       })
       .sort((a, b) => b.score - a.score)
-      .slice(0, 16);
+      .slice(0, MAX_ZONES);
   }, [regions, showRegions, bars.length, firstTime, span, lo, hi]);
 
   const last = bars[bars.length - 1];
@@ -170,6 +173,61 @@ export function CandlestickChart({
 
   const openTrades = useMemo(() => trades.filter((t) => t.state === 'OPEN'), [trades]);
   const manualOpen = useMemo(() => openTrades.filter((t) => t.origin === 'manual'), [openTrades]);
+
+  // Only a bounded number of trades is drawn. With ~70 open at once, no arrangement of
+  // boxes or lines is readable - they simply overlap. Manual trades are always drawn
+  // (there are few, and they are the operator's own), then the most recent engine trades
+  // fill the remaining slots. The footer states how many are hidden, so a capped view is
+  // never mistaken for the whole picture.
+  const MAX_DRAWN = 12;
+  const drawnTrades = useMemo(() => {
+    if (openTrades.length <= MAX_DRAWN) return openTrades;
+    const manual = openTrades.filter((t) => t.origin === 'manual');
+    const engine = openTrades.filter((t) => t.origin !== 'manual');
+    const room = Math.max(0, MAX_DRAWN - manual.length);
+    const recentEngine = engine.slice(-room);
+    return [...recentEngine, ...manual];
+  }, [openTrades]);
+  const hiddenTrades = openTrades.length - drawnTrades.length;
+
+  // Which bar a trade was triggered on, as an index into the visible window. Used to
+  // anchor a trade's risk box at its own start instead of running it across the plot.
+  const barIndexFor = useCallback((iso) => {
+    const ts = Date.parse(iso);
+    if (!Number.isFinite(ts) || !bars.length) return 0;
+    const frac = (ts - firstTime) / (span || 1);
+    return Math.max(0, Math.min(bars.length - 1, Math.round(frac * (bars.length - 1))));
+  }, [bars.length, firstTime, span]);
+
+  // Exactly one trade is "focused" and gets its levels extended into full lines. The
+  // focused trade is whichever one the pointer is over, falling back to the newest
+  // manual trade, because that is the one the operator just placed.
+  const focusedId = useMemo(() => {
+    if (!drawnTrades.length) return null;
+    if (hover !== null) {
+      const cx = xAt(hover);
+      const cy = y(bars[hover]?.c);
+      let best = null;
+      let bestD = Infinity;
+      for (const t of drawnTrades) {
+        const top = Math.min(y(t.entry), y(t.stop));
+        const h = Math.max(1.5, Math.abs(y(t.stop) - y(t.entry)));
+        const left = Math.max(PAD.left, xAt(barIndexFor(t.triggerBarTime)));
+        if (cx < left - 4) continue;
+        if (cy < top - 3 || cy > top + h + 3) continue;
+        const d = Math.hypot(cx - left, cy - (top + h / 2));
+        if (d < bestD) { bestD = d; best = t.id; }
+      }
+      if (best) return best;
+    }
+    const manual = drawnTrades.filter((t) => t.origin === 'manual');
+    return (manual.length ? manual[manual.length - 1] : drawnTrades[drawnTrades.length - 1]).id;
+  }, [drawnTrades, hover, bars, xAt, y, barIndexFor]);
+
+  const focusedTrade = useMemo(
+    () => drawnTrades.find((t) => t.id === focusedId) || null,
+    [drawnTrades, focusedId],
+  );
 
   // Legend lists only the engines actually drawn, so it never claims absent evidence.
   const legend = useMemo(() => {
@@ -399,16 +457,17 @@ export function CandlestickChart({
             </clipPath>
           </defs>
 
-          {/* faint grid, behind everything */}
+          {/* Grid: horizontal price lines only. The vertical time lines were removed -
+              they crossed every candle and added nothing the time axis does not already
+              say. Horizontal lines stay because price levels are what trades reference. */}
           {ticks.map((t, i) => (
             <line key={`g${i}`} x1={PAD.left} x2={PAD.left + plotW} y1={y(t)} y2={y(t)} stroke={GRID} strokeWidth={1} />
           ))}
-          {timeTicks.map((tk, i) => (
-            <line key={`v${i}`} x1={tk.x} x2={tk.x} y1={PAD.top} y2={PAD.top + plotH} stroke={GRID} strokeWidth={1} />
-          ))}
 
           <g clipPath={`url(#${clipId})`}>
-            {/* zone bands, anchored at their origin bar */}
+            {/* Zones, drawn as a bordered band. The fill is almost transparent and the
+                border carries engine identity, so overlapping zones read as depth rather
+                than as a pile of stripes. */}
             {visibleRegions.map((r) => {
               const yTop = y(Math.min(hi, r.zone.high));
               const yBot = y(Math.max(lo, r.zone.low));
@@ -419,32 +478,58 @@ export function CandlestickChart({
               return (
                 <g key={r.id}>
                   <rect x={x0} y={yTop} width={w} height={h} fill={ENGINE_FILL[r.engine] || 'rgba(125,147,173,0.06)'} />
-                  <line x1={x0} x2={PAD.left + plotW} y1={yTop} y2={yTop} stroke={stroke} strokeWidth={0.9} opacity={0.75} />
-                  <line x1={x0} x2={PAD.left + plotW} y1={yBot} y2={yBot} stroke={stroke} strokeWidth={0.9} opacity={0.75} />
-                  <line x1={x0} x2={x0} y1={yTop} y2={yTop + h} stroke={stroke} strokeWidth={1.4} opacity={0.95} />
+                  {/* One border, not two. The fill already shows where the band ends, so a
+                      second full-width hairline only added noise: 16 zones meant 32 lines
+                      crossing the candles. The left edge marks where the zone was born. */}
+                  <line x1={x0} x2={PAD.left + plotW} y1={yTop} y2={yTop} stroke={stroke} strokeWidth={0.9} opacity={0.45} />
+                  <line x1={x0} x2={x0} y1={yTop} y2={yTop + h} stroke={stroke} strokeWidth={1.6} opacity={0.9} />
                 </g>
               );
             })}
 
-            {/* open virtual trade levels. Manual trades are drawn with a label so a
-                hand-placed level is never mistaken for an engine's own level. */}
-            {openTrades.map((t) => (
-              <g key={t.id}>
-                <line x1={PAD.left} x2={PAD.left + plotW} y1={y(t.entry)} y2={y(t.entry)}
-                  stroke="#f3d36c" strokeWidth={t.origin === 'manual' ? 1.4 : 1} strokeDasharray="5 4" opacity={0.9} />
-                <line x1={PAD.left} x2={PAD.left + plotW} y1={y(t.stop)} y2={y(t.stop)}
-                  stroke={DOWN} strokeWidth={1} strokeDasharray="4 4" opacity={0.75} />
-                <line x1={PAD.left} x2={PAD.left + plotW} y1={y(t.target)} y2={y(t.target)}
-                  stroke={UP} strokeWidth={1} strokeDasharray="4 4" opacity={0.75} />
-                {t.origin === 'manual' && (
-                  <>
-                    <rect x={PAD.left + 4} y={y(t.entry) - 8} width={46} height={15} rx={2} fill="rgba(243,211,108,0.16)" />
-                    <text x={PAD.left + 27} y={y(t.entry) + 3.5} textAnchor="middle" fill="#f3d36c"
-                      fontSize={LABEL} fontFamily="IBM Plex Sans Arabic, sans-serif">يدوي</text>
-                  </>
-                )}
-              </g>
-            ))}
+            {/* Open trades.
+                A trade is a BOX from entry to stop, not three full-width lines. Full-width
+                lines are what made this chart unreadable: with ~70 trades open that was 207
+                hairlines competing with the candles. A box is bounded, so it shows where a
+                trade sits without cutting the whole chart in half. Only the focused trade
+                gets its levels extended, so the operator can read exact prices on demand. */}
+            {drawnTrades.map((t) => {
+              const isManual = t.origin === 'manual';
+              const isFocus = focusedId === t.id;
+              const long = t.direction === 'LONG';
+              const yEntry = y(t.entry);
+              const yStop = y(t.stop);
+              const boxTop = Math.min(yEntry, yStop);
+              const boxH = Math.max(1.5, Math.abs(yStop - yEntry));
+              const right = PAD.left + plotW;
+              // Risk box spans the trade's own recent life, not the whole plot.
+              const startX = Math.max(PAD.left, xAt(barIndexFor(t.triggerBarTime)));
+              const w = Math.max(6, right - startX);
+              const col = long ? UP : DOWN;
+              return (
+                <g key={t.id} opacity={isFocus ? 1 : 0.75}>
+                  {/* risk box, entry -> stop */}
+                  <rect x={startX} y={boxTop} width={w} height={boxH} fill={col} opacity={isFocus ? 0.16 : 0.09} />
+                  <rect x={startX} y={boxTop} width={w} height={boxH} fill="none" stroke={col}
+                    strokeWidth={isManual ? 1.3 : 1} strokeOpacity={isFocus ? 0.95 : 0.55}
+                    strokeDasharray={isManual ? '5 3' : undefined} />
+                  {/* entry line only for the focused trade, so one price stays readable */}
+                  {isFocus && (
+                    <>
+                      <line x1={PAD.left} x2={right} y1={yEntry} y2={yEntry} stroke={col} strokeWidth={1.1} opacity={0.9} />
+                      <line x1={PAD.left} x2={right} y1={y(t.target)} y2={y(t.target)} stroke={UP} strokeWidth={1} strokeDasharray="4 3" opacity={0.7} />
+                    </>
+                  )}
+                  {isManual && (
+                    <>
+                      <rect x={startX + 3} y={boxTop - 8} width={40} height={15} rx={2} fill="rgba(0,8,24,0.85)" />
+                      <text x={startX + 23} y={boxTop + 3.5} textAnchor="middle" fill="#f3d36c"
+                        fontSize={LABEL} fontFamily="IBM Plex Sans Arabic, sans-serif">يدوي</text>
+                    </>
+                  )}
+                </g>
+              );
+            })}
 
             {/* the trade being drawn, before it is confirmed */}
             {live && (
@@ -564,6 +649,41 @@ export function CandlestickChart({
           </div>
         )}
 
+        {/* Focused trade. Exactly one trade shows its numbers, so ~70 open trades never
+            become ~70 overlapping labels. This is also where the operator acts on a
+            manual trade, since a box on the chart is not a button. */}
+        {!draft && focusedTrade && (
+          <div dir="rtl" style={{
+            position: 'absolute', top: PAD.top + 2, insetInlineStart: PAD.left + 6,
+            background: 'rgba(0,8,24,0.88)', border: '1px solid #143259', borderRadius: 4,
+            padding: '7px 9px', display: 'flex', flexDirection: 'column', gap: 5, minWidth: 200,
+          }}>
+            <div className="row" style={{ gap: 7, alignItems: 'center' }}>
+              <span className={`chip ${focusedTrade.direction === 'LONG' ? 'up' : 'down'}`}>
+                {focusedTrade.direction === 'LONG' ? 'شراء' : 'بيع'}
+              </span>
+              <span className="caption">{focusedTrade.origin === 'manual' ? 'يدوية' : (ENGINE_AR[focusedTrade.engine] || focusedTrade.engine)}</span>
+              <span className="caption ltr" style={{ marginInlineStart: 'auto', color: '#647f9b' }}>{focusedTrade.timeframe}</span>
+            </div>
+            <div className="num caption" style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '2px 10px' }}>
+              <span className="caption">الدخول</span><span style={{ color: '#f3d36c' }}>{price(focusedTrade.entry)}</span>
+              <span className="caption">الوقف</span><span style={{ color: DOWN }}>{price(focusedTrade.stop)}</span>
+              <span className="caption">الهدف</span><span style={{ color: UP }}>{price(focusedTrade.target)}</span>
+              <span className="caption">المخاطرة</span>
+              <span>{Math.abs(focusedTrade.entry - focusedTrade.stop).toFixed(2)} نقطة</span>
+            </div>
+            {focusedTrade.origin === 'manual' && onCloseTrade && (
+              <button
+                className="chip dim"
+                onClick={() => onCloseTrade(focusedTrade.id, last?.c)}
+                style={{ padding: '4px 10px', fontSize: 'var(--t-small)' }}
+              >
+                إغلاق الصفقة الآن
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Drag handle for the target, so the reward can be adjusted after placing. */}
         {draft && (
           <div
@@ -577,10 +697,11 @@ export function CandlestickChart({
           />
         )}
 
-        {/* legend: only engines actually on screen */}
+        {/* legend: only engines actually on screen. Pinned to the plot's right edge,
+            clear of the readout panels on the left. */}
         <div style={{
-          position: 'absolute', top: PAD.top + 2, insetInlineStart: PAD.left + 6, display: 'flex', gap: 10,
-          flexWrap: 'wrap', maxWidth: '62%', pointerEvents: 'none', direction: 'rtl',
+          position: 'absolute', top: PAD.top + 2, right: PAD.right + 8, display: 'flex', gap: 10,
+          flexWrap: 'wrap', maxWidth: '52%', justifyContent: 'flex-end', pointerEvents: 'none', direction: 'rtl',
         }}>
           {legend.map((l) => (
             <span key={l.engine} className="caption" style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#a6bcd8' }}>
@@ -615,6 +736,7 @@ export function CandlestickChart({
           <span className="caption" style={{ color: '#6d87a6' }}>
             · <span className="num">{openTrades.length}</span> صفقة افتراضية مفتوحة
             {manualOpen.length > 0 && <> (منها <span className="num">{manualOpen.length}</span> يدوية)</>}
+            {hiddenTrades > 0 && <> · يُعرض <span className="num">{drawnTrades.length}</span> منها، و<span className="num">{hiddenTrades}</span> مخفية</>}
           </span>
         )}
         {operator && manualOpen.length > 0 && (
