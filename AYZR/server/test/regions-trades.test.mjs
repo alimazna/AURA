@@ -14,6 +14,8 @@ import {
 
 const ATR = 10;
 const NOW = Date.parse('2026-01-05T12:00:00Z');
+// Bars that resolve a trade must close strictly after it was created.
+const AFTER = '2026-01-05T12:15:00Z';
 
 function region(over = {}) {
   return {
@@ -108,7 +110,9 @@ test('a virtual trade models its costs explicitly', () => {
 
 test('stop is evaluated before target when a bar spans both (conservative)', () => {
   const t = virtualTradeFromRegion(region(), { atr: ATR, spread: 0.2, timeframe: 'M15', nowMs: NOW });
-  const spanning = bar(t.entry, t.target + 10, t.stop - 10, t.entry);
+  // One bar later than the trade's creation: a trade is never judged on the bar it
+  // was created on, which evaluateVirtualTrade now enforces itself.
+  const spanning = bar(t.entry, t.target + 10, t.stop - 10, t.entry, AFTER);
   const r = evaluateVirtualTrade(t, spanning);
   assert.equal(r.closed, true);
   assert.equal(r.result, 'LOSS', 'ambiguity must resolve against the strategy');
@@ -116,7 +120,7 @@ test('stop is evaluated before target when a bar spans both (conservative)', () 
 
 test('a winning trade reports a positive R multiple and profit', () => {
   const t = virtualTradeFromRegion(region(), { atr: ATR, spread: 0.2, timeframe: 'M15', nowMs: NOW });
-  const hit = evaluateVirtualTrade(t, bar(t.entry, t.target + 1, t.entry - 1, t.target));
+  const hit = evaluateVirtualTrade(t, bar(t.entry, t.target + 1, t.entry - 1, t.target, AFTER));
   assert.equal(hit.result, 'WIN');
   const closed = closeVirtualTrade(t, { exit: hit.exit, result: hit.result, exitReason: hit.exitReason, atMs: NOW });
   assert.ok(closed.rMultiple > 0);
@@ -125,7 +129,7 @@ test('a winning trade reports a positive R multiple and profit', () => {
 
 test('a losing trade reports a negative R multiple', () => {
   const t = virtualTradeFromRegion(region(), { atr: ATR, spread: 0.2, timeframe: 'M15', nowMs: NOW });
-  const hit = evaluateVirtualTrade(t, bar(t.entry, t.entry + 1, t.stop - 1, t.stop));
+  const hit = evaluateVirtualTrade(t, bar(t.entry, t.entry + 1, t.stop - 1, t.stop, AFTER));
   const closed = closeVirtualTrade(t, { exit: hit.exit, result: hit.result, exitReason: hit.exitReason, atMs: NOW });
   assert.ok(closed.rMultiple < 0);
   assert.ok(closed.pnlUsd < 0);

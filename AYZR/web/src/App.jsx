@@ -130,6 +130,18 @@ export default function App() {
     else refresh();
   }, [refresh]);
 
+  const onCreateTrade = useCallback(async (drawing) => {
+    const r = await api.createManualTrade({ ...drawing, operator: 'operator' });
+    if (r.ok) refresh();
+    return { ok: r.ok, error: r.body?.error };
+  }, [refresh]);
+
+  const onCloseTrade = useCallback(async (id, exit) => {
+    const r = await api.closeManualTrade(id, exit, 'أُغلقت يدوياً من الشارت');
+    if (!r.ok) setError(r.body?.error || 'تعذّر إغلاق الصفقة');
+    else refresh();
+  }, [refresh]);
+
   const onAnalyze = useCallback(async (prompt) => {
     setAiBusy(true);
     const r = await api.analyze(prompt, timeframe);
@@ -153,8 +165,8 @@ export default function App() {
   const stats = snapshot?.statistics;
 
   const chart = useMemo(() => (
-    <section className="panel" style={{ minWidth: 0, padding: 0, overflow: 'hidden' }}>
-      <div style={{ padding: '6px 10px', borderBottom: '1px solid var(--border)' }}>
+    <section className="panel" style={{ minWidth: 0, padding: 0 }}>
+      <div style={{ padding: 'var(--s2) var(--s3)', borderBottom: '1px solid var(--line)' }}>
         <TimeframeRail timeframes={timeframes} selected={timeframe} onSelect={onSelectTimeframe} defaultTf="M15" />
       </div>
       <CandlestickChart
@@ -163,9 +175,12 @@ export default function App() {
         regions={regions}
         trades={trades}
         height={440}
+        operator={operator}
+        onCreateTrade={onCreateTrade}
+        onCloseTrade={onCloseTrade}
       />
     </section>
-  ), [snapshot, timeframe, regions, trades, timeframes, onSelectTimeframe]);
+  ), [snapshot, timeframe, regions, trades, timeframes, onSelectTimeframe, operator, onCreateTrade, onCloseTrade]);
 
   if (closed) {
     return (
@@ -178,20 +193,20 @@ export default function App() {
   }
 
   return (
-    <div style={{ display: 'flex', height: '100%', overflow: 'hidden', background: 'var(--page-deep)', direction: 'ltr' }}>
-      {/* Sidebar — left, as in the reference dashboard (measured edge at x≈237 of 1672) */}
-      <aside dir="rtl" style={{
+    <div style={{ display: 'flex', height: '100%', overflow: 'hidden', background: 'var(--bg)', direction: 'ltr' }}>
+      {/* Sidebar — right, first in RTL reading order, as in the reference */}
+      <aside className="sidebar" dir="rtl" style={{
         width: 232, flex: '0 0 232px', background: 'var(--sidebar)',
-        borderRight: '1px solid var(--border)', display: 'flex', flexDirection: 'column', minHeight: 0,
+        borderLeft: '1px solid var(--line)', display: 'flex', flexDirection: 'column', minHeight: 0,
       }}>
-        <div style={{ padding: '16px 16px 14px', borderBottom: '1px solid var(--border)' }}>
+        <div style={{ padding: '18px 16px 16px', borderBottom: '1px solid var(--line)' }}>
           <BrandMark />
         </div>
 
-        <nav style={{ flex: 1, overflowY: 'auto', padding: '8px 0' }}>
+        <nav style={{ flex: 1, overflowY: 'auto', padding: '10px 0' }}>
           {NAV.map((g) => (
-            <div key={g.group} style={{ marginBottom: 8 }}>
-              <div className="label" style={{ padding: '8px 16px 4px', color: 'var(--gold-dim)' }}>{g.group}</div>
+            <div key={g.group} style={{ marginBottom: 12 }}>
+              <div className="eyebrow" style={{ padding: '6px 16px' }}>{g.group}</div>
               {g.items.map((it) => {
                 const active = section === it.id;
                 return (
@@ -199,10 +214,12 @@ export default function App() {
                     key={it.id}
                     onClick={() => goTo(it.id)}
                     style={{
-                      display: 'block', width: '100%', textAlign: 'right', padding: '7px 16px',
-                      fontSize: 12.5, background: active ? 'var(--sidebar-active)' : 'transparent',
-                      color: active ? 'var(--text)' : 'var(--text-dim)',
+                      display: 'block', width: '100%', textAlign: 'right',
+                      padding: '8px 16px', fontSize: 'var(--t-body)',
+                      color: active ? 'var(--fg)' : 'var(--fg-mid)',
+                      background: active ? 'var(--blue-soft)' : 'transparent',
                       borderRight: active ? '2px solid var(--gold)' : '2px solid transparent',
+                      fontWeight: active ? 600 : 400,
                     }}
                   >
                     {it.ar}
@@ -213,28 +230,29 @@ export default function App() {
           ))}
         </nav>
 
-        {/* operator token */}
-        <div style={{ padding: 10, borderTop: '1px solid var(--border)' }}>
+        <div style={{ padding: 'var(--s3)', borderTop: '1px solid var(--line)' }}>
           {operator ? (
             <div className="row-between">
-              <span className="chip up">وضع المشغل</span>
-              <button className="tiny faint" onClick={clearToken}>خروج</button>
+              <span className="chip up"><i className="dot up" />وضع المشغل</span>
+              <button className="small faint" onClick={clearToken}>خروج</button>
             </div>
           ) : (
-            <form onSubmit={onSetToken} className="stack" style={{ gap: 6 }}>
+            <form onSubmit={onSetToken} className="stack-sm">
               <input
                 type="password"
-                placeholder="رمز المشغل (اختياري)"
+                placeholder="رمز المشغل"
                 value={tokenDraft}
                 onChange={(e) => setTokenDraft(e.target.value)}
-                style={{ width: '100%', fontSize: 11.5 }}
+                style={{ width: '100%' }}
               />
-              <button className="chip blue" type="submit" style={{ justifyContent: 'center' }}>تفعيل المشغل</button>
+              <button className="chip blue" type="submit" style={{ justifyContent: 'center', padding: '7px 0' }}>
+                تفعيل المشغل
+              </button>
             </form>
           )}
         </div>
 
-        <div style={{ padding: 10, borderTop: '1px solid var(--border)' }}>
+        <div style={{ padding: '0 var(--s3) var(--s3)' }}>
           <button
             onClick={() => setExitOpen(true)}
             className="chip down"
@@ -248,25 +266,25 @@ export default function App() {
       {/* Main column */}
       <div dir="rtl" style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: 0 }}>
         <header style={{
-          height: 48, flex: '0 0 48px', display: 'flex', alignItems: 'center', gap: 16,
-          padding: '0 16px', background: 'var(--page)', borderBottom: '1px solid var(--border)',
+          height: 56, flex: '0 0 56px', display: 'flex', alignItems: 'center', gap: 'var(--s4)',
+          padding: '0 var(--s4)', background: 'var(--surface)', borderBottom: '1px solid var(--line)',
         }}>
-          <div className="row" style={{ gap: 10, minWidth: 0 }}>
-            <span style={{ fontWeight: 600, letterSpacing: '0.1em' }} className="ltr">AYZR</span>
-            <span style={{ width: 1, height: 14, background: 'var(--border)' }} />
-            <span className="small muted nowrap">منصة ذكاء وتحليل الذهب XAUUSD</span>
+          <div className="row" style={{ gap: 'var(--s2)', minWidth: 0 }}>
+            <span className="ltr" style={{ fontWeight: 700, letterSpacing: '0.12em' }}>AYZR</span>
+            <span style={{ width: 1, height: 16, background: 'var(--line-strong)' }} />
+            <span className="small muted nowrap">منصة ذكاء وتحليل الذهب <span className="ltr">XAUUSD</span></span>
           </div>
-          <div className="row" style={{ gap: 14, marginRight: 'auto', flexWrap: 'wrap' }}>
+          <div className="row" style={{ gap: 'var(--s5)', marginRight: 'auto', flexWrap: 'wrap' }}>
             <HeaderStat k="صحة النظام">
               {health?.status === 'HEALTHY'
-                ? <span className="chip up"><i className="dot up" />سليم</span>
+                ? <span className="chip up"><i className="dot up live" />سليم</span>
                 : health ? <span className="chip warn"><i className="dot warn" />متدهور</span> : <span className="chip dim">—</span>}
             </HeaderStat>
             <HeaderStat k="تدفقات البيانات">
               <span className="num small">{timeframes.filter((t) => t.status !== 'NOT_AVAILABLE').length} / {timeframes.length || 9}</span>
             </HeaderStat>
             <HeaderStat k="النقل">
-              <span className="ltr tiny muted">{health?.stream?.transport || '—'} · {health?.stream?.state || '—'}</span>
+              <span className="ltr small muted">{health?.stream?.transport || '—'} · {health?.stream?.state || '—'}</span>
             </HeaderStat>
             <HeaderStat k="الوقت">
               <span className="num small">{clockUTC(now.toISOString())}</span>
@@ -276,12 +294,12 @@ export default function App() {
         </header>
 
         {error && (
-          <div style={{ padding: '6px 16px', background: 'rgba(217,59,75,0.12)', color: '#f0a5a2', fontSize: 11.5, borderBottom: '1px solid var(--border)' }}>
+          <div style={{ padding: '8px var(--s4)', background: 'rgba(224,75,92,0.12)', color: '#f0a5a2', fontSize: 'var(--t-small)', borderBottom: '1px solid var(--line)' }}>
             {error}
           </div>
         )}
 
-        <main style={{ flex: 1, overflowY: 'auto', padding: 12, minHeight: 0 }}>
+        <main style={{ flex: 1, overflowY: 'auto', padding: 'var(--s4)', minHeight: 0 }}>
           {!snapshot ? (
             <div className="empty">جارٍ تحميل بيانات السوق من BiQuote…</div>
           ) : (
@@ -311,23 +329,22 @@ export default function App() {
         </main>
 
         <footer style={{
-          flex: '0 0 26px', display: 'flex', alignItems: 'center', gap: 14, padding: '0 16px',
-          background: 'var(--page)', borderTop: '1px solid var(--border)', fontSize: 10, color: 'var(--text-faint)',
+          flex: '0 0 30px', display: 'flex', alignItems: 'center', gap: 'var(--s4)', padding: '0 var(--s4)',
+          background: 'var(--surface)', borderTop: '1px solid var(--line)', fontSize: 'var(--t-small)', color: 'var(--fg-faint)',
         }}>
           <span className="ltr">AYZR v1.0.0</span>
-          <span>مصدر البيانات: <span className="ltr">BiQuote</span></span>
+          <span>المصدر: <span className="ltr">BiQuote</span></span>
           <span>آخر تحديث: <span className="num">{timeUTC(health?.lastIngest, true)}</span></span>
-          <span>دورات التحديث: <span className="num">{num(health?.ingestCycles)}</span></span>
-          <span style={{ marginRight: 'auto' }}>لا يوجد تنفيذ تداول حقيقي · نتائج افتراضية لقياس الأداء</span>
+          <span style={{ marginRight: 'auto' }}>لا تنفيذ تداول حقيقي · نتائج افتراضية لقياس الأداء</span>
         </footer>
       </div>
 
       {/* Right column — price ladder, data source and telemetry, as in the reference */}
       {snapshot && (
-        <aside dir="rtl" style={{
-          width: 320, flex: '0 0 320px', background: 'var(--surface-2)',
-          borderLeft: '1px solid var(--border)', display: 'flex', flexDirection: 'column',
-          minHeight: 0, overflowY: 'auto', padding: 10, gap: 10,
+        <aside className="right-col" dir="rtl" style={{
+          width: 320, flex: '0 0 320px', background: 'var(--surface)',
+          borderRight: '1px solid var(--line)', display: 'flex', flexDirection: 'column',
+          minHeight: 0, overflowY: 'auto', padding: 'var(--s3)', gap: 'var(--s3)',
         }}>
           <PriceLadder snapshot={snapshot} regions={regions} />
           <BiQuotePanel snapshot={snapshot} health={health} />
@@ -347,23 +364,25 @@ export default function App() {
 
 function HeaderStat({ k, children }) {
   return (
-    <div className="row" style={{ gap: 6 }}>
-      <span className="label">{k}</span>
-      {children}
+    <div className="stack-sm" style={{ gap: 1 }}>
+      <span className="eyebrow">{k}</span>
+      <span style={{ lineHeight: 1.3 }}>{children}</span>
     </div>
   );
 }
 
-function BrandMark({ size = 22 }) {
+function BrandMark({ size = 26 }) {
   return (
     <div className="row" style={{ gap: 10 }}>
       <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden="true">
         <path d="M16 2 L30 30 L22 30 L16 17 L10 30 L2 30 Z" fill="#f3d36c" />
-        <path d="M16 17 L19 23 L13 23 Z" fill="#04132d" />
+        <path d="M16 17 L19 23 L13 23 Z" fill="#000818" />
       </svg>
       <div>
-        <div style={{ fontSize: 15, fontWeight: 700, letterSpacing: '0.14em' }} className="ltr">AYZR</div>
-        <div className="label" style={{ marginTop: 2 }}>ذكاء وتحليل الذهب · <span className="ltr">XAUUSD</span></div>
+        <div className="ltr" style={{ fontSize: 17, fontWeight: 700, letterSpacing: '0.16em', lineHeight: 1.1 }}>AYZR</div>
+        <div className="micro faint" style={{ marginTop: 3, letterSpacing: 0 }}>
+          ذكاء وتحليل الذهب · <span className="ltr">XAUUSD</span>
+        </div>
       </div>
     </div>
   );
@@ -377,18 +396,18 @@ function ExitDialog({ onCancel, onConfirm }) {
   }, [onCancel]);
   return (
     <div
-      style={{ position: 'fixed', inset: 0, background: 'rgba(1,10,24,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,4,14,0.82)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}
       onClick={onCancel}
     >
-      <div className="panel" style={{ width: 380 }} onClick={(e) => e.stopPropagation()}>
-        <div className="panel-head" style={{ fontSize: 13 }}>إغلاق AYZR؟</div>
-        <div style={{ padding: '16px 14px', fontSize: 12.5, lineHeight: 1.9, color: 'var(--text-mid)' }}>
+      <div className="panel" style={{ width: 400 }} onClick={(e) => e.stopPropagation()}>
+        <div className="panel-head"><span className="panel-title">إغلاق AYZR؟</span></div>
+        <div className="panel-body muted" style={{ fontSize: 'var(--t-body)', lineHeight: 1.9 }}>
           الإغلاق يُنهي تشغيل الواجهة بشكل آمن. تُحفظ الحالة والمناطق والصفقات الافتراضية في قاعدة البيانات قبل الإنهاء.
           لا يوجد تنفيذ لأي أمر وسيط.
         </div>
-        <div className="grid-2" style={{ gap: 1, background: 'var(--border)' }}>
-          <button onClick={onCancel} style={{ background: 'var(--surface)', padding: '11px 0', fontSize: 12 }}>إلغاء</button>
-          <button onClick={onConfirm} style={{ background: 'var(--surface)', padding: '11px 0', fontSize: 12, color: 'var(--down)', fontWeight: 600 }}>إغلاق</button>
+        <div className="grid-2" style={{ gap: 1, background: 'var(--line)' }}>
+          <button onClick={onCancel} style={{ background: 'var(--surface)', padding: '12px 0', fontSize: 'var(--t-body)' }}>إلغاء</button>
+          <button onClick={onConfirm} style={{ background: 'var(--surface)', padding: '12px 0', fontSize: 'var(--t-body)', color: 'var(--down)', fontWeight: 600 }}>إغلاق</button>
         </div>
       </div>
     </div>
@@ -508,7 +527,7 @@ function SectionRouter(props) {
                       <td className={t.result === 'WIN' ? 'up' : 'down'}>{t.result === 'WIN' ? 'ربح' : 'خسارة'}</td>
                       <td className="num">{t.rMultiple}R</td>
                       <td className={`num ${t.pnlUsd >= 0 ? 'up' : 'down'}`}>{t.pnlUsd}</td>
-                      <td className="tiny muted">{t.exitReason}</td>
+                      <td className="caption muted">{t.exitReason}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -526,13 +545,13 @@ function SectionRouter(props) {
       <div className="stack">
         <div className="grid-2">
           <Panel title="حالة البيانات">
-            <Field k="المصدر" tone="var(--text-mid)">BiQuote</Field>
-            <Field k="النقل" tone="var(--text-mid)">{d.transport} · {d.streamState}</Field>
+            <Field k="المصدر" tone="var(--fg-mid)">BiQuote</Field>
+            <Field k="النقل" tone="var(--fg-mid)">{d.transport} · {d.streamState}</Field>
             <Field k="الشموع المتاحة">{num(d.barsAvailable)}</Field>
             <Field k="الشموع المغلقة">{num(d.closedBars)}</Field>
-            <Field k="أحدث شمعة مغلقة" tone="var(--text-mid)">{timeUTC(d.newestClosedBar, true)}</Field>
+            <Field k="أحدث شمعة مغلقة" tone="var(--fg-mid)">{timeUTC(d.newestClosedBar, true)}</Field>
             <Field k="دورات التحديث">{num(d.ingestCycles)}</Field>
-            <Field k="آخر خطأ" tone={d.lastError ? 'var(--down)' : 'var(--text-faint)'}>{d.lastError || 'لا يوجد'}</Field>
+            <Field k="آخر خطأ" tone={d.lastError ? 'var(--down)' : 'var(--fg-faint)'}>{d.lastError || 'لا يوجد'}</Field>
           </Panel>
           <Panel title="صلاحية الشموع">
             <div style={{ padding: '10px 12px' }} className="small muted">
@@ -540,7 +559,7 @@ function SectionRouter(props) {
                 يُعرض فقط ما وسمه المصدر كشمعة مغلقة (<span className="ltr">isOpen = false</span>).
                 لا يُعاد رسم تاريخ ولا تُختلق شموع، ولا تُدمج أطر زمنية مختلفة.
               </div>
-              <div className="tiny faint" style={{ marginTop: 8 }}>
+              <div className="caption faint" style={{ marginTop: 8 }}>
                 أطر <span className="ltr">W1</span> و <span className="ltr">MN1</span> غير متاحة مباشرة من المصدر،
                 لذلك تُجمَّع من شموع <span className="ltr">D1</span> القادمة من المصدر نفسه، ويُوسم الناتج بأنه «مجمّع».
               </div>
@@ -561,13 +580,13 @@ function SectionRouter(props) {
     return (
       <div className="stack">
         <Panel title="الإعدادات (للقراءة)">
-          <Field k="الرمز" tone="var(--text-mid)">XAUUSD</Field>
-          <Field k="الإطار الافتراضي" tone="var(--text-mid)">M15</Field>
+          <Field k="الرمز" tone="var(--fg-mid)">XAUUSD</Field>
+          <Field k="الإطار الافتراضي" tone="var(--fg-mid)">M15</Field>
           <Field k="التنفيذ" tone="var(--down)">معطّل</Field>
           <Field k="وضع التشغيل" tone="var(--gold)">ظل فقط</Field>
-          <Field k="مزود الذكاء الاصطناعي" tone="var(--text-mid)">{health?.ai?.available ? (health?.ai?.provider || '—') : 'غير مهيّأ'}</Field>
-          <Field k="وضع المشغل" tone={operator ? 'var(--up)' : 'var(--text-faint)'}>{operator ? 'مفعّل' : 'معطّل'}</Field>
-          <Field k="الإصدار" tone="var(--text-faint)">AYZR v1.0.0</Field>
+          <Field k="مزود الذكاء الاصطناعي" tone="var(--fg-mid)">{health?.ai?.available ? (health?.ai?.provider || '—') : 'غير مهيّأ'}</Field>
+          <Field k="وضع المشغل" tone={operator ? 'var(--up)' : 'var(--fg-faint)'}>{operator ? 'مفعّل' : 'معطّل'}</Field>
+          <Field k="الإصدار" tone="var(--fg-faint)">AYZR v1.0.0</Field>
         </Panel>
         <ControlPanel operator={operator} onControl={onControl} paused={health?.paused} status={busy ? 'جارٍ التنفيذ…' : ''} />
       </div>

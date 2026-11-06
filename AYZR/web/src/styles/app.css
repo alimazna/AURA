@@ -1,170 +1,316 @@
-/* AYZR design tokens.
+/* AYZR design system.
  *
- * Colours are sampled directly from the supplied reference dashboard
- * (aa/AYZR_Reference_Dashboard.png) rather than invented. Sampling evidence:
+ * Colours are sampled from the reference dashboard (aa/AYZR_Reference_Dashboard.png).
+ * Measured values: page background #000818 (36.8% of pixels), raised surface
+ * #000820/#001020, borders around #081830, primary blue #003068..#04418c, gold
+ * #f3d36c. The earlier build used a lighter navy than the reference; these tokens
+ * follow the measurement.
  *
- *   page background      #04132d      sidebar background   #030d1e
- *   panel surface        #081428      right column bg      #061124
- *   timeframe rail       #071429      chart background     #081120
- *   primary accent       #0456e6      primary block        #034dda
- *   highlight / identity #f3d36c      positive (up)        #1bd1a2
- *   negative (down)      #ba2939
- *
- * Blue is the primary interactive accent in the reference; gold is the identity and
- * highlight accent. Both are used here in the same roles.
+ * Type scale. Arabic needs more size and line-height than Latin to stay legible,
+ * so the smallest step is 11px and Arabic letter-spacing is always 0 (tracking
+ * breaks the joining forms). Latin-only labels may use the 10px micro step.
  */
 
 :root {
-  --page: #04132d;          /* page background */
-  --page-deep: #020d20;     /* darkest navy, chart gutters */
-  --surface: #081428;       /* panel surface */
-  --surface-2: #061124;     /* raised surface / right column */
-  --surface-3: #071429;     /* timeframe rail, table headers */
-  --chart: #081120;         /* chart plot background */
-  --sidebar: #030d1e;       /* sidebar background */
-  --sidebar-active: #0a2450;
-  --border: #12233d;
-  --border-strong: #1b3355;
-  --text: #e8eef7;
-  --text-mid: #a8bdd6;
-  --text-dim: #6f8aa8;
-  --text-faint: #486078;
+  /* Surfaces, darkest to lightest */
+  --bg: #000818;
+  --surface: #001020;
+  --surface-2: #00142a;
+  --surface-3: #061a33;
+  --sidebar: #000614;
+  --chart: #000a1c;
 
-  --gold: #f3d36c;          /* identity + highlight accent */
-  --gold-dim: #8a6a2c;
-  --blue: #0456e6;          /* primary interactive accent */
-  --blue-dim: #0a3fb0;
-  --blue-bright: #4d8dff;
-  --up: #1bd1a2;            /* positive / bullish */
-  --down: #d93b4b;          /* negative / bearish */
-  --warn: #f3d36c;
-  --neutral: #7d93ad;
+  /* Lines */
+  --line: #0a1e3a;
+  --line-soft: rgba(10, 30, 58, 0.6);
+  --line-strong: #143259;
 
-  --radius: 3px;
-  --gap: 10px;
-  --mono: "JetBrains Mono", ui-monospace, monospace;
-  --sans: "IBM Plex Sans Arabic", system-ui, sans-serif;
+  /* Text */
+  --fg: #eaf1fa;
+  --fg-mid: #a6bcd8;
+  --fg-dim: #6d87a6;
+  --fg-faint: #647f9b;
+
+  /* Accents */
+  --gold: #f3d36c;
+  --gold-deep: #7a5c1f;
+  --blue: #1a6cf0;
+  --blue-soft: rgba(26, 108, 240, 0.14);
+  --blue-line: #1c4a8a;
+  --cyan: #45c8f0;
+  --up: #12c48b;
+  --down: #e04b5c;
+  --warn: #f0b93a;
+
+  /* Type scale */
+  /* Arabic needs a larger floor than Latin to stay legible: 11px is the smallest size
+     used anywhere, so no label ever drops below it. */
+  --t-micro: 11px;
+  --t-small: 11.5px;
+  --t-body: 13px;
+  --t-lead: 14px;
+  --t-title: 15px;
+  --t-display: 26px;
+
+  /* Spacing */
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s5: 22px;
+
+  --radius: 4px;
+  --radius-lg: 6px;
+
+  --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --sans: "IBM Plex Sans Arabic", "Segoe UI", system-ui, sans-serif;
 }
 
-* { box-sizing: border-box; border-color: var(--border); }
+* { box-sizing: border-box; }
 
 html, body, #root { height: 100%; margin: 0; }
 
 body {
-  background: var(--page-deep);
-  color: var(--text);
+  background: var(--bg);
+  color: var(--fg);
   font-family: var(--sans);
-  font-size: 13px;
+  font-size: var(--t-body);
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
-/* Numerals stay Latin and tabular even inside RTL Arabic text. */
-.num { font-family: var(--mono); font-variant-numeric: tabular-nums; direction: ltr; unicode-bidi: isolate; }
-
-.label {
-  font-size: 10px;
-  letter-spacing: 0.06em;
-  color: var(--text-faint);
-  font-weight: 500;
+/* Latin numerals and identifiers stay LTR and tabular inside RTL Arabic. */
+.num {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  direction: ltr;
+  unicode-bidi: isolate;
+  font-feature-settings: "tnum";
 }
-
-/* Latin technical terms inside Arabic layout must not be reordered. */
 .ltr { direction: ltr; unicode-bidi: isolate; display: inline-block; }
 
-::-webkit-scrollbar { width: 9px; height: 9px; }
-::-webkit-scrollbar-track { background: var(--page-deep); }
-::-webkit-scrollbar-thumb { background: #16304f; border-radius: 0; }
-::-webkit-scrollbar-thumb:hover { background: #1f4270; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #14304f; border-radius: 5px; border: 2px solid var(--bg); }
+::-webkit-scrollbar-thumb:hover { background: #1e4675; }
 
-button { font-family: inherit; color: inherit; background: none; border: none; cursor: pointer; }
-button:disabled { cursor: not-allowed; opacity: 0.55; }
+button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; }
+button:disabled { cursor: not-allowed; opacity: 0.5; }
+:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }
 
 input, textarea, select {
-  font-family: inherit;
-  color: var(--text);
-  background: var(--page-deep);
-  border: 1px solid var(--border);
+  font: inherit;
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: 7px 9px;
-  font-size: 12.5px;
+  padding: 8px 10px;
+  font-size: var(--t-body);
 }
-input:focus, textarea:focus, select:focus { outline: none; border-color: var(--blue-dim); }
-input::placeholder, textarea::placeholder { color: var(--text-faint); }
+input:focus, textarea:focus, select:focus { outline: none; border-color: var(--blue); }
+input::placeholder, textarea::placeholder { color: var(--fg-faint); }
 
-.panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+/* ---------------------------------------------------------------- type ---- */
+
+.micro { font-size: var(--t-micro); letter-spacing: 0.04em; }
+.small { font-size: var(--t-small); }
+.body  { font-size: var(--t-body); }
+.lead  { font-size: var(--t-lead); }
+.title { font-size: var(--t-title); font-weight: 600; }
+.display { font-size: var(--t-display); font-weight: 600; font-family: var(--mono); }
+
+/* Section label above a value. Latin-only, so tracking is safe here. */
+.eyebrow {
+  font-size: var(--t-micro);
+  font-weight: 500;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--fg-faint);
+}
+
+/* Same role as .eyebrow but for Arabic captions: no tracking, no uppercase,
+ * because letter-spacing breaks the joining forms of Arabic script. */
+.caption {
+  font-size: var(--t-small);
+  font-weight: 400;
+  color: var(--fg-dim);
+  letter-spacing: 0;
+}
+
+.muted { color: var(--fg-dim); }
+.faint { color: var(--fg-faint); }
+.dim   { color: var(--fg-mid); }
+.up    { color: var(--up); }
+.down  { color: var(--down); }
+.gold  { color: var(--gold); }
+.center { text-align: center; }
+.nowrap { white-space: nowrap; }
+
+/* ------------------------------------------------------------- surfaces ---- */
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
 
 .panel-head {
-  display: flex; align-items: center; justify-content: space-between; gap: 8px;
-  padding: 8px 12px; border-bottom: 1px solid var(--border);
-  font-size: 11px; font-weight: 600; color: var(--text-mid);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s2);
+  padding: 10px var(--s3);
+  border-bottom: 1px solid var(--line);
+  min-height: 40px;
 }
-.panel-head .hint { font-size: 9.5px; color: var(--text-faint); font-weight: 400; }
+.panel-title {
+  font-size: var(--t-body);
+  font-weight: 600;
+  color: var(--fg);
+}
+.panel-hint {
+  font-size: var(--t-small);
+  color: var(--fg-faint);
+  font-weight: 400;
+}
+.panel-body { padding: var(--s3); }
 
+/* Quiet bordered pill for status and counts. */
 .chip {
-  display: inline-flex; align-items: center; gap: 5px;
-  padding: 2px 7px; border: 1px solid var(--border-strong); border-radius: 2px;
-  font-size: 9.5px; letter-spacing: 0.04em; color: var(--text-mid); white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border: 1px solid var(--line-strong);
+  border-radius: 3px;
+  font-size: var(--t-small);
+  color: var(--fg-mid);
+  white-space: nowrap;
+  line-height: 1.5;
 }
-.chip.gold { border-color: var(--gold-dim); color: var(--gold); }
-.chip.blue { border-color: var(--blue-dim); color: var(--blue-bright); }
-.chip.up { border-color: #12705c; color: var(--up); }
-.chip.down { border-color: #7d2531; color: var(--down); }
-.chip.dim { color: var(--text-faint); }
+.chip.gold { border-color: var(--gold-deep); color: var(--gold); }
+.chip.blue { border-color: var(--blue-line); color: #7fb0ff; }
+.chip.up   { border-color: #0e5c46; color: var(--up); }
+.chip.down { border-color: #7a2531; color: var(--down); }
+.chip.warn { border-color: #6b5314; color: var(--warn); }
+.chip.dim  { border-color: var(--line); color: var(--fg-dim); }
 
 .dot { width: 6px; height: 6px; border-radius: 50%; flex: 0 0 auto; }
 .dot.up { background: var(--up); }
 .dot.down { background: var(--down); }
 .dot.warn { background: var(--warn); }
-.dot.dim { background: var(--text-faint); }
+.dot.dim { background: var(--fg-faint); }
+
+/* Key/value row used across the panels. */
+.kv {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s2);
+  padding: 6px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+.kv:last-child { border-bottom: none; }
+.kv .k { font-size: var(--t-small); color: var(--fg-dim); white-space: nowrap; }
+.kv .v { font-size: var(--t-body); color: var(--fg); text-align: left; }
+
+/* -------------------------------------------------------------- tables ---- */
 
 table { width: 100%; border-collapse: collapse; }
 th {
-  text-align: right; font-weight: 500; font-size: 10px; color: var(--text-faint);
-  padding: 7px 10px; background: var(--surface-3); border-bottom: 1px solid var(--border);
+  text-align: right;
+  font-weight: 500;
+  font-size: var(--t-small);
+  color: var(--fg-dim);
+  padding: 9px var(--s3);
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
   white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
-td { padding: 7px 10px; border-bottom: 1px solid rgba(18, 35, 61, 0.6); font-size: 12px; }
-tbody tr:hover { background: rgba(7, 20, 41, 0.75); }
-tbody tr.active { background: rgba(4, 86, 230, 0.16); }
+td {
+  padding: 9px var(--s3);
+  border-bottom: 1px solid var(--line-soft);
+  font-size: var(--t-body);
+  color: var(--fg-mid);
+  vertical-align: middle;
+}
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover { background: rgba(26, 108, 240, 0.06); }
+tbody tr.active { background: var(--blue-soft); }
+td.strong { color: var(--fg); font-weight: 500; }
 
-.grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--gap); }
-.grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--gap); }
-.grid-4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--gap); }
+/* ------------------------------------------------------------- layout ---- */
 
-.stack { display: flex; flex-direction: column; gap: var(--gap); }
-.row { display: flex; align-items: center; gap: 8px; }
-.row-between { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s3); }
+.grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s3); }
+
+.stack { display: flex; flex-direction: column; gap: var(--s3); }
+.stack-sm { display: flex; flex-direction: column; gap: var(--s2); }
+.row { display: flex; align-items: center; gap: var(--s2); }
+.row-between { display: flex; align-items: center; justify-content: space-between; gap: var(--s2); }
 .wrap { display: flex; flex-wrap: wrap; gap: 6px; }
 
-.muted { color: var(--text-dim); }
-.faint { color: var(--text-faint); }
-.small { font-size: 11px; }
-.tiny { font-size: 10px; }
-.up { color: var(--up); }
-.down { color: var(--down); }
-.gold { color: var(--gold); }
-.center { text-align: center; }
-.nowrap { white-space: nowrap; }
+/* Fixed-height scroll body for panels that hold long tables. */
+.scroll { overflow: auto; max-height: 260px; }
+.scroll-lg { overflow: auto; max-height: 420px; }
 
 .empty {
-  padding: 22px 14px; text-align: center; color: var(--text-faint); font-size: 11.5px; line-height: 1.7;
+  padding: var(--s5) var(--s4);
+  text-align: center;
+  color: var(--fg-faint);
+  font-size: var(--t-small);
+  line-height: 1.8;
 }
 
-@keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: 0.35 } }
-.live { animation: pulse 1.8s ease-in-out infinite; }
+/* ---------------------------------------------------------- indicators ---- */
 
-/* Compact square control used inside the chart header and footer. */
+@keyframes pulse { 0%, 100% { opacity: 1 } 50% { opacity: 0.3 } }
+.live { animation: pulse 2s ease-in-out infinite; }
+
+.bar { height: 4px; background: var(--surface-3); border-radius: 2px; overflow: hidden; }
+.bar > i { display: block; height: 100%; border-radius: 2px; }
+
+/* Compact control used inside the chart header and footer. */
 .chart-btn {
-  width: 24px; height: 22px; display: inline-flex; align-items: center; justify-content: center;
-  border: 1px solid var(--border-strong); border-radius: 3px; background: var(--surface-3);
-  color: var(--text-mid); font-size: 12px; line-height: 1; padding: 0;
+  width: 26px; height: 24px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--line-strong);
+  border-radius: 3px;
+  background: var(--surface-2);
+  color: var(--fg-mid);
+  font-size: 13px; line-height: 1; padding: 0;
 }
-.chart-btn:hover { background: var(--blue-dim); color: var(--text); border-color: var(--blue); }
+.chart-btn:hover { background: var(--blue-soft); color: var(--fg); border-color: var(--blue); }
 .chart-btn:active { transform: translateY(1px); }
 
-@media (max-width: 1180px) {
-  .grid-3, .grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+/* ------------------------------------------------------------ sections ---- */
+
+.section-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--s3);
+  padding-bottom: var(--s2);
+  border-bottom: 1px solid var(--line);
+  margin-bottom: var(--s3);
 }
-@media (max-width: 760px) {
-  .grid-2, .grid-3, .grid-4 { grid-template-columns: minmax(0, 1fr); }
+.section-title { font-size: 18px; font-weight: 600; }
+.section-sub { font-size: var(--t-small); color: var(--fg-dim); margin-top: 2px; }
+
+/* ------------------------------------------------------------- layout ---- */
+
+@media (max-width: 1500px) {
+  .right-col { display: none; }
+}
+@media (max-width: 1180px) {
+  .grid-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 860px) {
+  .grid-2, .grid-3 { grid-template-columns: minmax(0, 1fr); }
+  .sidebar { display: none; }
 }

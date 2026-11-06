@@ -14,6 +14,7 @@ export class Store {
     this.db = new DatabaseSync(dbPath);
     this.db.exec('PRAGMA journal_mode = WAL');
     this.migrate();
+    this.migrateAdditive();
   }
 
   migrate() {
@@ -71,6 +72,9 @@ export class Store {
         id TEXT PRIMARY KEY,
         region_id TEXT, signal_id TEXT,
         engine TEXT, timeframe TEXT, direction TEXT,
+        origin TEXT NOT NULL DEFAULT 'engine',
+        operator TEXT,
+        note TEXT,
         state TEXT NOT NULL,
         entry REAL, entry_raw REAL, stop REAL, target REAL, lot REAL,
         costs TEXT, conditions TEXT, reason TEXT,
@@ -111,6 +115,22 @@ export class Store {
       CREATE INDEX IF NOT EXISTS idx_vt_state ON virtual_trades(state);
       CREATE INDEX IF NOT EXISTS idx_audit_at ON audit_log(at);
     `);
+  }
+
+  /**
+   * Additive migrations. Databases written before the manual-trade feature have no
+   * origin/operator/note columns; add them rather than recreate the table, so existing
+   * rows and their results survive.
+   */
+  migrateAdditive() {
+    const cols = this.db.prepare('PRAGMA table_info(virtual_trades)').all().map((c) => c.name);
+    for (const [name, ddl] of [
+      ['origin', "ALTER TABLE virtual_trades ADD COLUMN origin TEXT NOT NULL DEFAULT 'engine'"],
+      ['operator', 'ALTER TABLE virtual_trades ADD COLUMN operator TEXT'],
+      ['note', 'ALTER TABLE virtual_trades ADD COLUMN note TEXT'],
+    ]) {
+      if (!cols.includes(name)) this.db.exec(ddl);
+    }
   }
 
   audit(category, action, detail = '', actor = 'engine') {
@@ -211,14 +231,15 @@ export class Store {
 
   upsertVirtualTrade(t) {
     this.db.prepare(`
-      INSERT INTO virtual_trades (id, region_id, signal_id, engine, timeframe, direction, state, entry, entry_raw, stop, target, lot, costs, conditions, reason, opened_at, opened_at_ms, trigger_bar_time, closed_at, closed_at_ms, exit, result, r_multiple, pnl_usd, exit_reason)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+      INSERT INTO virtual_trades (id, region_id, signal_id, engine, timeframe, direction, origin, operator, note, state, entry, entry_raw, stop, target, lot, costs, conditions, reason, opened_at, opened_at_ms, trigger_bar_time, closed_at, closed_at_ms, exit, result, r_multiple, pnl_usd, exit_reason)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
       ON CONFLICT(id) DO UPDATE SET
         state=excluded.state, closed_at=excluded.closed_at, closed_at_ms=excluded.closed_at_ms,
         exit=excluded.exit, result=excluded.result, r_multiple=excluded.r_multiple,
         pnl_usd=excluded.pnl_usd, exit_reason=excluded.exit_reason
     `).run(
-      t.id, t.regionId, t.signalId, t.engine, t.timeframe, t.direction, t.state,
+      t.id, t.regionId, t.signalId, t.engine, t.timeframe, t.direction,
+      t.origin || 'engine', t.operator || null, t.note || null, t.state,
       t.entry, t.entryRaw, t.stop, t.target, t.lot, JSON.stringify(t.costs || {}),
       JSON.stringify(t.conditions || []), t.reason || '', t.openedAt, t.openedAtMs,
       t.triggerBarTime || null,
@@ -226,18 +247,20 @@ export class Store {
     );
   }
 
-  getVirtualTrades({ timeframe, state, limit = 200 } = {}) {
+  getVirtualTrades({ timeframe, state, origin, limit = 200 } = {}) {
     let sql = 'SELECT * FROM virtual_trades';
     const where = [];
     const args = [];
     if (timeframe) { where.push('timeframe = ?'); args.push(timeframe); }
     if (state) { where.push('state = ?'); args.push(state); }
+    if (origin) { where.push('origin = ?'); args.push(origin); }
     if (where.length) sql += ' WHERE ' + where.join(' AND ');
     sql += ' ORDER BY opened_at_ms DESC LIMIT ?';
     args.push(limit);
     return this.db.prepare(sql).all(...args).map((r) => ({
       id: r.id, regionId: r.region_id, signalId: r.signal_id, engine: r.engine, timeframe: r.timeframe,
-      direction: r.direction, state: r.state, entry: r.entry, entryRaw: r.entry_raw, stop: r.stop,
+      direction: r.direction, origin: r.origin || 'engine', operator: r.operator, note: r.note,
+      state: r.state, entry: r.entry, entryRaw: r.entry_raw, stop: r.stop,
       target: r.target, lot: r.lot, costs: safeJson(r.costs, {}), conditions: safeJson(r.conditions, []),
       reason: r.reason, openedAt: r.opened_at, openedAtMs: r.opened_at_ms, triggerBarTime: r.trigger_bar_time, closedAt: r.closed_at,
       closedAtMs: r.closed_at_ms, exit: r.exit, result: r.result, rMultiple: r.r_multiple,

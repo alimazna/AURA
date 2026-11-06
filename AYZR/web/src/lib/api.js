@@ -46,4 +46,8 @@ export const api = {
   analyze: (prompt, timeframe) => post('/api/ai/analyze', { prompt, timeframe }),
   decide: (signalId, decision) => post('/api/signals/decision', { signalId, decision }),
   control: (action) => post('/api/control', { action }),
+
+  // Operator-drawn shadow trades. These create a virtual trade, never an order.
+  createManualTrade: (drawing) => post('/api/virtual-trades/manual', drawing),
+  closeManualTrade: (id, exit, reason) => post('/api/virtual-trades/close', { id, exit, reason }),
 };

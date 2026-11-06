@@ -107,6 +107,112 @@ export function virtualTradeFromRegion(region, { atr, spread, timeframe, nowMs, 
 }
 
 /**
+ * Build a virtual trade from a chart drawing the operator made.
+ *
+ * A manual trade is the same kind of object as an engine trade — same cost model, same
+ * lot sizing, same look-ahead guard — so it is evaluated by the identical loop and its
+ * result is directly comparable. Only two things differ, and both are recorded so the
+ * statistics can be separated later:
+ *
+ *   * origin is 'manual' rather than 'engine', and operator is the person who drew it;
+ *   * the levels come from the drawing instead of from a region.
+ *
+ * This still creates no real order. AYZR has no order path.
+ */
+export function manualTradeFromDrawing({
+  direction, entry, stop, target, timeframe, operator, nowMs, triggerBarTime, spread = 0, note = '',
+}) {
+  // Every stored trade needs a real creation time: it is what the look-ahead guard
+  // compares against, so a trade without one could never be evaluated.
+  if (!Number.isFinite(nowMs)) {
+    throw new Error('a manual trade requires a valid creation time');
+  }
+  const isLong = direction === 'LONG';
+  const slippage = COST_MODEL.slippagePerSide;
+
+  // Entry is taken at the drawn level, then charged the same entry costs an engine
+  // trade pays, so a manual trade is not flattered by a free fill.
+  const entryPx = round(isLong ? entry + spread / 2 + slippage : entry - spread / 2 - slippage);
+  const stopPx = round(stop);
+  const targetPx = round(target);
+  const stopDistance = Math.abs(entryPx - stopPx);
+  const lot = COST_MODEL.lotSize;
+  const commission = COST_MODEL.commissionPerLot * lot;
+
+  return {
+    id: stableId(['mtrade', operator, timeframe, entryPx, stopPx, targetPx, nowMs]),
+    regionId: null,
+    signalId: null,
+    engine: 'MANUAL',
+    origin: 'manual',
+    operator,
+    note,
+    timeframe,
+    direction,
+    state: 'OPEN',
+    entry: entryPx,
+    entryRaw: round(entry),
+    stop: stopPx,
+    target: targetPx,
+    lot,
+    riskReward: stopDistance > 0 ? round(Math.abs(targetPx - entryPx) / stopDistance, 2) : null,
+    costs: {
+      spreadAtEntry: round(spread, 3),
+      slippagePerSide: slippage,
+      commission,
+      modelled: true,
+    },
+    conditions: [],
+    reason: 'operator drawing',
+    openedAt: isoFromMs(nowMs),
+    openedAtMs: nowMs,
+    closedAt: null,
+    closedAtMs: null,
+    exit: null,
+    result: null,
+    rMultiple: null,
+    pnlUsd: null,
+    exitReason: null,
+    triggerBarTime: triggerBarTime || null,
+  };
+}
+
+/**
+ * Validate an operator's drawing before it becomes a trade. Returns a list of reasons
+ * the drawing is unusable; empty means valid. Kept here rather than in the API so the
+ * rules travel with the trade model.
+ */
+export function validateDrawing({ direction, entry, stop, target, quote, maxRiskPoints }) {
+  const errors = [];
+  const nums = { entry, stop, target };
+  for (const [k, v] of Object.entries(nums)) {
+    if (typeof v !== 'number' || !Number.isFinite(v) || v <= 0) errors.push(`${k} must be a positive number`);
+  }
+  if (errors.length) return errors;
+
+  if (direction !== 'LONG' && direction !== 'SHORT') errors.push('direction must be LONG or SHORT');
+  if (direction === 'LONG' && !(stop < entry)) errors.push('for a LONG trade the stop must be below the entry');
+  if (direction === 'SHORT' && !(stop > entry)) errors.push('for a SHORT trade the stop must be above the entry');
+  if (direction === 'LONG' && !(target > entry)) errors.push('for a LONG trade the target must be above the entry');
+  if (direction === 'SHORT' && !(target < entry)) errors.push('for a SHORT trade the target must be below the entry');
+
+  const risk = Math.abs(entry - stop);
+  if (risk > 0 && risk < 0.05) errors.push('stop is too close to the entry to be meaningful');
+  if (Number.isFinite(maxRiskPoints) && risk > maxRiskPoints) {
+    errors.push(`risk of ${round(risk, 2)} points exceeds the ${maxRiskPoints} point limit`);
+  }
+
+  // A drawing far away from the live price is almost always a mis-drag.
+  const mid = quote?.mid;
+  if (typeof mid === 'number' && mid > 0) {
+    const drift = Math.abs(entry - mid) / mid;
+    if (drift > 0.05) errors.push(`entry is ${round(drift * 100, 1)}% away from the live price`);
+  }
+
+  return errors;
+}
+
+/**
  * Select the closed bars a trade is allowed to be judged against.
  *
  * This is the look-ahead guard, and it lives in one place so it cannot drift: a trade
@@ -122,9 +228,18 @@ export function eligibleBarsFor(trade, closedBars) {
 /**
  * Advance an open virtual trade bar by bar. Stops are assumed to be hit before targets
  * when a single bar contains both, which is the conservative assumption.
+ *
+ * The look-ahead rule is re-checked here rather than trusted to the caller, so a bar
+ * that closed at or before the trade was created can never resolve it even if a future
+ * call site forgets to filter first.
  */
 export function evaluateVirtualTrade(trade, bar) {
   if (trade.state !== 'OPEN') return { closed: false };
+  const created = trade.triggerBarTime ? Date.parse(trade.triggerBarTime) : Date.parse(trade.openedAt);
+  const barTime = Date.parse(bar.openTime);
+  if (!Number.isFinite(created) || !Number.isFinite(barTime) || barTime <= created) {
+    return { closed: false, skipped: 'bar is not after the trade was created' };
+  }
   const isLong = trade.direction === 'LONG';
   const hitStop = isLong ? bar.low <= trade.stop : bar.high >= trade.stop;
   const hitTarget = isLong ? bar.high >= trade.target : bar.low <= trade.target;
@@ -200,6 +315,9 @@ export function statistics(trades) {
     byEngine: by('engine'),
     byTimeframe: by('timeframe'),
     bySession: by('session'),
+    // Manual and engine trades are measured separately. Blending them would let a
+    // discretionary trade hide or inflate an engine's record (brief §5).
+    byOrigin: by('origin'),
   };
 }
 

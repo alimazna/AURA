@@ -12,9 +12,9 @@ export function Panel({ title, hint, right, children, style }) {
   return (
     <section className="panel" style={style}>
       <div className="panel-head">
-        <span>{title}</span>
-        <span className="row" style={{ gap: 6 }}>
-          {hint && <span className="hint">{hint}</span>}
+        <span className="panel-title">{title}</span>
+        <span className="row" style={{ gap: 'var(--s2)' }}>
+          {hint && <span className="panel-hint">{hint}</span>}
           {right}
         </span>
       </div>
@@ -25,9 +25,20 @@ export function Panel({ title, hint, right, children, style }) {
 
 export function Field({ k, children, tone }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '7px 12px', borderBottom: '1px solid rgba(22,37,63,0.5)' }}>
-      <span className="label">{k}</span>
-      <span className="num" style={{ fontSize: 12, color: tone }}>{children}</span>
+    <div className="kv">
+      <span className="k">{k}</span>
+      <span className="v num" style={{ color: tone }}>{children}</span>
+    </div>
+  );
+}
+
+/* Labelled block: small caption above a value, used in the market header and
+ * the right-hand column. Keeps the caption/value pairing consistent everywhere. */
+export function Stat({ k, children, tone, align = 'start' }) {
+  return (
+    <div style={{ textAlign: align }}>
+      <div className="eyebrow">{k}</div>
+      <div className="num" style={{ fontSize: 'var(--t-lead)', color: tone, marginTop: 2 }}>{children}</div>
     </div>
   );
 }
@@ -52,50 +63,33 @@ export function MarketHeader({ snapshot }) {
   const up = (chg ?? 0) >= 0;
   const priceValue = q?.mid ?? null;
   return (
-    <div className="panel" style={{ padding: '12px 14px' }}>
-      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', gap: '18px 28px', justifyContent: 'space-between' }}>
-        <div className="row" style={{ gap: 18, flexWrap: 'wrap' }}>
+    <div className="panel" style={{ padding: 'var(--s4)' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', gap: 'var(--s4) var(--s5)', justifyContent: 'space-between' }}>
+        <div className="row" style={{ gap: 'var(--s5)', flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <div>
-            <div className="row" style={{ gap: 10, alignItems: 'baseline' }}>
-              <h1 style={{ margin: 0, fontSize: 22, letterSpacing: '0.04em' }} className="ltr">XAUUSD</h1>
-              <span className="small muted">{q?.description || 'الذهب مقابل الدولار الأمريكي'}</span>
+            <div className="row" style={{ gap: 'var(--s2)', alignItems: 'baseline' }}>
+              <span className="num" style={{ fontSize: 'var(--t-display)', fontWeight: 600 }}>{price(priceValue)}</span>
+              <span className={`num ${chg === null ? 'muted' : up ? 'up' : 'down'}`} style={{ fontSize: 'var(--t-lead)' }}>
+                {chg === null ? '—' : pct(chg)}
+              </span>
             </div>
-            <div className="label" style={{ marginTop: 4 }}>
-              تحليل الذهب · <span className="ltr">{snapshot.timeframe}</span> · {ROLE_AR[snapshot.analysis.role] || ''}
-            </div>
-          </div>
-
-          <div>
-            <div className="label">السعر الحالي</div>
-            <div className="num" style={{ fontSize: 24, fontWeight: 500 }}>{price(priceValue)}</div>
-          </div>
-
-          <div>
-            <div className="label">تغير اليوم</div>
-            <div className={`num ${up ? 'up' : 'down'}`} style={{ fontSize: 13 }}>
-              {chg === null ? '—' : pct(chg)}
+            <div className="small muted" style={{ marginTop: 4 }}>
+              <span className="ltr" style={{ fontWeight: 600 }}>XAUUSD</span>
+              {' · '}{q?.description || 'الذهب مقابل الدولار الأمريكي'}
+              {' · '}<span className="ltr">{snapshot.timeframe}</span>
             </div>
           </div>
 
-          <div>
-            <div className="label">حالة السوق</div>
-            <div className="small">{MARKET_STATE_AR[q?.marketState] || (q?.marketState ? <span className="ltr tiny">{q.marketState}</span> : 'غير معروف')}</div>
-          </div>
-
-          <div>
-            <div className="label">الفرق (سبريد)</div>
-            <div className="num small">{q ? price(q.spread, 3) : '—'}</div>
-          </div>
-
-          <div>
-            <div className="label">مصدر البيانات</div>
-            <div className="small ltr" style={{ color: 'var(--text-mid)' }}>{q?.source || 'غير متاح'}</div>
-          </div>
+          <Stat k="حالة السوق">
+            {MARKET_STATE_AR[q?.marketState] || (q?.marketState ? <span className="ltr">{q.marketState}</span> : 'غير معروف')}
+          </Stat>
+          <Stat k="الفرق (سبريد)">{q ? price(q.spread, 3) : '—'}</Stat>
+          <Stat k="مصدر البيانات"><span className="ltr" style={{ fontSize: 'var(--t-body)' }}>{q?.source || 'غير متاح'}</span></Stat>
         </div>
 
         <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
           <span className="chip gold">وضع الظل فقط</span>
-          <span className="chip">لا يوجد تداول حقيقي</span>
+          <span className="chip dim">لا يوجد تداول حقيقي</span>
           {q?.stale ? <span className="chip down">بيانات قديمة</span> : <span className="chip up">بيانات حديثة</span>}
         </div>
       </div>
@@ -107,7 +101,7 @@ export function MarketHeader({ snapshot }) {
 
 export function TimeframeRail({ timeframes, selected, onSelect, defaultTf }) {
   return (
-    <div className="row" style={{ gap: 0, border: '1px solid var(--border)', borderRadius: 3, overflow: 'hidden', flexWrap: 'wrap' }}>
+    <div className="row" style={{ gap: 0, border: '1px solid var(--line)', borderRadius: 'var(--radius)', overflow: 'hidden', flexWrap: 'wrap', width: 'fit-content' }}>
       {timeframes.map((tf) => {
         const active = tf.id === selected;
         const na = tf.status === 'NOT_AVAILABLE';
@@ -118,14 +112,14 @@ export function TimeframeRail({ timeframes, selected, onSelect, defaultTf }) {
             title={`${ROLE_AR[tf.role] || tf.role}${tf.derived ? ' · مجمّعة من اليومي' : ''}${na ? ' · غير متاح' : ''}`}
             className="num"
             style={{
-              padding: '6px 13px', fontSize: 12, borderLeft: '1px solid var(--border)',
-              background: active ? 'var(--blue)' : 'var(--surface-3)',
-              color: active ? '#fff' : na ? 'var(--text-faint)' : 'var(--text-mid)',
-              fontWeight: active ? 600 : 400, minWidth: 46,
+              padding: '7px 15px', fontSize: 'var(--t-body)', borderLeft: '1px solid var(--line)',
+              background: active ? 'var(--blue)' : 'transparent',
+              color: active ? '#fff' : na ? 'var(--fg-faint)' : 'var(--fg-mid)',
+              fontWeight: active ? 600 : 400, minWidth: 50,
             }}
           >
             {tf.label}
-            {tf.id === defaultTf && !active && <span style={{ display: 'block', fontSize: 7, color: 'var(--text-faint)' }}>DEFAULT</span>}
+            {tf.id === defaultTf && !active && <span className="ltr" style={{ display: 'block', fontSize: 'var(--t-micro)', color: 'var(--fg-faint)' }}>DEFAULT</span>}
           </button>
         );
       })}
@@ -143,7 +137,7 @@ export function SignalsPanel({ signals, operator, onDecide }) {
       {rows.length === 0 ? (
         <div className="empty">
           لا توجد إشارات حالياً
-          <div className="tiny" style={{ marginTop: 4 }}>تُنشر الإشارة عندما تصل منطقة إلى حالة مؤكدة.</div>
+          <div className="caption" style={{ marginTop: 4 }}>تُنشر الإشارة عندما تصل منطقة إلى حالة مؤكدة.</div>
         </div>
       ) : (
         <div style={{ overflowX: 'auto' }}>
@@ -161,7 +155,7 @@ export function SignalsPanel({ signals, operator, onDecide }) {
                   <td className="num" title="قيمة ترتيب داخلية غير معايرة — ليست احتمالاً">
                     <div className="row" style={{ gap: 7 }}>
                       <span>{num(s.score, 2)}</span>
-                      <span style={{ display: 'inline-block', width: 40, height: 3, background: 'var(--border)' }}>
+                      <span style={{ display: 'inline-block', width: 40, height: 3, background: 'var(--line)' }}>
                         <span style={{ display: 'block', height: '100%', width: `${Math.min(100, (s.score || 0) * 100)}%`, background: 'var(--gold)' }} />
                       </span>
                     </div>
@@ -179,7 +173,7 @@ export function SignalsPanel({ signals, operator, onDecide }) {
                         <button className="chip up" disabled={busy === s.id} onClick={async () => { setBusy(s.id); await onDecide(s.id, 'ACCEPTED'); setBusy(null); }}>قبول</button>
                         <button className="chip dim" disabled={busy === s.id} onClick={async () => { setBusy(s.id); await onDecide(s.id, 'IGNORED'); setBusy(null); }}>تجاهل</button>
                       </span>
-                    ) : <span className="faint tiny">يتطلب مشغلاً</span>}
+                    ) : <span className="caption faint">يتطلب مشغلاً</span>}
                   </td>
                 </tr>
               ))}
@@ -203,7 +197,7 @@ export function RiskPanel({ snapshot }) {
       <Field k="حالة المخاطر" tone={snapshot.data.lastError ? 'var(--warn)' : 'var(--up)'}>
         {snapshot.data.lastError ? 'تحذير' : 'منخفضة'}
       </Field>
-      <Field k="بوابة المخاطر" tone="var(--text-dim)">مغلقة · لا يوجد تنفيذ</Field>
+      <Field k="بوابة المخاطر" tone="var(--fg-dim)">مغلقة · لا يوجد تنفيذ</Field>
       <Field k="التعرض (صفقات افتراضية)">{money(exposure)}</Field>
       <Field k="الصفقات الافتراضية المفتوحة">{num(open.length)}</Field>
       <Field k="جودة البيانات">{quality}%</Field>
@@ -214,14 +208,18 @@ export function RiskPanel({ snapshot }) {
 
 /* -------------------------------------------------------- shadow positions */
 
+const POSITION_PAGE = 8;
+
 export function ShadowPositions({ trades }) {
+  const [expanded, setExpanded] = useState(false);
   const open = trades.filter((t) => t.state === 'OPEN');
+  const shown = expanded ? open : open.slice(0, POSITION_PAGE);
   return (
     <Panel title="الصفقات الافتراضية" hint="ظل فقط" right={<span className="chip gold">ظل</span>}>
       {open.length === 0 ? (
         <div className="empty">
           لا توجد صفقات افتراضية نشطة
-          <div className="tiny" style={{ marginTop: 4 }}>تُنشأ الصفقة تلقائياً عند تحقق شروط المحرك، بشكل مستقل عن قرار المشغل.</div>
+          <div className="caption" style={{ marginTop: 4 }}>تُنشأ الصفقة تلقائياً عند تحقق شروط المحرك، بشكل مستقل عن قرار المشغل.</div>
         </div>
       ) : (
         <div style={{ overflowX: 'auto' }}>
@@ -230,18 +228,27 @@ export function ShadowPositions({ trades }) {
               <tr><th>المحرك</th><th>الاتجاه</th><th>الدخول</th><th>الوقف</th><th>الهدف</th><th>التكلفة</th></tr>
             </thead>
             <tbody>
-              {open.map((t) => (
+              {shown.map((t) => (
                 <tr key={t.id}>
                   <td className="small">{ENGINE_AR[t.engine] || t.engine}</td>
                   <td><DirTag dir={t.direction} /></td>
                   <td className="num">{price(t.entry)}</td>
                   <td className="num down">{price(t.stop)}</td>
                   <td className="num up">{price(t.target)}</td>
-                  <td className="num tiny muted">{price(t.costs?.spreadAtEntry, 3)} + {price(t.costs?.slippagePerSide, 2)}</td>
+                  <td className="num caption muted">{price(t.costs?.spreadAtEntry, 3)} + {price(t.costs?.slippagePerSide, 2)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
+          {open.length > POSITION_PAGE && (
+            <button
+              onClick={() => setExpanded((v) => !v)}
+              className="caption"
+              style={{ width: '100%', padding: '10px 0', borderTop: '1px solid var(--line)', color: 'var(--fg-dim)' }}
+            >
+              {expanded ? 'عرض أقل' : `عرض ${open.length - POSITION_PAGE} صفقة أخرى`}
+            </button>
+          )}
         </div>
       )}
     </Panel>
@@ -254,24 +261,24 @@ export function PerformancePanel({ stats }) {
   const c = stats?.counts || {};
   return (
     <Panel title="أداء المحركات (قياس دقة)" hint="تكاليف محتسبة">
-      <div className="grid-3" style={{ gap: 0, borderBottom: '1px solid var(--border)' }}>
-        <div style={{ padding: '9px 12px', borderLeft: '1px solid var(--border)' }}>
-          <div className="label">نسبة الربح</div>
-          <div className="num" style={{ fontSize: 15 }}>{stats?.winRate === null ? '—' : `${(stats?.winRate * 100).toFixed(0)}%`}</div>
+      <div className="grid-3" style={{ gap: 0, borderBottom: '1px solid var(--line)' }}>
+        <div style={{ padding: '10px var(--s3)', borderLeft: '1px solid var(--line)' }}>
+          <div className="caption">نسبة الربح</div>
+          <div className="num" style={{ fontSize: 'var(--t-title)' }}>{stats?.winRate === null ? '—' : `${(stats?.winRate * 100).toFixed(0)}%`}</div>
         </div>
-        <div style={{ padding: '9px 12px', borderLeft: '1px solid var(--border)' }}>
-          <div className="label">التوقع (R)</div>
-          <div className={`num ${(stats?.expectancyR ?? 0) >= 0 ? 'up' : 'down'}`} style={{ fontSize: 15 }}>{stats?.expectancyR === null ? '—' : rMultiple(stats?.expectancyR)}</div>
+        <div style={{ padding: '10px var(--s3)', borderLeft: '1px solid var(--line)' }}>
+          <div className="caption">التوقع (R)</div>
+          <div className={`num ${(stats?.expectancyR ?? 0) >= 0 ? 'up' : 'down'}`} style={{ fontSize: 'var(--t-title)' }}>{stats?.expectancyR === null ? '—' : rMultiple(stats?.expectancyR)}</div>
         </div>
-        <div style={{ padding: '9px 12px' }}>
-          <div className="label">صافي النتيجة</div>
-          <div className={`num ${(stats?.netPnlUsd ?? 0) >= 0 ? 'up' : 'down'}`} style={{ fontSize: 15 }}>{money(stats?.netPnlUsd)}</div>
+        <div style={{ padding: '10px var(--s3)' }}>
+          <div className="caption">صافي النتيجة</div>
+          <div className={`num ${(stats?.netPnlUsd ?? 0) >= 0 ? 'up' : 'down'}`} style={{ fontSize: 'var(--t-title)' }}>{money(stats?.netPnlUsd)}</div>
         </div>
       </div>
       <div style={{ padding: '4px 12px 8px' }}>
-        <div className="label" style={{ margin: '8px 0 4px' }}>حسب المحرك</div>
+        <div className="caption" style={{ margin: '8px 0 4px' }}>حسب المحرك</div>
         {!stats?.byEngine || Object.keys(stats.byEngine).length === 0 ? (
-          <div className="tiny faint">لا توجد صفقات مغلقة بعد — لا يمكن حساب إحصاءات.</div>
+          <div className="caption faint">لا توجد صفقات مغلقة بعد — لا يمكن حساب إحصاءات.</div>
         ) : (
           <table>
             <thead><tr><th>المحرك</th><th>العدد</th><th>ربح</th><th>خسارة</th><th>النسبة</th><th>R</th></tr></thead>
@@ -289,7 +296,7 @@ export function PerformancePanel({ stats }) {
             </tbody>
           </table>
         )}
-        <div className="tiny faint" style={{ marginTop: 8 }}>
+        <div className="caption faint" style={{ marginTop: 8 }}>
           الإحصاءات محسوبة لكل محرك على حدة. النتائج غير مُعايرة ولا تمثل وعداً بأداء مستقبلي.
         </div>
       </div>
@@ -299,31 +306,44 @@ export function PerformancePanel({ stats }) {
 
 /* ---------------------------------------------------------------- regions */
 
+const REGION_PAGE = 12;
+
 export function RegionsPanel({ regions, onOpen }) {
+  const [expanded, setExpanded] = useState(false);
+  const shown = expanded ? regions : regions.slice(0, REGION_PAGE);
   return (
     <Panel title="المناطق الحية" hint={`${regions.length} منطقة`}>
       {regions.length === 0 ? (
         <div className="empty">لا توجد مناطق نشطة على هذا الإطار الزمني.</div>
       ) : (
-        <div style={{ overflowX: 'auto', maxHeight: 300, overflowY: 'auto' }}>
+        <div style={{ overflowX: 'auto' }}>
           <table>
             <thead>
               <tr><th>المحرك</th><th>النوع</th><th>النطاق</th><th>الاتجاه</th><th>الحالة</th><th>الدرجة</th><th>المصدر</th></tr>
             </thead>
             <tbody>
-              {regions.map((r) => (
+              {shown.map((r) => (
                 <tr key={r.id} onClick={() => onOpen?.(r.id)} style={{ cursor: onOpen ? 'pointer' : 'default' }}>
                   <td className="small">{ENGINE_AR[r.engine] || r.engine}</td>
                   <td className="small">{TYPE_AR[r.type] || r.type}</td>
-                  <td className="num tiny nowrap">{price(r.zone?.low)} – {price(r.zone?.high)}</td>
+                  <td className="num caption nowrap">{price(r.zone?.low)} – {price(r.zone?.high)}</td>
                   <td><DirTag dir={r.direction} /></td>
                   <td><StateTag state={r.state} /></td>
                   <td className="num">{num(r.score, 2)}</td>
-                  <td className="num tiny muted">{timeUTC(r.sourceTime)}</td>
+                  <td className="num caption muted">{timeUTC(r.sourceTime)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
+          {regions.length > REGION_PAGE && (
+            <button
+              onClick={() => setExpanded((v) => !v)}
+              className="caption"
+              style={{ width: '100%', padding: '10px 0', borderTop: '1px solid var(--line)', color: 'var(--fg-dim)' }}
+            >
+              {expanded ? 'عرض أقل' : `عرض ${regions.length - REGION_PAGE} منطقة أخرى`}
+            </button>
+          )}
         </div>
       )}
     </Panel>
@@ -355,7 +375,7 @@ export function TimeframeMatrix({ rows, selected, onSelect, compact = false }) {
               <tr key={r.id} className={r.id === selected ? 'active' : ''} onClick={() => onSelect(r.id)} style={{ cursor: 'pointer' }}>
                 <td className="num" style={{ fontWeight: 600 }}>
                   {r.label}
-                  {r.derived && <span className="tiny faint" style={{ marginRight: 4 }} title="مجمّعة من اليومي">*</span>}
+                  {r.derived && <span className="caption faint" style={{ marginRight: 4 }} title="مجمّعة من اليومي">*</span>}
                 </td>
                 {!compact && <td className="small muted">{ROLE_AR[r.role] || r.role}</td>}
                 <td>
@@ -364,12 +384,12 @@ export function TimeframeMatrix({ rows, selected, onSelect, compact = false }) {
                     : <span className="chip up">متاح</span>}
                 </td>
                 <td className="num">{num(r.closedBars)}</td>
-                <td className="num tiny">{age(r.freshnessSeconds)}</td>
+                <td className="num caption">{age(r.freshnessSeconds)}</td>
                 {!compact && <td className="small">{r.trend === 'UP' ? 'صاعد' : r.trend === 'DOWN' ? 'هابط' : r.trend === 'RANGE' ? 'عرضي' : 'غير معروف'}</td>}
-                <td className="num tiny">{r.atr === null ? '—' : price(r.atr)}</td>
+                <td className="num caption">{r.atr === null ? '—' : price(r.atr)}</td>
                 <td className="num">{num(r.activeRegions)}</td>
                 {!compact && (
-                  <td className="tiny">
+                  <td className="caption">
                     {r.derived ? <span className="chip dim" title="مجمّعة من شموع يومية من المصدر نفسه">مجمّعة</span> : <span className="ltr faint">{r.stream}</span>}
                   </td>
                 )}
@@ -379,7 +399,7 @@ export function TimeframeMatrix({ rows, selected, onSelect, compact = false }) {
         </table>
       </div>
       {compact && (
-        <div className="tiny faint" style={{ padding: '6px 12px' }}>
+        <div className="caption faint" style={{ padding: 'var(--s2) var(--s3)' }}>
           <span className="ltr">*</span> مجمّعة من شموع <span className="ltr">D1</span> من المصدر نفسه.
         </div>
       )}
@@ -420,22 +440,22 @@ export function PriceLadder({ snapshot, regions }) {
               style={{
                 padding: '3px 12px',
                 background: isMid ? 'rgba(4,86,230,0.22)' : z ? 'rgba(243,211,108,0.08)' : 'transparent',
-                borderRight: z ? '2px solid var(--gold-dim)' : '2px solid transparent',
+                borderRight: z ? '2px solid var(--gold-deep)' : '2px solid transparent',
               }}
             >
-              <span className="num" style={{ fontSize: 11.5, color: isMid ? 'var(--text)' : p > mid ? 'var(--up)' : 'var(--down)', fontWeight: isMid ? 600 : 400 }}>
+              <span className="num" style={{ fontSize: 'var(--t-body)', color: isMid ? 'var(--fg)' : p > mid ? 'var(--up)' : 'var(--down)', fontWeight: isMid ? 600 : 400 }}>
                 {price(p)}
               </span>
               {z ? (
-                <span className="tiny faint" style={{ maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <span className="caption faint" style={{ maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {ENGINE_AR[z.engine] || z.engine}
                 </span>
-              ) : isMid ? <span className="tiny gold">السعر</span> : null}
+              ) : isMid ? <span className="caption gold">السعر</span> : null}
             </div>
           );
         })}
       </div>
-      <div style={{ borderTop: '1px solid var(--border)' }}>
+      <div style={{ borderTop: '1px solid var(--line)' }}>
         <Field k="أقرب منطقة أعلى" tone="var(--up)">{nearestAbove ? `${price(nearestAbove.zone.low)} – ${price(nearestAbove.zone.high)}` : '—'}</Field>
         <Field k="أقرب منطقة أدنى" tone="var(--down)">{nearestBelow ? `${price(nearestBelow.zone.low)} – ${price(nearestBelow.zone.high)}` : '—'}</Field>
       </div>
@@ -462,13 +482,13 @@ export function BiQuotePanel({ snapshot, health }) {
       <Field k="الاتجاه">
         {q ? <span className={`chip ${q.direction === 'UP' ? 'up' : 'down'}`}>{q.direction === 'UP' ? 'صاعد' : q.direction === 'DOWN' ? 'هابط' : q.direction}</span> : '—'}
       </Field>
-      <Field k="عمر التسعيرة" tone="var(--text-mid)">{q ? age(q.quoteAgeSeconds) : '—'}</Field>
-      <Field k="المصدر" tone="var(--text-mid)">
-        <span className="ltr" style={{ fontSize: 10.5 }}>{q?.source || '—'}</span>
+      <Field k="عمر التسعيرة" tone="var(--fg-mid)">{q ? age(q.quoteAgeSeconds) : '—'}</Field>
+      <Field k="المصدر" tone="var(--fg-mid)">
+        <span className="ltr" style={{ fontSize: 'var(--t-small)' }}>{q?.source || '—'}</span>
       </Field>
-      <Field k="الوقت" tone="var(--text-mid)">{q ? timeUTC(q.timestamp, true) : '—'}</Field>
-      <Field k="النقل" tone="var(--text-mid)">
-        <span className="ltr" style={{ fontSize: 10.5 }}>{health?.stream?.transport || '—'}</span>
+      <Field k="الوقت" tone="var(--fg-mid)">{q ? timeUTC(q.timestamp, true) : '—'}</Field>
+      <Field k="النقل" tone="var(--fg-mid)">
+        <span className="ltr" style={{ fontSize: 'var(--t-small)' }}>{health?.stream?.transport || '—'}</span>
       </Field>
       <Field k="جودة التسعيرة" tone={q?.stale ? 'var(--warn)' : 'var(--up)'}>{q?.stale ? 'قديمة' : 'حديثة'}</Field>
     </Panel>
@@ -486,14 +506,14 @@ export function TelemetryPanel({ health, snapshot, timeframes }) {
         {health?.status === 'HEALTHY' ? 'سليم' : (health?.status || '—')}
       </Field>
       <Field k="دورات التحديث">{num(health?.ingestCycles)}</Field>
-      <Field k="آخر تحديث" tone="var(--text-mid)">{timeUTC(health?.lastIngest, true)}</Field>
+      <Field k="آخر تحديث" tone="var(--fg-mid)">{timeUTC(health?.lastIngest, true)}</Field>
       <Field k="تدفقات متاحة">{`${avail} / ${total}`}</Field>
       <Field k="شموع مغلقة (الإطار الحالي)">{num(snapshot?.data?.closedBars)}</Field>
-      <Field k="الإطار الافتراضي" tone="var(--text-mid)">M15</Field>
+      <Field k="الإطار الافتراضي" tone="var(--fg-mid)">M15</Field>
       <Field k="الوضع" tone="var(--gold)">ظل فقط</Field>
       <Field k="التنفيذ" tone="var(--down)">معطّل</Field>
-      <Field k="آخر خطأ" tone={health?.lastError ? 'var(--down)' : 'var(--text-faint)'}>
-        <span className="ltr" style={{ fontSize: 10 }}>{health?.lastError || 'لا يوجد'}</span>
+      <Field k="آخر خطأ" tone={health?.lastError ? 'var(--down)' : 'var(--fg-faint)'}>
+        <span className="ltr" style={{ fontSize: 'var(--t-small)' }}>{health?.lastError || 'لا يوجد'}</span>
       </Field>
     </Panel>
   );
@@ -509,16 +529,16 @@ export function AiPanel({ aiStatus, requests, operator, onSubmit, busy, lastResu
       hint="بطلب المشغل فقط"
       right={<span className={`chip ${aiStatus?.available ? 'up' : 'dim'}`}>{aiStatus?.available ? 'مهيّأ' : 'غير مهيّأ'}</span>}
     >
-      <div style={{ padding: '10px 12px' }}>
+      <div style={{ padding: 'var(--s3)' }}>
         {!aiStatus?.available && (
-          <div className="tiny" style={{ color: 'var(--warn)', marginBottom: 8, lineHeight: 1.7 }}>
+          <div className="caption" style={{ color: 'var(--warn)', marginBottom: 8, lineHeight: 1.7 }}>
             {aiStatus?.reason || 'لا يوجد مزود ذكاء اصطناعي مهيّأ.'}
             <br />
             لن يُنشئ النظام تحليلاً وهمياً: الطلب يُسجَّل وتكون النتيجة «غير متاح».
           </div>
         )}
         {!operator && (
-          <div className="tiny faint" style={{ marginBottom: 8 }}>
+          <div className="caption faint" style={{ marginBottom: 8 }}>
             إرسال أوامر التحليل متاح للمشغل فقط. الزوار يمكنهم المشاهدة دون تسجيل دخول.
           </div>
         )}
@@ -530,7 +550,7 @@ export function AiPanel({ aiStatus, requests, operator, onSubmit, busy, lastResu
           style={{ width: '100%', resize: 'vertical' }}
         />
         <div className="row-between" style={{ marginTop: 8 }}>
-          <span className="tiny faint">يُربط التحليل ببيانات فعلية من المحركات ويُحفظ مع نتيجته.</span>
+          <span className="caption faint">يُربط التحليل ببيانات فعلية من المحركات ويُحفظ مع نتيجته.</span>
           <button
             className="chip blue"
             disabled={busy || !operator || !prompt.trim()}
@@ -542,23 +562,23 @@ export function AiPanel({ aiStatus, requests, operator, onSubmit, busy, lastResu
         </div>
 
         {lastResult && (
-          <div className="panel" style={{ marginTop: 10, padding: '9px 11px' }}>
+          <div className="panel" style={{ marginTop: 'var(--s3)', padding: 'var(--s3)' }}>
             <div className="row-between">
-              <span className="label">نتيجة آخر طلب</span>
+              <span className="caption">نتيجة آخر طلب</span>
               <span className={`chip ${lastResult.verdict === 'ACCEPTED' ? 'up' : lastResult.verdict === 'NOT_AVAILABLE' ? 'dim' : 'down'}`}>{lastResult.verdict}</span>
             </div>
-            <div className="tiny muted" style={{ marginTop: 6, lineHeight: 1.7 }}>{lastResult.reason}</div>
+            <div className="caption muted" style={{ marginTop: 6, lineHeight: 1.7 }}>{lastResult.reason}</div>
             {lastResult.plan && <PlanView plan={lastResult.plan} />}
           </div>
         )}
 
         {requests?.length > 0 && (
           <>
-            <div className="label" style={{ margin: '12px 0 6px' }}>سجل الطلبات</div>
+            <div className="caption" style={{ margin: '12px 0 6px' }}>سجل الطلبات</div>
             <div style={{ maxHeight: 150, overflowY: 'auto' }}>
               {requests.slice(0, 8).map((r) => (
-                <div key={r.id} className="row-between" style={{ padding: '5px 0', borderBottom: '1px solid rgba(22,37,63,0.5)' }}>
-                  <span className="tiny" style={{ maxWidth: '60%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.prompt}</span>
+                <div key={r.id} className="row-between" style={{ padding: '5px 0', borderBottom: '1px solid var(--line-soft)' }}>
+                  <span className="caption" style={{ maxWidth: '60%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.prompt}</span>
                   <span className={`chip ${r.verdict === 'ACCEPTED' ? 'up' : 'dim'}`}>{r.verdict}</span>
                 </div>
               ))}
@@ -578,14 +598,14 @@ function PlanView({ plan }) {
         <span className="chip dim">{plan.timeHorizon}</span>
       </div>
       {(plan.scenarios || []).map((s, i) => (
-        <div key={i} style={{ borderRight: '2px solid var(--gold-dim)', paddingRight: 8, marginBottom: 7 }}>
+        <div key={i} style={{ borderRight: '2px solid var(--gold-deep)', paddingRight: 8, marginBottom: 7 }}>
           <div className="small" style={{ fontWeight: 600 }}>{s.name}</div>
-          <div className="tiny muted">الشرط: {s.condition}</div>
-          <div className="tiny muted">التوقع: {s.expectation}</div>
+          <div className="caption muted">الشرط: {s.condition}</div>
+          <div className="caption muted">التوقع: {s.expectation}</div>
         </div>
       ))}
       {(plan.invalidationConditions || []).length > 0 && (
-        <div className="tiny" style={{ color: 'var(--down)', marginTop: 4 }}>
+        <div className="caption" style={{ color: 'var(--down)', marginTop: 4 }}>
           الإبطال: {plan.invalidationConditions.join(' · ')}
         </div>
       )}
@@ -600,28 +620,28 @@ export function EnginesPanel({ engines, costModel }) {
     <Panel title="توثيق المحركات" hint="شرط الإكمال: مدخلات ومخرجات وعدم اليقين">
       <div style={{ padding: '4px 12px 10px' }}>
         {(engines || []).map((e) => (
-          <div key={e.id} style={{ borderBottom: '1px solid rgba(22,37,63,0.5)', padding: '9px 0' }}>
+          <div key={e.id} style={{ borderBottom: '1px solid var(--line-soft)', padding: '10px 0' }}>
             <div className="row-between">
               <span style={{ fontWeight: 600 }}>{ENGINE_AR[e.id] || e.id}</span>
               <span className="chip dim ltr">{e.id}</span>
             </div>
-            <div className="tiny muted" style={{ marginTop: 4, lineHeight: 1.7 }}>{e.covers}</div>
-            <div className="tiny" style={{ marginTop: 4 }}>
+            <div className="caption muted" style={{ marginTop: 4, lineHeight: 1.7 }}>{e.covers}</div>
+            <div className="caption" style={{ marginTop: 4 }}>
               <span className="faint">المدخلات: </span><span className="ltr muted">{e.inputs.join(', ')}</span>
             </div>
-            <div className="tiny">
+            <div className="caption">
               <span className="faint">المخرجات: </span><span className="ltr muted">{e.outputs.join(', ')}</span>
             </div>
-            <div className="tiny" style={{ color: 'var(--warn)' }}>
+            <div className="caption" style={{ color: 'var(--warn)' }}>
               <span className="faint">عدم اليقين: </span>{e.uncertainty.join(' · ')}
             </div>
-            <div className="tiny faint">
+            <div className="caption faint">
               لا يُصدر عندما: {e.noEmit.join(' · ')}
             </div>
           </div>
         ))}
         {costModel && (
-          <div className="tiny faint" style={{ marginTop: 8 }}>
+          <div className="caption faint" style={{ marginTop: 8 }}>
             نموذج التكاليف: سبريد عند الدخول + انزلاق <span className="ltr">{costModel.slippagePerSide}</span> لكل جهة
             {costModel.commissionPerLot ? ` + عمولة ${costModel.commissionPerLot} لكل لوت` : ''} · نسبة المخاطرة/المكافأة <span className="ltr">{costModel.riskReward}:1</span>
           </div>
@@ -644,25 +664,25 @@ export function ControlPanel({ operator, onControl, paused, status }) {
   ];
   return (
     <Panel title="أدوات التشغيل الآمنة" hint="لا توجد أوامر تداول">
-      <div className="grid-3" style={{ gap: 1, background: 'var(--border)' }}>
+      <div className="grid-3" style={{ gap: 1, background: 'var(--line)' }}>
         {actions.map((x) => (
           <button
             key={x.a}
             disabled={!operator}
             onClick={() => onControl(x.a)}
             style={{
-              background: 'var(--surface)', padding: '9px 6px', fontSize: 11.5,
-              color: x.a === 'STOP' ? 'var(--down)' : 'var(--text-mid)',
+              background: 'var(--surface)', padding: '10px 6px', fontSize: 'var(--t-body)',
+              color: x.a === 'STOP' ? 'var(--down)' : 'var(--fg-mid)',
             }}
             title={operator ? x.a : 'يتطلب وضع المشغل'}
           >
             {x.ar}
-            <div className="tiny faint ltr" style={{ marginTop: 2 }}>{x.a}</div>
+            <div className="caption faint ltr" style={{ marginTop: 2 }}>{x.a}</div>
           </button>
         ))}
       </div>
-      <div style={{ padding: '8px 12px' }}>
-        <div className="tiny faint" style={{ lineHeight: 1.7 }}>
+      <div style={{ padding: 'var(--s2) var(--s3)' }}>
+        <div className="caption faint" style={{ lineHeight: 1.7 }}>
           هذه الأدوات لا تُنفّذ أي أمر وسيط. «إيقاف» يُغلق التطبيق بشكل نظيف بعد حفظ الحالة.
           {' '}
           {paused ? <span className="chip warn">متوقف مؤقتاً</span> : <span className="chip up">نشط</span>}
@@ -687,11 +707,11 @@ export function AuditPanel({ entries }) {
             <tbody>
               {entries.map((e) => (
                 <tr key={e.id}>
-                  <td className="num tiny nowrap">{timeUTC(e.at, true)}</td>
-                  <td className="tiny">{e.category}</td>
-                  <td className="tiny ltr">{e.action}</td>
-                  <td className="tiny muted">{e.actor}</td>
-                  <td className="tiny faint ltr" style={{ maxWidth: 320, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.detail}</td>
+                  <td className="num caption nowrap">{timeUTC(e.at, true)}</td>
+                  <td className="caption">{e.category}</td>
+                  <td className="caption ltr">{e.action}</td>
+                  <td className="caption muted">{e.actor}</td>
+                  <td className="caption faint ltr" style={{ maxWidth: 320, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.detail}</td>
                 </tr>
               ))}
             </tbody>
@@ -707,9 +727,9 @@ export function AuditPanel({ entries }) {
 export function SectionScaffold({ title, intro, fields, timeline, controls }) {
   return (
     <div className="stack">
-      <div className="panel" style={{ padding: '11px 14px' }}>
+      <div className="panel" style={{ padding: 'var(--s3)' }}>
         <div className="row-between">
-          <h2 style={{ margin: 0, fontSize: 16 }}>{title}</h2>
+          <h2 style={{ margin: 0, fontSize: 'var(--t-lead)' }}>{title}</h2>
           <span className="chip gold">وضع الظل فقط</span>
         </div>
         <div className="small muted" style={{ marginTop: 6, lineHeight: 1.8 }}>{intro}</div>
@@ -726,10 +746,10 @@ export function SectionScaffold({ title, intro, fields, timeline, controls }) {
           ) : (
             <div style={{ padding: '4px 12px 8px' }}>
               {timeline.map((t, i) => (
-                <div key={i} className="row-between" style={{ padding: '7px 0', borderBottom: '1px solid rgba(22,37,63,0.5)' }}>
-                  <span className="num tiny muted nowrap">{t.t}</span>
+                <div key={i} className="row-between" style={{ padding: '7px 0', borderBottom: '1px solid var(--line-soft)' }}>
+                  <span className="num caption muted nowrap">{t.t}</span>
                   <span className="small" style={{ flex: 1, padding: '0 10px' }}>{t.title}</span>
-                  <span className="tiny" style={{ color: t.tone }}>{t.state}</span>
+                  <span className="caption" style={{ color: t.tone }}>{t.state}</span>
                 </div>
               ))}
             </div>

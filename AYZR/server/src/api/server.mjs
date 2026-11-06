@@ -157,6 +157,41 @@ async function handleApi({ req, res, url, runtime, store, operatorToken, paused 
       return json(200, runtime.setOperatorDecision(body.signalId, body.decision));
     }
 
+    if (url.pathname === '/api/virtual-trades/manual' && req.method === 'POST') {
+      const auth = operatorOk();
+      if (!auth.ok) return json(403, { error: auth.reason });
+      const body = await readJson(req);
+      if (!body) return json(400, { error: 'a JSON body is required' });
+
+      const asNum = (v) => (typeof v === 'number' ? v : Number(v));
+      const result = runtime.createManualTrade({
+        direction: body.direction,
+        entry: asNum(body.entry),
+        stop: asNum(body.stop),
+        target: asNum(body.target),
+        timeframe: body.timeframe,
+        operator: (body.operator || 'operator').toString().slice(0, 60),
+        note: (body.note || '').toString().slice(0, 280),
+      });
+      if (!result.ok) return json(400, { error: result.errors.join('; '), errors: result.errors });
+      return json(201, { ok: true, trade: result.trade });
+    }
+
+    if (url.pathname === '/api/virtual-trades/close' && req.method === 'POST') {
+      const auth = operatorOk();
+      if (!auth.ok) return json(403, { error: auth.reason });
+      const body = await readJson(req);
+      if (!body?.id) return json(400, { error: '"id" is required' });
+      const result = runtime.closeManualTrade({
+        id: body.id,
+        exit: typeof body.exit === 'number' ? body.exit : Number(body.exit),
+        reason: (body.reason || '').toString().slice(0, 200),
+        operator: (body.operator || 'operator').toString().slice(0, 60),
+      });
+      if (!result.ok) return json(400, { error: result.errors.join('; '), errors: result.errors });
+      return json(200, { ok: true, trade: result.trade });
+    }
+
     if (url.pathname === '/api/control' && req.method === 'POST') {
       const auth = operatorOk();
       if (!auth.ok) return json(403, { error: auth.reason });

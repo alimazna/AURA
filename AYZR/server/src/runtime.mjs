@@ -8,7 +8,7 @@ import { SYMBOL, TIMEFRAMES, TIMEFRAME_BY_ID, DEFAULT_TIMEFRAME, RUNTIME } from 
 import * as bq from './biquote/client.mjs';
 import { runAllEngines } from './engines/index.mjs';
 import { advanceRegion, expireStale, regionKey, TERMINAL_STATES } from './engines/regions.mjs';
-import { signalFromRegion, virtualTradeFromRegion, evaluateVirtualTrade, closeVirtualTrade, statistics, isActionable, eligibleBarsFor } from './engines/trades.mjs';
+import { signalFromRegion, virtualTradeFromRegion, evaluateVirtualTrade, closeVirtualTrade, statistics, isActionable, eligibleBarsFor, manualTradeFromDrawing, validateDrawing } from './engines/trades.mjs';
 import { isoNow, round, stableId } from './engines/primitives.mjs';
 import { requestPlan, buildContext, providerStatus, newRequestId } from './ai/planner.mjs';
 
@@ -269,6 +269,75 @@ export class Runtime {
     this.store.setSignalDecision(signalId, decision);
     this.store.audit('signal', 'OPERATOR_DECISION', { signalId, decision }, 'operator');
     return { ok: true };
+  }
+
+  /**
+   * Create a shadow trade from a drawing the operator made on the chart.
+   *
+   * The result is a virtual trade like any other, so `evaluateOpenTrades` judges it by
+   * the same rules and it appears in the same statistics (separated by origin). This
+   * still creates no order: there is no broker path in AYZR.
+   */
+  createManualTrade({ direction, entry, stop, target, timeframe, operator, note }) {
+    const tfId = TIMEFRAME_BY_ID.has(timeframe) ? timeframe : DEFAULT_TIMEFRAME;
+    const nowMs = Date.now();
+
+    const errors = validateDrawing({
+      direction, entry, stop, target,
+      quote: this.quote,
+      maxRiskPoints: RUNTIME.manualMaxRiskPoints,
+    });
+    if (errors.length) return { ok: false, errors };
+
+    const bars = this.bars.get(tfId) || [];
+    const closed = bars.filter((b) => !b.isOpen);
+    const trade = manualTradeFromDrawing({
+      direction, entry, stop, target,
+      timeframe: tfId,
+      operator,
+      note,
+      nowMs,
+      spread: this.quote?.spread ?? 0,
+      // Judged only against bars closing after the last one the operator could see,
+      // which is the same look-ahead guard the engine trades use.
+      triggerBarTime: closed[closed.length - 1]?.openTime || null,
+    });
+
+    this.store.upsertVirtualTrade(trade);
+    this.store.audit('virtual_trade', 'MANUAL_OPENED', {
+      id: trade.id, operator, direction, entry: trade.entry, stop: trade.stop,
+      target: trade.target, riskReward: trade.riskReward, timeframe: tfId, note: note || '',
+    }, 'operator');
+
+    return { ok: true, trade };
+  }
+
+  /** Close a shadow trade early at the operator's request. Shadow only, never a venue call. */
+  closeManualTrade({ id, exit, reason, operator }) {
+    const trade = this.store.getVirtualTrades({ limit: 5000 }).find((t) => t.id === id);
+    if (!trade) return { ok: false, errors: ['no such virtual trade'] };
+    if (trade.state !== 'OPEN') return { ok: false, errors: ['trade is already closed'] };
+    if (trade.origin !== 'manual') {
+      return { ok: false, errors: ['only manual trades can be closed by hand; engine trades close on their own rules'] };
+    }
+    if (typeof exit !== 'number' || !Number.isFinite(exit) || exit <= 0) {
+      return { ok: false, errors: ['exit must be a positive number'] };
+    }
+
+    const isLong = trade.direction === 'LONG';
+    const grossPoints = isLong ? exit - trade.entry : trade.entry - exit;
+    const result = grossPoints > 0 ? 'WIN' : grossPoints < 0 ? 'LOSS' : 'BREAKEVEN';
+    const finalised = closeVirtualTrade(trade, {
+      exit, result,
+      exitReason: reason || 'closed by operator',
+      atMs: Date.now(),
+    });
+
+    this.store.upsertVirtualTrade(finalised);
+    this.store.audit('virtual_trade', 'MANUAL_CLOSED', {
+      id, operator, exit, result, pnlUsd: finalised.pnlUsd, rMultiple: finalised.rMultiple,
+    }, 'operator');
+    return { ok: true, trade: finalised };
   }
 
   /** AI entry point. Operator-only; called from the API, never from a timer. */

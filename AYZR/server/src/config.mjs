@@ -39,6 +39,10 @@ export const RUNTIME = {
   // timeframe still has usable history: ~2 years of days gives 24 monthly bars.
   derivedSourceBars: Number(process.env.AYZR_DERIVED_SOURCE_BARS || 730),
   dbPath: process.env.AYZR_DB || 'data/ayzr.sqlite',
+  // Manual drawings are shadow trades like any other, but a mis-drag should not create
+  // a nonsense risk profile: reject a drawing whose stop is further than this many
+  // points (USD per ounce) from the entry.
+  manualMaxRiskPoints: Number(process.env.AYZR_MANUAL_MAX_RISK || 60),
   // AI is never called by a timer. It requires an explicit operator request.
   ai: {
     provider: process.env.AYZR_AI_PROVIDER || 'none',
