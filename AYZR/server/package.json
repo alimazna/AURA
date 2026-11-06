@@ -1,0 +1,13 @@
+{
+  "name": "ayzr-server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "AYZR — XAUUSD gold intelligence platform. Independent engines, shadow-only virtual trades, AI on operator request only.",
+  "engines": { "node": ">=22.5.0" },
+  "scripts": {
+    "start": "node src/index.mjs",
+    "test": "node --test",
+    "discover": "node src/biquote/discover.mjs"
+  }
+}

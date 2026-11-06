@@ -1,0 +1,161 @@
+/* AYZR design tokens.
+ *
+ * Colours are sampled directly from the supplied reference dashboard
+ * (aa/AYZR_Reference_Dashboard.png) rather than invented. Sampling evidence:
+ *
+ *   page background      #04132d      sidebar background   #030d1e
+ *   panel surface        #081428      right column bg      #061124
+ *   timeframe rail       #071429      chart background     #081120
+ *   primary accent       #0456e6      primary block        #034dda
+ *   highlight / identity #f3d36c      positive (up)        #1bd1a2
+ *   negative (down)      #ba2939
+ *
+ * Blue is the primary interactive accent in the reference; gold is the identity and
+ * highlight accent. Both are used here in the same roles.
+ */
+
+:root {
+  --page: #04132d;          /* page background */
+  --page-deep: #020d20;     /* darkest navy, chart gutters */
+  --surface: #081428;       /* panel surface */
+  --surface-2: #061124;     /* raised surface / right column */
+  --surface-3: #071429;     /* timeframe rail, table headers */
+  --chart: #081120;         /* chart plot background */
+  --sidebar: #030d1e;       /* sidebar background */
+  --sidebar-active: #0a2450;
+  --border: #12233d;
+  --border-strong: #1b3355;
+  --text: #e8eef7;
+  --text-mid: #a8bdd6;
+  --text-dim: #6f8aa8;
+  --text-faint: #486078;
+
+  --gold: #f3d36c;          /* identity + highlight accent */
+  --gold-dim: #8a6a2c;
+  --blue: #0456e6;          /* primary interactive accent */
+  --blue-dim: #0a3fb0;
+  --blue-bright: #4d8dff;
+  --up: #1bd1a2;            /* positive / bullish */
+  --down: #d93b4b;          /* negative / bearish */
+  --warn: #f3d36c;
+  --neutral: #7d93ad;
+
+  --radius: 3px;
+  --gap: 10px;
+  --mono: "JetBrains Mono", ui-monospace, monospace;
+  --sans: "IBM Plex Sans Arabic", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; border-color: var(--border); }
+
+html, body, #root { height: 100%; margin: 0; }
+
+body {
+  background: var(--page-deep);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 13px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Numerals stay Latin and tabular even inside RTL Arabic text. */
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; direction: ltr; unicode-bidi: isolate; }
+
+.label {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--text-faint);
+  font-weight: 500;
+}
+
+/* Latin technical terms inside Arabic layout must not be reordered. */
+.ltr { direction: ltr; unicode-bidi: isolate; display: inline-block; }
+
+::-webkit-scrollbar { width: 9px; height: 9px; }
+::-webkit-scrollbar-track { background: var(--page-deep); }
+::-webkit-scrollbar-thumb { background: #16304f; border-radius: 0; }
+::-webkit-scrollbar-thumb:hover { background: #1f4270; }
+
+button { font-family: inherit; color: inherit; background: none; border: none; cursor: pointer; }
+button:disabled { cursor: not-allowed; opacity: 0.55; }
+
+input, textarea, select {
+  font-family: inherit;
+  color: var(--text);
+  background: var(--page-deep);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 7px 9px;
+  font-size: 12.5px;
+}
+input:focus, textarea:focus, select:focus { outline: none; border-color: var(--blue-dim); }
+input::placeholder, textarea::placeholder { color: var(--text-faint); }
+
+.panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+
+.panel-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 8px 12px; border-bottom: 1px solid var(--border);
+  font-size: 11px; font-weight: 600; color: var(--text-mid);
+}
+.panel-head .hint { font-size: 9.5px; color: var(--text-faint); font-weight: 400; }
+
+.chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 2px 7px; border: 1px solid var(--border-strong); border-radius: 2px;
+  font-size: 9.5px; letter-spacing: 0.04em; color: var(--text-mid); white-space: nowrap;
+}
+.chip.gold { border-color: var(--gold-dim); color: var(--gold); }
+.chip.blue { border-color: var(--blue-dim); color: var(--blue-bright); }
+.chip.up { border-color: #12705c; color: var(--up); }
+.chip.down { border-color: #7d2531; color: var(--down); }
+.chip.dim { color: var(--text-faint); }
+
+.dot { width: 6px; height: 6px; border-radius: 50%; flex: 0 0 auto; }
+.dot.up { background: var(--up); }
+.dot.down { background: var(--down); }
+.dot.warn { background: var(--warn); }
+.dot.dim { background: var(--text-faint); }
+
+table { width: 100%; border-collapse: collapse; }
+th {
+  text-align: right; font-weight: 500; font-size: 10px; color: var(--text-faint);
+  padding: 7px 10px; background: var(--surface-3); border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+td { padding: 7px 10px; border-bottom: 1px solid rgba(18, 35, 61, 0.6); font-size: 12px; }
+tbody tr:hover { background: rgba(7, 20, 41, 0.75); }
+tbody tr.active { background: rgba(4, 86, 230, 0.16); }
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--gap); }
+.grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--gap); }
+.grid-4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--gap); }
+
+.stack { display: flex; flex-direction: column; gap: var(--gap); }
+.row { display: flex; align-items: center; gap: 8px; }
+.row-between { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.wrap { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.muted { color: var(--text-dim); }
+.faint { color: var(--text-faint); }
+.small { font-size: 11px; }
+.tiny { font-size: 10px; }
+.up { color: var(--up); }
+.down { color: var(--down); }
+.gold { color: var(--gold); }
+.center { text-align: center; }
+.nowrap { white-space: nowrap; }
+
+.empty {
+  padding: 22px 14px; text-align: center; color: var(--text-faint); font-size: 11.5px; line-height: 1.7;
+}
+
+@keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: 0.35 } }
+.live { animation: pulse 1.8s ease-in-out infinite; }
+
+@media (max-width: 1180px) {
+  .grid-3, .grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 760px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: minmax(0, 1fr); }
+}
