@@ -1,2 +1,5 @@
 __pycache__/
 *.pyc
+paper/state.json
+paper/watch.pid
+paper/loop.out
