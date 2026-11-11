@@ -82,6 +82,26 @@ def append(rec: dict) -> None:
         f.write(json.dumps(rec, ensure_ascii=False) + "\n")
 
 
+# --- The live journal is only ever written by a live run.
+#
+# A replay must not touch it. The first version of this file wrote to the same
+# journal from every code path, so a verification replay (backfilling 131 bars
+# of history) appended four trades that never happened live — each stamped
+# "at 19:25" but carrying an entry time ten hours earlier. They then showed up
+# in the report as real results. That is exactly the kind of fabricated record
+# this section exists to prevent, so the sink is now explicit and a replay
+# must pass its own.
+_LIVE_SINK: list = []
+
+
+def emit(rec: dict, sink: list | None = None) -> None:
+    """Write a record to `sink` if given, otherwise to the live journal."""
+    if sink is None:
+        append(rec)
+    else:
+        sink.append(rec)
+
+
 # ------------------------------------------------------------------ the rule
 def read_context(bars):
     """Everything the entry rule needs, computed from bars up to the last one."""
@@ -141,7 +161,7 @@ def levels(direction: str, entry: float, atr_v: float) -> dict:
 
 
 # --------------------------------------------------------------- resolution
-def judge(bars, pos, from_index):
+def judge(bars, pos, from_index, sink=None):
     """Walk bars after entry. Returns an update dict or None.
 
     Pessimistic: a bar touching stop and target together is a loss.
@@ -162,8 +182,8 @@ def judge(bars, pos, from_index):
             return {"event": "tp2", "bar": b["openTime"], "price": pos["tp2"]}
         if hit_tp1 and not pos.get("tp1_hit"):
             pos["tp1_hit"] = True
-            append({"kind": "tp1_hit", "id": pos["id"], "bar": b["openTime"],
-                    "price": pos["tp1"], "at": now()})
+            emit({"kind": "tp1_hit", "id": pos["id"], "bar": b["openTime"],
+                  "price": pos["tp1"], "at": now()}, sink)
     return None
 
 
@@ -182,7 +202,7 @@ def close_position(pos, ev):
 
 
 # --------------------------------------------------------------------- cycle
-def process_range(bars, start_index, state):
+def process_range(bars, start_index, state, sink=None):
     """Advance the state machine over bars[start_index:], one bar at a time.
 
     This is the gap-safe core. The earlier version looked only at the latest
@@ -191,6 +211,10 @@ def process_range(bars, start_index, state):
     order, so a 12-hour run survives the sandbox pausing and resuming: the
     checkpoint is a bar timestamp, not a promise that the process stayed alive.
 
+    `sink` routes records away from the live journal. A replay of history must
+    pass one; without it, a verification run writes trades into the journal that
+    never happened live.
+
     Returns a list of human-readable events.
     """
     events: list[str] = []
@@ -198,10 +222,10 @@ def process_range(bars, start_index, state):
         bar = bars[i]
         if state.get("position"):
             pos = state["position"]
-            ev = judge([bar], pos, 0)          # this single bar only
+            ev = judge([bar], pos, 0, sink)    # this single bar only
             if ev:
                 close_position(pos, ev)
-                append({"kind": "close", "at": now(), **pos})
+                emit({"kind": "close", "at": now(), **pos}, sink)
                 events.append(f"أُغلقت #{pos['id']}: {pos['outcome']} "
                               f"({pos['result']:+.2f}$)")
                 state["position"] = None
@@ -224,7 +248,7 @@ def process_range(bars, start_index, state):
                 }
                 state["position"] = pos
                 state["next_id"] = pos["id"] + 1
-                append({"kind": "open", "at": now(), **pos})
+                emit({"kind": "open", "at": now(), **pos}, sink)
                 events.append(f"فتحت #{pos['id']} {direction} @ {lv['entry']} "
                               f"وقف {lv['stop']} هدف2 {lv['tp2']}")
         state["last_bar"] = bar["openTime"]
@@ -257,6 +281,35 @@ def once() -> str:
 
 
 # -------------------------------------------------------------------- report
+def replay(bars_back: int = 0) -> str:
+    """Backfill a checkpoint over history into a throwaway sink.
+
+    This exists so the entry rule can be exercised on bars that already closed,
+    which is the only way to prove the loop takes trades during a quiet market.
+    It writes **nowhere near the live journal** — the records go to an in-memory
+    list and are printed. The first version of this ran as an ad-hoc script that
+    called the same functions, which silently appended four historical trades to
+    the live journal; the report then presented them as live results.
+    """
+    bars = fetch(TIMEFRAME)
+    if len(bars) < 80:
+        return "بيانات غير كافية"
+    start = max(61, len(bars) - bars_back) if bars_back else 61
+    state = {"last_bar": bars[start - 1]["openTime"], "position": None}
+    sink: list = []
+    events = process_range(bars, start, state, sink)
+    lines = [f"إعادة تشغيل على {len(bars) - start} شمعة — {len(events)} حدث:"]
+    lines += [f"  • {e}" for e in events]
+    closes = [r for r in sink if r["kind"] == "close"]
+    if closes:
+        wins = sum(1 for c in closes if c["result"] > 0)
+        net = sum(c["result"] for c in closes)
+        lines.append(f"  مغلقة: {len(closes)} | رابحة: {wins} | "
+                     f"صافي: {net:+.2f}$")
+    lines.append("  (هذه إعادة تشغيل — لم تُكتب في الدفتر الحي)")
+    return "\n".join(lines)
+
+
 def report() -> str:
     if not JOURNAL.exists():
         return "لا سجل بعد."
@@ -310,11 +363,17 @@ def main() -> None:
     ap = argparse.ArgumentParser(description="صفقات ظل حقيقية + تقرير")
     ap.add_argument("--once", action="store_true")
     ap.add_argument("--report", action="store_true")
+    ap.add_argument("--replay", type=int, nargs="?", const=0, default=None,
+                    metavar="N",
+                    help="أعد تشغيل على آخر N شمعة (لا يكتب في الدفتر الحي)")
     ap.add_argument("--loop", action="store_true")
     ap.add_argument("--hours", type=float, default=12.0)
     ap.add_argument("--interval", type=int, default=300)
     args = ap.parse_args()
 
+    if args.replay is not None:
+        print(replay(args.replay))
+        return
     if args.report:
         print(report())
         return
