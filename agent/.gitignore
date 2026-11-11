@@ -3,3 +3,4 @@ __pycache__/
 paper/state.json
 paper/watch.pid
 paper/loop.out
+paper/watch.log

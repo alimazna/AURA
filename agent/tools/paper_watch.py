@@ -182,6 +182,55 @@ def close_position(pos, ev):
 
 
 # --------------------------------------------------------------------- cycle
+def process_range(bars, start_index, state):
+    """Advance the state machine over bars[start_index:], one bar at a time.
+
+    This is the gap-safe core. The earlier version looked only at the latest
+    bar, so any bar that closed while the sandbox was paused was skipped and an
+    entry on it was lost. Here every bar after the checkpoint is evaluated in
+    order, so a 12-hour run survives the sandbox pausing and resuming: the
+    checkpoint is a bar timestamp, not a promise that the process stayed alive.
+
+    Returns a list of human-readable events.
+    """
+    events: list[str] = []
+    for i in range(start_index, len(bars)):
+        bar = bars[i]
+        if state.get("position"):
+            pos = state["position"]
+            ev = judge([bar], pos, 0)          # this single bar only
+            if ev:
+                close_position(pos, ev)
+                append({"kind": "close", "at": now(), **pos})
+                events.append(f"أُغلقت #{pos['id']}: {pos['outcome']} "
+                              f"({pos['result']:+.2f}$)")
+                state["position"] = None
+        if state.get("position") is None:
+            ctx = read_context(bars[:i + 1])
+            direction, reason = entry_signal(ctx)
+            if direction is not None:
+                lv = levels(direction, ctx["price"], ctx["atr"])
+                pos = {
+                    "id": state.get("next_id", 1),
+                    "direction": direction, "timeframe": TIMEFRAME,
+                    "entry_time": bar["openTime"], "opened_at": now(),
+                    "atr": round(ctx["atr"], 3), "rsi": round(ctx["rsi"], 1),
+                    "adx": round(ctx["adx"], 1) if ctx["adx"] else None,
+                    "reason": reason,
+                    "invalidation": (f"إغلاق "
+                                     f"{'تحت' if direction == 'BUY' else 'فوق'} "
+                                     f"{lv['stop']:.2f} يُبطل"),
+                    "status": "open", "tp1_hit": False, **lv,
+                }
+                state["position"] = pos
+                state["next_id"] = pos["id"] + 1
+                append({"kind": "open", "at": now(), **pos})
+                events.append(f"فتحت #{pos['id']} {direction} @ {lv['entry']} "
+                              f"وقف {lv['stop']} هدف2 {lv['tp2']}")
+        state["last_bar"] = bar["openTime"]
+    return events
+
+
 def once() -> str:
     state = load_state()
     bars = fetch(TIMEFRAME)
@@ -189,54 +238,22 @@ def once() -> str:
         return "بيانات غير كافية"
     latest = bars[-1]["openTime"]
 
-    # 1) advance an open position
-    if state.get("position"):
-        pos = state["position"]
-        ev = judge(bars, pos, 0)
-        if ev:
-            close_position(pos, ev)
-            append({"kind": "close", "at": now(), **pos})
-            log(f"أُغلقت الصفقة #{pos['id']}: {pos['outcome']} "
-                f"نتيجة {pos['result']:+.2f}$")
-            state["position"] = None
-        else:
-            save_state(state)
-            return f"صفقة #{pos['id']} مفتوحة، لا إغلاق بعد"
+    last = state.get("last_bar")
+    if last is None:
+        # First run: only consider the latest bar, so a fresh watcher does not
+        # backfill a week of history as if it had traded it live.
+        start = len(bars) - 1
+    else:
+        after = [j for j, b in enumerate(bars) if b["openTime"] > last]
+        if not after:
+            return "لا شمعة جديدة"
+        start = after[0]
 
-    # 2) look for a new entry, but only on a bar we have not processed
-    if state.get("last_bar") == latest:
-        return "لا شمعة جديدة"
-    ctx = read_context(bars)
-    direction, reason = entry_signal(ctx)
-    state["last_bar"] = latest
-    if direction is None:
-        save_state(state)
-        return f"لا دخول: {reason}"
-
-    lv = levels(direction, ctx["price"], ctx["atr"])
-    pos = {
-        "id": (state.get("next_id") or 1),
-        "direction": direction,
-        "timeframe": TIMEFRAME,
-        "entry_time": bars[-1]["openTime"],
-        "opened_at": now(),
-        "atr": round(ctx["atr"], 3),
-        "rsi": round(ctx["rsi"], 1),
-        "adx": round(ctx["adx"], 1) if ctx["adx"] else None,
-        "reason": reason,
-        "invalidation": (f"إغلاق {'تحت' if direction == 'BUY' else 'فوق'} "
-                         f"{lv['stop']:.2f} يُبطل"),
-        "status": "open",
-        "tp1_hit": False,
-        **lv,
-    }
-    state["position"] = pos
-    state["next_id"] = pos["id"] + 1
+    events = process_range(bars, start, state)
     save_state(state)
-    append({"kind": "open", "at": now(), **pos})
-    log(f"صفقة جديدة #{pos['id']} {direction} @ {lv['entry']} "
-        f"وقف {lv['stop']} هدف1 {lv['tp1']} هدف2 {lv['tp2']}")
-    return f"فتحت #{pos['id']} {direction}"
+    if not events:
+        return f"لا دخول حتى {latest[:16]}"
+    return " | ".join(events)
 
 
 # -------------------------------------------------------------------- report
