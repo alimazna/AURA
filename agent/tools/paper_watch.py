@@ -39,6 +39,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 from chart_eye import atr, adx, ema, fetch, rsi, swings, structure  # noqa: E402
+import kb  # noqa: E402
 
 PAPER = Path(__file__).resolve().parent.parent / "paper"
 JOURNAL = PAPER / "journal.jsonl"
@@ -103,6 +104,12 @@ def emit(rec: dict, sink: list | None = None) -> None:
 
 
 # ------------------------------------------------------------------ the rule
+#
+# The entry rule lives in the knowledge base (agent/knowledge/rules.json) and is
+# applied by agent/tools/kb.py. This file used to re-implement it inline, which
+# meant two copies of the same rule that could drift apart — a change to one
+# would silently leave the other trading the old rule. It now delegates, so the
+# watcher and the analyser cannot disagree about what the rule is.
 def read_context(bars):
     """Everything the entry rule needs, computed from bars up to the last one."""
     c = [b["close"] for b in bars]
@@ -128,36 +135,42 @@ def read_context(bars):
 
 
 def entry_signal(ctx) -> tuple[str | None, str]:
-    """Return (direction, reason) or (None, why not)."""
+    """Return (direction, reason) or (None, why not), from the knowledge base."""
     if ctx is None:
         return None, "مؤشرات غير مكتملة"
-    if not ctx["agree"]:
-        return None, f"لا اتفاق: اتجاه {'صاعد' if ctx['up'] else 'هابط'} والبنية {ctx['structure']}"
-    if ctx["dist_atr"] is None or ctx["dist_atr"] > PULLBACK_ATR:
-        return None, (f"السعر بعيد عن EMA20 ({ctx['dist_atr']:.2f}×ATR) — "
-                      f"الدخول يحتاج ارتداداً لا مطاردة")
-    if ctx["up"] and ctx["rsi"] >= 50:
-        return None, f"اتجاه صاعد لكن RSI {ctx['rsi']:.1f} ≥ 50 — لا ارتداد"
-    if (not ctx["up"]) and ctx["rsi"] <= 50:
-        return None, f"اتجاه هابط لكن RSI {ctx['rsi']:.1f} ≤ 50 — لا ارتداد"
-    d = "BUY" if ctx["up"] else "SELL"
+    decision = kb.apply(ctx, kb.load_rules())
+    if decision["decision"] == "NEUTRAL":
+        return None, (decision["rejects"][0] if decision["rejects"]
+                      else "لا اتجاه واضح")
+    d = decision["direction"]
     reason = (f"اتجاه {'صاعد' if ctx['up'] else 'هابط'} والبنية موافقة؛ "
-              f"السعر ارتد إلى EMA20 ({ctx['ema20']:.2f}) على بعد "
-              f"{ctx['dist_atr']:.2f}×ATR؛ RSI {ctx['rsi']:.1f} على جانب الارتداد")
+              f"السعر على بعد {ctx['dist_atr']:.2f}×ATR من EMA20؛ "
+              f"RSI {ctx['rsi']:.1f} على جانب الارتداد")
     return d, reason
 
 
 def levels(direction: str, entry: float, atr_v: float) -> dict:
+    """Levels come from the knowledge base's risk floor and target selection.
+
+    These are read straight from the rules rather than pushed through apply(),
+    because apply() is a decision gate: handing it a synthetic context would
+    make it evaluate an entry that is not being considered, and could reject a
+    perfectly valid set of levels for the wrong reason.
+    """
+    rules = kb.load_rules()
+    stop_atr, tp1_r, tp2_r = STOP_ATR, TP1_R, TP2_R
+    for r in rules["rules"]:
+        if r["id"] == "R-STOP-MIN" and r["status"] != "refuted":
+            stop_atr = max(stop_atr, r["params"]["min_stop_atr"])
+        if r["id"] == "R-RR-LOW" and r["status"] != "refuted":
+            tp1_r = r["params"]["tp1_r"]
+            tp2_r = r["params"]["tp2_r"]
     sgn = 1.0 if direction == "BUY" else -1.0
-    stop = entry - sgn * atr_v * STOP_ATR
+    stop = entry - sgn * atr_v * stop_atr
     risk = abs(entry - stop)
-    return {
-        "entry": round(entry, 3),
-        "stop": round(stop, 3),
-        "tp1": round(entry + sgn * risk * TP1_R, 3),
-        "tp2": round(entry + sgn * risk * TP2_R, 3),
-        "risk": round(risk, 3),
-    }
+    return {"entry": round(entry, 3), "stop": round(stop, 3),
+            "tp1": round(entry + sgn * risk * tp1_r, 3),
+            "tp2": round(entry + sgn * risk * tp2_r, 3), "risk": round(risk, 3)}
 
 
 # --------------------------------------------------------------- resolution
@@ -202,22 +215,30 @@ def close_position(pos, ev):
 
 
 # --------------------------------------------------------------------- cycle
-def process_range(bars, start_index, state, sink=None):
+def process_range(bars, start_index, state, sink=None, allow_new_entries=True):
     """Advance the state machine over bars[start_index:], one bar at a time.
 
-    This is the gap-safe core. The earlier version looked only at the latest
-    bar, so any bar that closed while the sandbox was paused was skipped and an
-    entry on it was lost. Here every bar after the checkpoint is evaluated in
-    order, so a 12-hour run survives the sandbox pausing and resuming: the
-    checkpoint is a bar timestamp, not a promise that the process stayed alive.
+    Two different things happen here, and the first version conflated them:
 
-    `sink` routes records away from the live journal. A replay of history must
-    pass one; without it, a verification run writes trades into the journal that
-    never happened live.
+    1. **Resolving an open position** across a gap is legitimate. The position
+       was really taken, so checking whether its stop or target was hit while
+       the process was down is correct — otherwise a genuine trade would be
+       left unresolved just because the sandbox paused.
+
+    2. **Opening a new position** on a historical bar is not legitimate in the
+       live path. If the process was down, that trade was never taken. Opening
+       it retroactively and writing it to the live journal fabricates a live
+       record. This is what happened: six trades were stamped "at 15:23" with
+       entry times between 00:00 and 05:45.
+
+    So the live path resolves across the gap but only opens on the latest bar
+    (`allow_new_entries=False` for everything before it). Historical entries
+    belong in `--replay`, which writes to an isolated sink.
 
     Returns a list of human-readable events.
     """
     events: list[str] = []
+    last = len(bars) - 1
     for i in range(start_index, len(bars)):
         bar = bars[i]
         if state.get("position"):
@@ -229,7 +250,8 @@ def process_range(bars, start_index, state, sink=None):
                 events.append(f"أُغلقت #{pos['id']}: {pos['outcome']} "
                               f"({pos['result']:+.2f}$)")
                 state["position"] = None
-        if state.get("position") is None:
+        may_open = allow_new_entries or i == last
+        if state.get("position") is None and may_open:
             ctx = read_context(bars[:i + 1])
             direction, reason = entry_signal(ctx)
             if direction is not None:
@@ -273,7 +295,7 @@ def once() -> str:
             return "لا شمعة جديدة"
         start = after[0]
 
-    events = process_range(bars, start, state)
+    events = process_range(bars, start, state, allow_new_entries=(start == len(bars) - 1))
     save_state(state)
     if not events:
         return f"لا دخول حتى {latest[:16]}"
