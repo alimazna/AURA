@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GOLD INTELLIGENCE — نموذج تصميم (عرض فقط)</title>
+<!--
+  نموذج تصميم ثابت — عرض فقط، بلا Backend وبلا بيانات حقيقية.
+  كل الأرقام هنا أمثلة توضيحية للتخطيط البصري فقط، وليست بيانات سوق.
+  المرجع: GOLD_INTELLIGENCE/docs/DESIGN_SYSTEM.md و design/DESIGN_DIRECTION.md
+-->
+<style>
+  :root{
+    --bg:#010a18; --surface:#010917; --surface-2:#020e20; --surface-3:#04122a;
+    --sidebar:#030d1e; --chart:#020b1a;
+    --line:#061428; --line-strong:#0d2544; --hairline:#010a19;
+    --fg:#ffffff; --fg-mid:#9abbe5; --fg-dim:#8daede; --fg-faint:#5d7ba6;
+    --gold:#fbbf1d; --gold-deep:#8a6420;
+    --blue:#064dcf; --blue-line:#1b4a95; --cyan:#13b8fa;
+    --up:#01cd75; --down:#e93d53; --warn:#fbbf1d;
+    --t-micro:11px; --t-small:11.5px; --t-body:13px; --t-lead:14px; --t-title:15px; --t-display:26px;
+    --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:22px;
+    --radius:4px; --radius-lg:6px;
+    --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,monospace;
+    --sans:"IBM Plex Sans Arabic","Segoe UI",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:var(--t-body);line-height:1.6}
+  .app{display:grid;grid-template-rows:64px 1fr;height:100vh}
+  /* Top bar */
+  .topbar{display:flex;align-items:center;gap:var(--s4);background:var(--surface);border-bottom:1px solid var(--line);padding:0 var(--s4)}
+  .brand{display:flex;align-items:center;gap:var(--s2);font-weight:700;letter-spacing:0}
+  .brand .dot{width:10px;height:10px;border-radius:50%;background:var(--gold)}
+  .brand small{color:var(--fg-faint);font-weight:400}
+  .quote{display:flex;align-items:baseline;gap:var(--s2);font-family:var(--mono);direction:ltr}
+  .quote .price{font-size:var(--t-display);font-weight:600}
+  .quote .chg{color:var(--up);font-size:var(--t-lead)}
+  .spacer{flex:1}
+  .badge{display:inline-flex;align-items:center;gap:6px;padding:3px 8px;border-radius:999px;font-size:var(--t-micro);border:1px solid var(--line-strong);color:var(--fg-mid)}
+  .badge .led{width:6px;height:6px;border-radius:50%;background:var(--up)}
+  .badge.stale{border-color:var(--gold-deep);color:var(--warn)}
+  .badge.stale .led{background:var(--warn)}
+  /* Layout */
+  .body{display:grid;grid-template-columns:200px 1fr;min-height:0}
+  .sidebar{background:var(--sidebar);border-inline-end:1px solid var(--line);padding:var(--s3) var(--s2);display:flex;flex-direction:column;gap:2px}
+  .nav-item{padding:8px 10px;border-radius:var(--radius);color:var(--fg-mid);font-size:var(--t-body);cursor:default}
+  .nav-item.active{background:var(--surface-3);color:var(--fg);border:1px solid var(--blue-line)}
+  .nav-sep{margin-top:auto;border-top:1px solid var(--line);padding-top:var(--s2);font-size:var(--t-micro);color:var(--fg-faint)}
+  /* Main */
+  .main{display:grid;grid-template-rows:1fr 96px;min-height:0;gap:var(--s3);padding:var(--s3)}
+  .stage{display:grid;grid-template-columns:1fr 360px;gap:var(--s3);min-height:0}
+  .panel{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius-lg);overflow:hidden;display:flex;flex-direction:column;min-height:0}
+  .panel-head{display:flex;align-items:center;gap:var(--s3);padding:var(--s2) var(--s3);border-bottom:1px solid var(--line);background:var(--surface)}
+  .panel-title{font-size:var(--t-title);font-weight:600}
+  .tf{display:flex;gap:2px;margin-inline-start:auto}
+  .tf span{padding:3px 8px;font-size:var(--t-micro);color:var(--fg-mid);border:1px solid var(--line);border-radius:var(--radius)}
+  .tf span.on{background:var(--surface-3);color:var(--fg);border-color:var(--blue-line)}
+  /* Chart placeholder */
+  .chart{flex:1;position:relative;background:var(--chart);min-height:0}
+  .chart svg{width:100%;height:100%;display:block}
+  .chart .watermark{position:absolute;inset:auto auto 8px 12px;font-size:var(--t-micro);color:var(--fg-faint)}
+  /* Scenario panel */
+  .scn{padding:var(--s3);display:flex;flex-direction:column;gap:var(--s3);overflow:auto}
+  .scn-id{font-family:var(--mono);font-size:var(--t-micro);color:var(--fg-faint);direction:ltr}
+  .status{display:inline-flex;align-items:center;gap:6px;font-size:var(--t-small);padding:3px 8px;border-radius:999px;border:1px solid var(--gold-deep);color:var(--warn)}
+  .dir{margin-inline-start:auto;font-weight:700;font-size:var(--t-title)}
+  .dir.buy{color:var(--up)}
+  .row{display:flex;justify-content:space-between;gap:var(--s2);padding:6px 0;border-bottom:1px dashed var(--line)}
+  .row .k{color:var(--fg-mid);font-size:var(--t-small)}
+  .row .v{font-family:var(--mono);direction:ltr;font-weight:600}
+  .v.sl{color:var(--down)} .v.tp{color:var(--up)} .v.entry{color:var(--cyan)}
+  .why{display:flex;flex-direction:column;gap:var(--s2)}
+  .why h4{margin:0;font-size:var(--t-small);color:var(--fg-mid);font-weight:600}
+  details{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:var(--s2) var(--s3)}
+  details summary{cursor:pointer;font-size:var(--t-small);color:var(--fg)}
+  details p{margin:var(--s2) 0 0;color:var(--fg-dim);font-size:var(--t-small)}
+  .ai-note{font-size:var(--t-micro);color:var(--gold);border:1px dashed var(--gold-deep);border-radius:var(--radius);padding:4px 8px;display:inline-block}
+  .cta{margin-top:auto;display:flex;gap:var(--s2)}
+  .btn{flex:1;padding:10px;border-radius:var(--radius);border:1px solid var(--line-strong);background:var(--surface-3);color:var(--fg);font-family:var(--sans);font-size:var(--t-body);cursor:default}
+  .btn.primary{background:var(--blue);border-color:var(--blue);font-weight:600}
+  .btn small{display:block;font-size:var(--t-micro);color:var(--fg-mid);font-weight:400}
+  /* Bottom row */
+  .bottom{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--s3)}
+  .card{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius-lg);padding:var(--s3);display:flex;flex-direction:column;gap:6px}
+  .card .label{font-size:var(--t-micro);color:var(--fg-mid)}
+  .card .value{font-family:var(--mono);font-size:var(--t-lead);direction:ltr}
+  .card .src{font-size:var(--t-micro);color:var(--fg-faint)}
+  .no-opp{background:var(--surface-3);border:1px solid var(--line-strong);border-radius:var(--radius-lg);padding:var(--s4);text-align:center;color:var(--fg-mid)}
+  .no-opp strong{color:var(--fg);display:block;margin-bottom:4px}
+  .risk{border:1px solid var(--gold-deep);background:rgba(251,191,29,.06);border-radius:var(--radius);padding:var(--s2) var(--s3);font-size:var(--t-micro);color:var(--fg-dim)}
+  @media (max-width:1100px){
+    .body{grid-template-columns:64px 1fr}
+    .nav-item{font-size:0;text-align:center}
+    .nav-item.active{font-size:0}
+    .stage{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand"><span class="dot"></span>GOLD INTELLIGENCE <small>· XAUUSD</small></div>
+    <div class="quote"><span class="price">4,050.09</span><span class="chg">▲ 0.42%</span></div>
+    <span class="badge"><span class="led"></span>بيانات حيّة · آخر تحديث 2s</span>
+    <span class="badge">السوق: مفتوح</span>
+    <div class="spacer"></div>
+    <span class="badge">الدرجة ترتيب داخلي — ليست احتمالًا</span>
+  </header>
+
+  <div class="body">
+    <nav class="sidebar">
+      <div class="nav-item">الرئيسية</div>
+      <div class="nav-item active">الصفقات الجاهزة</div>
+      <div class="nav-item">صفقاتي السابقة</div>
+      <div class="nav-item">تحليل السوق</div>
+      <div class="nav-item">الأخبار والاقتصاد</div>
+      <div class="nav-item">مساعد الذهب AI</div>
+      <div class="nav-item">التعليم والأداء</div>
+      <div class="nav-item">الحساب والإعدادات</div>
+      <div class="nav-sep">جودة البيانات: موثوقة<br>حالة النظام: سليم</div>
+    </nav>
+
+    <main class="main">
+      <section class="stage">
+        <!-- Chart -->
+        <div class="panel">
+          <div class="panel-head">
+            <span class="panel-title">XAUUSD — الشارت</span>
+            <span class="badge">آخر شمعة مغلقة: H1</span>
+            <div class="tf"><span>M1</span><span>M5</span><span>M15</span><span class="on">H1</span><span>H4</span><span>D1</span></div>
+          </div>
+          <div class="chart">
+            <svg viewBox="0 0 900 420" preserveAspectRatio="none" aria-label="نموذج شارت">
+              <g stroke="#061428" stroke-width="1">
+                <line x1="0" y1="60" x2="900" y2="60"/><line x1="0" y1="140" x2="900" y2="140"/>
+                <line x1="0" y1="220" x2="900" y2="220"/><line x1="0" y1="300" x2="900" y2="300"/>
+                <line x1="0" y1="380" x2="900" y2="380"/>
+              </g>
+              <!-- entry zone -->
+              <rect x="0" y="196" width="900" height="26" fill="rgba(19,184,250,.10)"/>
+              <line x1="0" y1="196" x2="900" y2="196" stroke="#13b8fa" stroke-width="1" stroke-dasharray="4 4"/>
+              <line x1="0" y1="222" x2="900" y2="222" stroke="#13b8fa" stroke-width="1" stroke-dasharray="4 4"/>
+              <text x="884" y="192" fill="#13b8fa" font-size="11" text-anchor="end">منطقة الدخول</text>
+              <!-- SL -->
+              <line x1="0" y1="288" x2="900" y2="288" stroke="#e93d53" stroke-width="1" stroke-dasharray="6 4"/>
+              <text x="884" y="284" fill="#e93d53" font-size="11" text-anchor="end">وقف الخسارة</text>
+              <!-- TP1 -->
+              <line x1="0" y1="132" x2="900" y2="132" stroke="#01cd75" stroke-width="1" stroke-dasharray="6 4"/>
+              <text x="884" y="128" fill="#01cd75" font-size="11" text-anchor="end">الهدف 1</text>
+              <!-- TP2 -->
+              <line x1="0" y1="84" x2="900" y2="84" stroke="#01cd75" stroke-width="1" stroke-dasharray="6 4"/>
+              <text x="884" y="80" fill="#01cd75" font-size="11" text-anchor="end">الهدف 2</text>
+              <!-- candles (illustrative only) -->
+              <g id="candles"></g>
+            </svg>
+            <span class="watermark">نموذج تصميم — الأرقام توضيحية وليست بيانات سوق</span>
+          </div>
+        </div>
+
+        <!-- Scenario panel -->
+        <div class="panel scn">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="scn-id">#SCN-2026-1114-001</span>
+            <span class="dir buy">شراء</span>
+          </div>
+          <div><span class="status">◐ بانتظار التفعيل</span></div>
+
+          <div class="risk">سيناريو منشور ≠ فرصة مفعّلة. لم يدخل السعر منطقة الدخول بعد.</div>
+
+          <div>
+            <div class="row"><span class="k">منطقة الدخول</span><span class="v entry">4042.00 – 4045.00</span></div>
+            <div class="row"><span class="k">وقف الخسارة</span><span class="v sl">4031.50</span></div>
+            <div class="row"><span class="k">الهدف 1</span><span class="v tp">4060.00</span></div>
+            <div class="row"><span class="k">الهدف 2</span><span class="v tp">4075.00</span></div>
+            <div class="row"><span class="k">المخاطرة / المكافأة</span><span class="v">1 : 2.3</span></div>
+            <div class="row"><span class="k">وقت النشر (UTC)</span><span class="v">2026-11-14 13:20</span></div>
+          </div>
+
+          <div class="why">
+            <h4>لماذا هذا السيناريو؟</h4>
+            <details open>
+              <summary>شرح مبسّط ▸</summary>
+              <p>السعر يقترب من منطقة دعم على الإطار اليومي، وحولها سيولة أسفل القيعان السابقة.
+                 الخطة: انتظار وصول السعر للمنطقة، ثم الدخول فقط إن ظهر دليل ارتداد.
+                 إن كسر السعر المنطقة لأسفل، يُبطل السيناريو.</p>
+              <span class="ai-note">تفسير مُولَّد — البيانات الأساسية موثقة</span>
+            </details>
+            <details>
+              <summary>تحليل احترافي ▸</summary>
+              <p>بنية H4: اتجاه صاعد (قمم وقيعان أعلى). D1: اختبار منطقة عرض سابقة.
+                 دليل داعم: نقطتا تلامس سابقتان + تجمّع سيولة أسفل 4040.
+                 دليل معارض: تقارب قبل حدث الفيدرالي (يستدعي حذرًا).</p>
+            </details>
+          </div>
+
+          <div class="cta">
+            <button class="btn primary">متابعة (محاكاة)<small>لا يوجد تنفيذ حقيقي</small></button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Bottom row -->
+      <section class="bottom">
+        <div class="card"><span class="label">النظام الحالي</span><span class="value">TRENDING</span><span class="src">سياق H4 · 13:00 UTC</span></div>
+        <div class="card"><span class="label">التقلب (ATR H1)</span><span class="value">6.84</span><span class="src">مقارنة 30 يومًا</span></div>
+        <div class="card"><span class="label">الجلسة</span><span class="value">LONDON</span><span class="src">حتى 17:00 UTC</span></div>
+        <div class="card"><span class="label">سيناريوهات منشورة</span><span class="value">1</span><span class="src">آخر 24 ساعة</span></div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<script>
+// شموع توضيحية فقط لملء الشارت بصريًا — ليست بيانات سوق.
+(function(){
+  const g=document.getElementById('candles'); if(!g) return;
+  let x=20, seed=7;
+  const rnd=()=>{seed=(seed*1103515245+12345)&0x7fffffff;return seed/0x7fffffff;};
+  let y=250;
+  for(let i=0;i<70 && x<860;i++){
+    const up=rnd()>0.45;
+    const o=y, c=Math.max(70,Math.min(360, y+(rnd()-0.5)*26));
+    const h=Math.min(o,c)-rnd()*14, l=Math.max(o,c)+rnd()*14;
+    const col=up?'#01cd75':'#e93d53';
+    g.innerHTML+=`<line x1="${x+4}" y1="${h}" x2="${x+4}" y2="${l}" stroke="${col}" stroke-width="1"/>`+
+                 `<rect x="${x}" y="${Math.min(o,c)}" width="8" height="${Math.max(2,Math.abs(c-o))}" fill="${col}"/>`;
+    y=c; x+=12;
+  }
+})();
+</script>
+</body>
+</html>
